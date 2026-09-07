@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { buildEnvironment } from "./environment.js";
+import { createSoundscape } from "./audio.js";
 import {
   REGION,
   sites,
@@ -88,9 +89,8 @@ export function createGame(
     riding = false,
     sprint = false,
     night = false,
-    sound = false,
-    audio = null,
-    audioGain = null;
+    sound = false;
+  const soundscape = createSoundscape();
   let touchMove = { x: 0, y: 0 },
     pointer = null,
     viewReady = false,
@@ -105,7 +105,6 @@ export function createGame(
   let boatHeading = 0,
     boatSpeed = 0;
   let invalidatedAt = performance.now();
-  let lastDrum = 0;
   const cameraTarget = new THREE.Vector3(),
     desiredCamera = new THREE.Vector3();
   const dayColor = new THREE.Color("#bfd8ce"),
@@ -275,72 +274,17 @@ export function createGame(
   canvas.addEventListener("wheel", wheel, { passive: false });
   canvas.addEventListener("webglcontextlost", lost);
 
-  function chime() {
-    if (!sound || !audio) return;
-    [523.25, 659.25, 783.99].forEach((frequency, i) => {
-      const o = audio.createOscillator(),
-        g = audio.createGain(),
-        at = audio.currentTime + i * 0.1;
-      o.type = "sine";
-      o.frequency.value = frequency;
-      g.gain.setValueAtTime(0, at);
-      g.gain.linearRampToValueAtTime(0.055, at + 0.025);
-      g.gain.exponentialRampToValueAtTime(0.001, at + 0.65);
-      o.connect(g).connect(audio.destination);
-      o.start(at);
-      o.stop(at + 0.7);
-    });
-  }
-  function playBeat() {
-    if (!sound || !audio) return;
-    const oscillator = audio.createOscillator(),
-      gain = audio.createGain(),
-      at = audio.currentTime;
-    oscillator.frequency.setValueAtTime(160, at);
-    oscillator.frequency.exponentialRampToValueAtTime(55, at + 0.18);
-    gain.gain.setValueAtTime(0.16, at);
-    gain.gain.exponentialRampToValueAtTime(0.001, at + 0.24);
-    oscillator.connect(gain).connect(audio.destination);
-    oscillator.start();
-    oscillator.stop(at + 0.25);
-  }
+  const chime = () => soundscape.chime();
+  const playBeat = () => soundscape.beat();
 
   async function setSound(value) {
     sound = value;
-    if (!value) {
-      await audio?.suspend();
-      return;
-    }
-    try {
-      if (!audio) {
-        audio = new (window.AudioContext || window.webkitAudioContext)();
-        const buffer = audio.createBuffer(
-            1,
-            audio.sampleRate * 3,
-            audio.sampleRate,
-          ),
-          data = buffer.getChannelData(0);
-        let last = 0;
-        for (let i = 0; i < data.length; i++) {
-          last = (last + Math.random() * 0.04 - 0.02) / 1.03;
-          data[i] = last;
-        }
-        const source = audio.createBufferSource();
-        source.buffer = buffer;
-        source.loop = true;
-        const filter = audio.createBiquadFilter();
-        filter.type = "lowpass";
-        filter.frequency.value = 550;
-        audioGain = audio.createGain();
-        audioGain.gain.value = paused ? 0 : 0.35;
-        source.connect(filter).connect(audioGain).connect(audio.destination);
-        source.start();
-      }
-      await audio.resume();
-    } catch {
+    const ok = await soundscape.enable(value);
+    if (!ok) {
       sound = false;
       return false;
     }
+    if (value) soundscape.setMaster(paused ? 0 : 0.9);
     return true;
   }
 
@@ -372,14 +316,6 @@ export function createGame(
     if (paused && now - invalidatedAt > 1800) return;
     if (!paused) {
       elapsed += dt;
-      if (
-        sound &&
-        Math.hypot(position.x + 22, position.z + 25) < 30 &&
-        elapsed - lastDrum > 0.55
-      ) {
-        playBeat();
-        lastDrum = elapsed;
-      }
       // Weather drifts between clear spells and short monsoon showers.
       weatherIn -= dt;
       if (weatherIn <= 0) {
@@ -547,6 +483,18 @@ export function createGame(
         z: position.z,
         rowing: boating ? Math.min(1, Math.abs(boatSpeed) / 3.4) : 0,
       });
+      if (sound)
+        soundscape.update({
+          x: position.x,
+          z: position.z,
+          yaw,
+          night: night ? 1 : 0,
+          rain,
+          boating,
+          speed: Math.abs(boatSpeed),
+          moving,
+          stand: nearestStop,
+        });
       if (now - lastPublish > 160) {
         publish();
         lastPublish = now;
@@ -630,16 +578,8 @@ export function createGame(
       paused = value;
       invalidatedAt = performance.now();
       clearInput();
-      if (audioGain)
-        audioGain.gain.setTargetAtTime(
-          value ? 0 : 0.35,
-          audio.currentTime,
-          0.08,
-        );
-      if (!value) {
-        if (sound) audio?.resume();
-        canvas.focus({ preventScroll: true });
-      }
+      if (sound) soundscape.setMaster(value ? 0 : 0.9);
+      if (!value) canvas.focus({ preventScroll: true });
     },
     setMove(x, y) {
       touchMove = { x, y };
@@ -665,6 +605,7 @@ export function createGame(
     setSound,
     chime,
     playBeat,
+    bell: () => soundscape.bell(),
     interact: interaction,
     ride,
     sit,
@@ -707,7 +648,7 @@ export function createGame(
       canvas.removeEventListener("pointercancel", pointerUp);
       canvas.removeEventListener("wheel", wheel);
       canvas.removeEventListener("webglcontextlost", lost);
-      audio?.close();
+      soundscape.dispose();
       environment.dispose();
       renderer.dispose();
       renderer.forceContextLoss();

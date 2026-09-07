@@ -2203,6 +2203,7 @@ export function buildEnvironment(scene) {
     if (disposed) return;
     const t = Number.isFinite(time) ? time : 0;
     const darkness = THREE.MathUtils.clamp(Number(night) || 0, 0, 1);
+    const wetness = THREE.MathUtils.clamp(Number(world.rain) || 0, 0, 1);
     waterTime.value = t;
     waterNight.value = darkness;
     m.glass.emissiveIntensity = darkness * 0.75;
@@ -2223,16 +2224,23 @@ export function buildEnvironment(scene) {
       object.rotation.y = Math.cos(phase) > 0 ? Math.PI : 0;
       object.rotation.z = Math.sin(t + i) * 0.015;
     });
+    // When the rain comes everyone walks faster, heads down, arm over the head.
+    const hurry = 1 + wetness * 1.35;
     walkers.forEach(({ person, limbs, x, from, to, phase }) => {
       const length = to - from;
-      const travel =
-        (((t * 0.85 + phase) % (length * 2)) + length * 2) % (length * 2);
+      const pace = t * 0.85 * hurry;
+      const travel = (((pace + phase) % (length * 2)) + length * 2) % (length * 2);
       const forward = travel < length;
       const z = from + (forward ? travel : length * 2 - travel);
       person.position.set(x, terrainHeight(x, z), z);
       person.rotation.y = forward ? Math.PI : 0;
-      const swing = Math.sin(t * 4 + phase) * 0.38;
+      const swing = Math.sin(t * 4 * hurry + phase) * (0.38 + wetness * 0.22);
       limbs.forEach((limb, i) => {
+        if (wetness > 0.45 && i === 2) {
+          // One arm up against the shower, the way everyone does it.
+          limb.rotation.x = -2.5;
+          return;
+        }
         limb.rotation.x = swing * (i === 0 || i === 3 ? 1 : -1);
       });
     });
@@ -2338,13 +2346,12 @@ export function buildEnvironment(scene) {
     });
     fireflyMaterial.opacity = 0.35 + Math.sin(t * 2.2) * 0.25 + darkness * 0.3;
     // Monsoon drizzle falls around the player while a rain event is running.
-    const wet = THREE.MathUtils.clamp(Number(world.rain) || 0, 0, 1);
-    rain.visible = wet > 0.01;
+    rain.visible = wetness > 0.01;
     if (rain.visible) {
       const rx = world.x || 0;
       const rz = world.z || 0;
       rain.position.set(rx, terrainHeight(rx, rz) - 1, rz);
-      rainMaterial.opacity = 0.62 * wet;
+      rainMaterial.opacity = 0.62 * wetness;
       const array = rainGeometry.attributes.position.array;
       const fall = dt * 34;
       for (let i = 1; i < array.length; i += 3) {

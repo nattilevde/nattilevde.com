@@ -512,3 +512,40 @@ test("the canoe can be boarded, paddled forward, and comes to rest", async ({
     )
     .toBeLessThan(0.1);
 });
+
+test("the world is overheard, not narrated", async ({ page }) => {
+  test.setTimeout(90000);
+  // Standing in the chaayakkada, you pick up the talk at the counter.
+  await enter(page, { x: -12, z: 34 }, ["village", "tea-shop"]);
+  const line = page.locator(".game-overheard");
+  await expect(line).toBeVisible({ timeout: 25000 });
+  const first = await line.innerText();
+  expect(first.length).toBeGreaterThan(8);
+  // It fades on its own: nothing to read, nothing to dismiss.
+  await expect(line).toBeHidden({ timeout: 15000 });
+  // Opening a panel never leaves a line stranded over the UI.
+  await page.keyboard.press("p");
+  await expect(line).toHaveCount(0);
+});
+
+test("fast travel is a bus ride with a conductor, not a teleport", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  await enter(page, { x: 8, z: 84 }, ["village", "beach", "jetty"]);
+  const game = page.getByTestId("kerala-game");
+  await page.keyboard.press("b");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: /Periyar Bridge Stand/ })
+    .click();
+  // The conductor says his piece while the bus is on the road.
+  await expect(page.locator(".game-overheard")).toContainText("Conductor");
+  await expect(page.locator(".game-bus-fade")).toBeVisible();
+  await expect
+    .poll(async () => Number(await game.getAttribute("data-z")), {
+      timeout: 20000,
+    })
+    .toBeLessThan(-600);
+  await expect(page.locator(".game-bus-fade")).toHaveCount(0);
+});

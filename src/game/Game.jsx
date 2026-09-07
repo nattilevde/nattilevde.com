@@ -29,6 +29,12 @@ import {
 } from "lucide-react";
 import { createGame } from "./engine.js";
 import {
+  overheardFor,
+  weatherLine,
+  conductorLine,
+  arrivalLine,
+} from "./culture.js";
+import {
   REGION,
   sites,
   activities,
@@ -348,13 +354,19 @@ export default function Game({ onExit, onRecord }) {
   const [panel, setPanel] = useState(null),
     [encounter, setEncounter] = useState(null),
     [notice, setNotice] = useState(null);
-  const [sound, setSound] = useState(false),
+  const [sound, setSound] = useState(true),
     [time, setTime] = useState("day"),
     [low, setLow] = useState(false),
     [running, setRunning] = useState(false);
   const [beats, setBeats] = useState(0),
     [stick, setStick] = useState({ x: 0, y: 0 }),
-    [picked, setPicked] = useState(null);
+    [picked, setPicked] = useState(null),
+    [overheard, setOverheard] = useState(null),
+    [busRide, setBusRide] = useState(false);
+  const overheardTimer = useRef(null),
+    lastLine = useRef({ text: "", at: 0 });
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const lastSave = useRef(0),
     noticeTimer = useRef(null);
   const region = regionAt(state.x, state.z);
@@ -384,6 +396,21 @@ export default function Game({ onExit, onRecord }) {
     clearTimeout(noticeTimer.current);
     setNotice(value);
     noticeTimer.current = setTimeout(() => setNotice(null), 5200);
+  }
+  // Overheard talk is ambience: it never blocks, never repeats back to back,
+  // and stays quiet unless a while has passed since the last line.
+  function say(line, { force = false } = {}) {
+    if (!line) return;
+    const now = Date.now();
+    if (!force && now - lastLine.current.at < 21000) return;
+    if (line.text === lastLine.current.text && !force) return;
+    lastLine.current = { text: line.text, at: now };
+    clearTimeout(overheardTimer.current);
+    setOverheard(line);
+    overheardTimer.current = setTimeout(
+      () => setOverheard(null),
+      line.gloss ? 7000 : 5600,
+    );
   }
   function record(kind, id) {
     const old = journeyRef.current;
@@ -461,7 +488,8 @@ export default function Game({ onExit, onRecord }) {
           setPanel("encounter");
         },
         onMoment: (id) => record("moments", id),
-        onEvent: (kind) =>
+        onEvent: (kind) => {
+          say(weatherLine(kind), { force: true });
           announce(
             kind === "rain-start"
               ? {
@@ -476,7 +504,8 @@ export default function Game({ onExit, onRecord }) {
                   text: "Everything smells green again.",
                   weather: true,
                 },
-          ),
+          );
+        },
         onError: setError,
       });
       engine.current = game;
@@ -504,6 +533,17 @@ export default function Game({ onExit, onRecord }) {
   useEffect(() => {
     engine.current?.setPaused(!started || !!panel || !!error);
   }, [started, panel, error, ready]);
+  // Listen for something worth overhearing wherever the player has wandered.
+  useEffect(() => {
+    if (!started || panel) return;
+    const listen = setInterval(() => {
+      const now = stateRef.current;
+      if (now.sitting || now.boating) return;
+      say(overheardFor({ x: now.x, z: now.z, rain: now.rain, night: now.night }));
+    }, 6500);
+    return () => clearInterval(listen);
+  }, [started, panel]);
+  useEffect(() => () => clearTimeout(overheardTimer.current), []);
   useEffect(() => {
     if (!started || lastRegion.current === region.id) return;
     lastRegion.current = region.id;
@@ -547,15 +587,23 @@ export default function Game({ onExit, onRecord }) {
     setEncounter(null);
     setPicked(null);
   };
+  // Fast travel is a bus ride, not a teleport: bell, conductor, then the road.
   function travel(destination) {
-    if (!destination?.unlocked) return;
-    engine.current?.travelTo(destination);
+    if (!destination?.unlocked || busRide) return;
     closePanel();
-    announce({
-      title: destination.name,
-      subtitle: "THE BUS DROPS YOU OFF",
-      text: "Mind the step. Good exploring.",
-    });
+    setBusRide(true);
+    engine.current?.bell();
+    say(conductorLine(), { force: true });
+    setTimeout(() => {
+      engine.current?.travelTo(destination);
+      say(arrivalLine(), { force: true });
+      announce({
+        title: destination.name,
+        subtitle: "THE BUS DROPS YOU OFF",
+        text: "Mind the step. Good exploring.",
+      });
+      setTimeout(() => setBusRide(false), 260);
+    }, 1150);
   }
   function completeEncounter() {
     if (encounterSite.kind === "culture" && beats < 2) {
@@ -616,6 +664,17 @@ export default function Game({ onExit, onRecord }) {
                 <Map size={19} />
               </button>
               <button
+                aria-label={sound ? "Mute the world" : "Unmute the world"}
+                title="Sound"
+                onClick={async () => {
+                  const next = !sound;
+                  const ok = await engine.current?.setSound(next);
+                  setSound(next && ok !== false);
+                }}
+              >
+                {sound ? <Volume2 size={19} /> : <VolumeX size={19} />}
+              </button>
+              <button
                 aria-label="Open bus network"
                 title="Fast travel (B)"
                 onClick={() => setPanel("travel")}
@@ -653,10 +712,25 @@ export default function Game({ onExit, onRecord }) {
             <br />
             the long road north to the fort, the hill road east into the tea.
           </p>
+          <label className="game-intro-sound">
+            <input
+              type="checkbox"
+              checked={sound}
+              onChange={(e) => setSound(e.target.checked)}
+            />
+            {sound ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            Sound on — the world is worth listening to
+          </label>
           <button
             className="game-primary"
             disabled={!ready}
-            onClick={() => setStarted(true)}
+            onClick={async () => {
+              setStarted(true);
+              if (sound) {
+                const ok = await engine.current?.setSound(true);
+                if (ok === false) setSound(false);
+              }
+            }}
           >
             {ready
               ? journey.discoveries.length
@@ -897,6 +971,16 @@ export default function Game({ onExit, onRecord }) {
         </>
       )}
 
+      {overheard && started && !panel && (
+        <div className="game-overheard" role="status" key={lastLine.current.at}>
+          <span>{overheard.who}</span>
+          <p>
+            &ldquo;{overheard.text}&rdquo;
+            {overheard.gloss && <em>{overheard.gloss}</em>}
+          </p>
+        </div>
+      )}
+      {busRide && <div className="game-bus-fade" />}
       {notice && started && (
         <div
           className={`game-discovery-notice ${notice.badge ? "badge" : ""}`}
