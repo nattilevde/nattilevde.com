@@ -1,0 +1,19 @@
+name: Idea
+description: Suggest something for the world or the game.
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it would make exploring better
+      description: >
+        This project favours depth over breadth — a place that feels alive beats
+        five more map markers. What would this add to the feel of the world?
+    validations:
+      required: true

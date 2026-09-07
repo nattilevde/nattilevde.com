@@ -83,7 +83,10 @@ export function createSoundscape() {
     return lfo;
   }
   // A short filtered noise hit: splashes, footsteps, drum skin, clinks.
-  function hit(out, { kind = "white", type = "bandpass", freq, q = 1, peak, decay, at = 0 }) {
+  function hit(
+    out,
+    { kind = "white", type = "bandpass", freq, q = 1, peak, decay, at = 0 },
+  ) {
     const t = ctx.currentTime + at;
     const node = source(kind, false);
     const band = filter(type, freq, q);
@@ -96,7 +99,10 @@ export function createSoundscape() {
     node.stop(t + decay + 0.05);
   }
   // A pitched body: drum thump, horn, bell partial, bird note.
-  function tone(out, { type = "sine", from, to, peak, decay, at = 0, hold = 0 }) {
+  function tone(
+    out,
+    { type = "sine", from, to, peak, decay, at = 0, hold = 0 },
+  ) {
     const t = ctx.currentTime + at;
     const osc = ctx.createOscillator();
     osc.type = type;
@@ -278,7 +284,14 @@ export function createSoundscape() {
     ...[
       { id: "chenda-courtyard", x: -22, z: -25, range: 105, drums: 3 },
       { id: "chenda-pooram", x: 90, z: -735, range: 150, drums: 5 },
-      { id: "chenda-theyyam", x: 128, z: -1150, range: 120, drums: 4, wild: true },
+      {
+        id: "chenda-theyyam",
+        x: 128,
+        z: -1150,
+        range: 120,
+        drums: 4,
+        wild: true,
+      },
     ].map((spot) => ({
       id: spot.id,
       range: spot.range,
@@ -757,7 +770,8 @@ export function createSoundscape() {
     const rightX = Math.cos(listener.yaw);
     const rightZ = -Math.sin(listener.yaw);
     for (const voice of voices) {
-      const spot = typeof voice.at === "function" ? voice.at(listener) : voice.at;
+      const spot =
+        typeof voice.at === "function" ? voice.at(listener) : voice.at;
       const dx = spot.x - listener.x;
       const dz = spot.z - listener.z;
       const distance = Math.hypot(dx, dz);
@@ -786,7 +800,8 @@ export function createSoundscape() {
         0.2,
       );
       if (voice.every) {
-        if (!voice.nextAt) voice.nextAt = t + voice.every(listener, voice.state);
+        if (!voice.nextAt)
+          voice.nextAt = t + voice.every(listener, voice.state);
         else if (t >= voice.nextAt) {
           voice.fire(voice.out, listener, voice.state);
           voice.nextAt = t + voice.every(listener, voice.state);

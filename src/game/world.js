@@ -385,7 +385,8 @@ export const activities = [
   {
     id: "malabar-road",
     name: "The Malabar Road",
-    description: "Reach the beach market, the sea fort, and the Theyyam ground.",
+    description:
+      "Reach the beach market, the sea fort, and the Theyyam ground.",
     requires: ["beachmarket", "fort", "theyyam"],
     source: "discoveries",
     badge: "Malabar Pilgrim",
@@ -401,7 +402,8 @@ export const activities = [
   {
     id: "southern-lights",
     name: "Southern Lights",
-    description: "Ride south to the lagoon, the old street, and the lighthouse.",
+    description:
+      "Ride south to the lagoon, the old street, and the lighthouse.",
     requires: ["lagoon", "southstreet", "lighthouse"],
     source: "discoveries",
     badge: "Southern Soul",
@@ -409,7 +411,8 @@ export const activities = [
   {
     id: "quiet-moments",
     name: "Sit With Kerala",
-    description: "Rest at the driftwood log, the ghat step, and the cloudline bench.",
+    description:
+      "Rest at the driftwood log, the ghat step, and the cloudline bench.",
     requires: ["beach-log", "ghat-step", "viewpoint-bench"],
     source: "moments",
     badge: "Still Water",
@@ -754,8 +757,7 @@ export function coastX(z) {
 
 export function terrainHeight(x, z) {
   // Kadal Village and its lookout hill stay exactly as originally authored.
-  let h =
-    Math.max(0, 1 - Math.hypot((x - 83) / 43, (z - 111) / 49)) ** 2 * 9;
+  let h = Math.max(0, 1 - Math.hypot((x - 83) / 43, (z - 111) / 49)) ** 2 * 9;
   const rectX = Math.max(0, Math.abs(x - 12.5) - 122.5);
   const rectZ = Math.max(0, Math.abs(z) - 170);
   const away = smooth(0, 150, Math.hypot(rectX, rectZ));

@@ -3,3 +3,14 @@ dist/
 .DS_Store
 test-results/
 playwright-report/
+
+# Local environment overrides
+.env
+.env.*
+!.env.example
+
+# Editor and OS noise
+.vscode/
+.idea/
+*.swp
+Thumbs.db

@@ -140,11 +140,7 @@ export function createGame(
     sitting = nearestRest;
     satFor = 0;
     // Settle onto the seat and turn to the view it was placed for.
-    position.set(
-      sitting.x,
-      terrainHeight(sitting.x, sitting.z),
-      sitting.z,
-    );
+    position.set(sitting.x, terrainHeight(sitting.x, sitting.z), sitting.z);
     player.position.copy(position);
     player.rotation.y = sitting.face;
     yaw = sitting.face;
@@ -186,8 +182,10 @@ export function createGame(
   }
   const nearScooter = () =>
     !boating &&
-    Math.hypot(position.x - scooter.position.x, position.z - scooter.position.z) <
-      4;
+    Math.hypot(
+      position.x - scooter.position.x,
+      position.z - scooter.position.z,
+    ) < 4;
   function ride() {
     if (paused || boating || sitting) return false;
     if (riding) {
@@ -320,7 +318,8 @@ export function createGame(
       weatherIn -= dt;
       if (weatherIn <= 0) {
         rainTarget = rainTarget > 0.05 ? 0 : 0.55 + Math.random() * 0.45;
-        weatherIn = rainTarget > 0.05 ? 26 + Math.random() * 24 : 70 + Math.random() * 90;
+        weatherIn =
+          rainTarget > 0.05 ? 26 + Math.random() * 24 : 70 + Math.random() * 90;
         if (rainTarget > 0.05) onEvent?.("rain-start");
         else if (rain > 0.05) onEvent?.("rain-stop");
       }
@@ -415,7 +414,9 @@ export function createGame(
               ? -1.5
               : -0.18 + Math.sin(elapsed * 0.7) * 0.05
             : moving && !boating
-              ? Math.sin(elapsed * (speed > 6 ? 14 : 9)) * (i % 2 ? -1 : 1) * 0.5
+              ? Math.sin(elapsed * (speed > 6 ? 14 : 9)) *
+                (i % 2 ? -1 : 1) *
+                0.5
               : 0;
       });
       canoe.visible = boating;

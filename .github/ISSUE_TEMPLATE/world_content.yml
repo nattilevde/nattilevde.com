@@ -1,0 +1,24 @@
+name: World content
+description: A correction or suggestion about Kerala's culture, language or places.
+labels: ["content"]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Corrections from people who know a place, a tradition or the language
+        first-hand are especially welcome.
+  - type: textarea
+    id: what
+    attributes:
+      label: What the world currently says or shows
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: What it should be, and why
+      description: >
+        For Malayalam lines, a natural transliteration is more useful than a
+        literal one.
+    validations:
+      required: true

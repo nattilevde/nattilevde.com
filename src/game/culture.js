@@ -94,7 +94,10 @@ export const OVERHEARD = [
         text: "Kai vedana edukkum, pinne shariyaakum.",
         gloss: "your hands will hurt, then they'll learn",
       },
-      { who: "Hari", text: "Chenda kettunnathu kaathu kondalla, manassu kondaanu." },
+      {
+        who: "Hari",
+        text: "Chenda kettunnathu kaathu kondalla, manassu kondaanu.",
+      },
     ],
   },
   {
@@ -114,7 +117,10 @@ export const OVERHEARD = [
     radius: 60,
     lines: [
       { who: "A neighbour", text: "Aa vazhikku pokandaa, chelam aanu." },
-      { who: "Someone passing", text: "Sugalle? Veetil ellaarum sugam thanne?" },
+      {
+        who: "Someone passing",
+        text: "Sugalle? Veetil ellaarum sugam thanne?",
+      },
       { who: "A boy on a cycle", text: "Maaru maaru, vazhi tha!" },
     ],
   },
@@ -183,7 +189,10 @@ export const OVERHEARD = [
         text: "Ee theruvil ethra kappal vannu poyi.",
         gloss: "how many ships have come and gone down this street",
       },
-      { who: "Fatima", text: "Elakkaayum karugapattayum — pathukke chertha mathi." },
+      {
+        who: "Fatima",
+        text: "Elakkaayum karugapattayum — pathukke chertha mathi.",
+      },
     ],
   },
   {
@@ -272,7 +281,10 @@ export const OVERHEARD = [
         text: "Payasam undu. Ozhivaakkaan nokkanda.",
         gloss: "there's payasam — don't even try to get out of it",
       },
-      { who: "A shopkeeper", text: "Ee theruvinu nooru varshathe pazhakkam undu." },
+      {
+        who: "A shopkeeper",
+        text: "Ee theruvinu nooru varshathe pazhakkam undu.",
+      },
     ],
   },
   {
@@ -282,7 +294,10 @@ export const OVERHEARD = [
     radius: 40,
     lines: [
       { who: "A keeper", text: "Velicham thirinju thodangi. Nokkiko." },
-      { who: "A fisherman", text: "Aa velicham kandaanu njangal thirichu varunnathu." },
+      {
+        who: "A fisherman",
+        text: "Aa velicham kandaanu njangal thirichu varunnathu.",
+      },
     ],
   },
 ];
@@ -291,8 +306,15 @@ export const OVERHEARD = [
 export const WEATHER_LINES = {
   "rain-start": [
     { who: "Someone running past", text: "Mazha! Odu odu!" },
-    { who: "A woman", text: "Alakku pureth aanu, ayyo!", gloss: "the washing is still outside" },
-    { who: "A man on the road", text: "Kuda edukkathe irunnathu bhaagyam kettu." },
+    {
+      who: "A woman",
+      text: "Alakku pureth aanu, ayyo!",
+      gloss: "the washing is still outside",
+    },
+    {
+      who: "A man on the road",
+      text: "Kuda edukkathe irunnathu bhaagyam kettu.",
+    },
   ],
   "rain-stop": [
     { who: "A boy", text: "Mazha ninnu. Purathekku iranghaam." },
@@ -308,7 +330,11 @@ export const CONDUCTOR_LINES = [
   { who: "Conductor", text: "Kayari nilkku, kayari nilkku! Vandi vidum." },
   { who: "Conductor", text: "Ticket edutho? Chillara undo, chillara?" },
   { who: "Conductor", text: "Munnottu neengi nilkku, sthalam undu." },
-  { who: "Conductor", text: "Right! Right!", gloss: "the call that sends the bus off" },
+  {
+    who: "Conductor",
+    text: "Right! Right!",
+    gloss: "the call that sends the bus off",
+  },
 ];
 
 export const ARRIVAL_LINES = [

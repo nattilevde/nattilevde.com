@@ -61,20 +61,33 @@ const MAP = (() => {
   coastPath += ` L${coastX(b.maxZ) - b.minX} ${H} L0 ${H} Z`;
   const roadPaths = roads.map((road) =>
     road.points
-      .map(
-        ([x, z], i) => `${i ? "L" : "M"}${x - b.minX} ${z - b.minZ}`,
-      )
+      .map(([x, z], i) => `${i ? "L" : "M"}${x - b.minX} ${z - b.minZ}`)
       .join(" "),
   );
   return { b, W, H, coastPath, roadPaths };
 })();
 
 const MAP_LABELS = [
-  { x: 210, z: -1200, name: "MALABAR COAST", sub: "Kasaragod · Kannur · Kozhikode" },
-  { x: 210, z: -720, name: "CENTRAL KERALA", sub: "Palakkad · Thrissur · Ernakulam" },
+  {
+    x: 210,
+    z: -1200,
+    name: "MALABAR COAST",
+    sub: "Kasaragod · Kannur · Kozhikode",
+  },
+  {
+    x: 210,
+    z: -720,
+    name: "CENTRAL KERALA",
+    sub: "Palakkad · Thrissur · Ernakulam",
+  },
   { x: 585, z: -580, name: "THE HIGH RANGES", sub: "Wayanad · Idukki" },
   { x: 220, z: 60, name: "THE BACKWATERS", sub: "Alappuzha · Kottayam" },
-  { x: 210, z: 720, name: "TRAVANCORE SOUTH", sub: "Kollam · Thiruvananthapuram" },
+  {
+    x: 210,
+    z: 720,
+    name: "TRAVANCORE SOUTH",
+    sub: "Kollam · Thiruvananthapuram",
+  },
 ];
 
 function WorldMap({
@@ -137,9 +150,21 @@ function WorldMap({
         opacity=".9"
       />
       {/* canal, river, lagoon, pond, pool */}
-      <rect x={30 - b.minX} y={-155 - b.minZ} width="16" height="310" fill="#64a6a0" />
+      <rect
+        x={30 - b.minX}
+        y={-155 - b.minZ}
+        width="16"
+        height="310"
+        fill="#64a6a0"
+      />
       <rect x={0} y={-614 - b.minZ} width={590} height="28" fill="#64a6a0" />
-      <ellipse cx={250 - b.minX} cy={450 - b.minZ} rx="92" ry="137" fill="#64a6a0" />
+      <ellipse
+        cx={250 - b.minX}
+        cy={450 - b.minZ}
+        rx="92"
+        ry="137"
+        fill="#64a6a0"
+      />
       <circle cx={620 - b.minX} cy={-185 - b.minZ} r="8" fill="#64a6a0" />
       {/* the coastal highway and branching roads */}
       <path
@@ -539,7 +564,9 @@ export default function Game({ onExit, onRecord }) {
     const listen = setInterval(() => {
       const now = stateRef.current;
       if (now.sitting || now.boating) return;
-      say(overheardFor({ x: now.x, z: now.z, rain: now.rain, night: now.night }));
+      say(
+        overheardFor({ x: now.x, z: now.z, rain: now.rain, night: now.night }),
+      );
     }, 6500);
     return () => clearInterval(listen);
   }, [started, panel]);
@@ -707,8 +734,8 @@ export default function Game({ onExit, onRecord }) {
             More <em>wandering.</em>
           </h1>
           <p>
-            The sea to your left. A village ahead. And beyond it, a whole
-            Kerala —
+            The sea to your left. A village ahead. And beyond it, a whole Kerala
+            —
             <br />
             the long road north to the fort, the hill road east into the tea.
           </p>
@@ -887,7 +914,11 @@ export default function Game({ onExit, onRecord }) {
           {!panel &&
             !state.sitting &&
             !state.boating &&
-            (state.riding || (!nearby && !state.restSpot && !state.busStop && state.nearScooter)) && (
+            (state.riding ||
+              (!nearby &&
+                !state.restSpot &&
+                !state.busStop &&
+                state.nearScooter)) && (
               <button
                 className="game-interaction"
                 onClick={() => engine.current?.ride()}
@@ -902,21 +933,25 @@ export default function Game({ onExit, onRecord }) {
                 <ArrowRight size={17} />
               </button>
             )}
-          {!panel && nearby && !state.boating && !state.riding && !state.sitting && (
-            <button
-              className="game-interaction"
-              onClick={() => engine.current?.interact()}
-            >
-              <kbd>E</kbd>
-              <span>
-                {nearby.npc ? `Meet ${nearby.npc}` : "Pause here"}
-                <strong>
-                  {nearby.action || `A story from ${nearby.name}`}
-                </strong>
-              </span>
-              <ArrowRight size={17} />
-            </button>
-          )}
+          {!panel &&
+            nearby &&
+            !state.boating &&
+            !state.riding &&
+            !state.sitting && (
+              <button
+                className="game-interaction"
+                onClick={() => engine.current?.interact()}
+              >
+                <kbd>E</kbd>
+                <span>
+                  {nearby.npc ? `Meet ${nearby.npc}` : "Pause here"}
+                  <strong>
+                    {nearby.action || `A story from ${nearby.name}`}
+                  </strong>
+                </span>
+                <ArrowRight size={17} />
+              </button>
+            )}
           {state.boating && !panel && (
             <div className="game-boat-prompt">
               <Ship size={18} />
@@ -1118,7 +1153,9 @@ export default function Game({ onExit, onRecord }) {
                             ? regions.find((r) => r.id === dest.region)
                                 ?.districts
                             : `Opens after ${dest.remaining} more ${
-                                dest.remaining === 1 ? "discovery" : "discoveries"
+                                dest.remaining === 1
+                                  ? "discovery"
+                                  : "discoveries"
                               }`}
                         </small>
                       </span>
@@ -1218,8 +1255,8 @@ export default function Game({ onExit, onRecord }) {
                   <p className="game-map-hint">
                     Gold squares are region bus stands; pale dots are places
                     you've found. Pick one, then <em>Travel here</em>. The
-                    highway and the hill road are still there when you feel
-                    like the long way round.
+                    highway and the hill road are still there when you feel like
+                    the long way round.
                   </p>
                   <small>
                     Five regions / fourteen districts

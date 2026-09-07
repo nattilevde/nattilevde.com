@@ -1,13 +1,39 @@
 {
   "name": "kerala-unfolded",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
+  "description": "A stylised 3D open-world exploration game set in Kerala, plus an illustrated portal covering all 14 districts.",
+  "license": "MIT",
+  "author": "Muhammed Nabeel",
+  "homepage": "https://nattilevde.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OWNER/REPO.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OWNER/REPO/issues"
+  },
+  "keywords": [
+    "kerala",
+    "exploration-game",
+    "open-world",
+    "threejs",
+    "react",
+    "vite",
+    "webgl",
+    "web-audio"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 5174",
+    "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0",
-    "test": "playwright test"
+    "preview": "vite preview",
+    "test": "playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
@@ -18,6 +44,7 @@
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "prettier": "3.4.2",
     "vite": "^6.1.0"
   }
 }

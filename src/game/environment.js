@@ -938,8 +938,8 @@ export function buildEnvironment(scene) {
     "position",
     new THREE.Float32BufferAttribute(
       [
-        -0.22, 0, 0, 0.06, 0.85, 0.05, 0.06, 0, 0, 0, 0, -0.2, -0.08, 0.6,
-        0.04, 0, 0, 0.2, -0.12, 0, 0.12, -0.3, 0.55, 0.08, 0.12, 0, -0.12,
+        -0.22, 0, 0, 0.06, 0.85, 0.05, 0.06, 0, 0, 0, 0, -0.2, -0.08, 0.6, 0.04,
+        0, 0, 0.2, -0.12, 0, 0.12, -0.3, 0.55, 0.08, 0.12, 0, -0.12,
       ],
       3,
     ),
@@ -1065,10 +1065,30 @@ export function buildEnvironment(scene) {
   mesh(scooter, sphere, m.rose, 0, 0.68, 0.98, 0.1, 0.1, 0.04);
   const scooterWheels = [];
   for (const z of [-0.62, 0.62]) {
-    const tire = mesh(scooter, cylinder, m.black, 0, 0.26, z, 0.26, 0.14, 0.26, true);
+    const tire = mesh(
+      scooter,
+      cylinder,
+      m.black,
+      0,
+      0.26,
+      z,
+      0.26,
+      0.14,
+      0.26,
+      true,
+    );
     tire.rotation.z = Math.PI / 2;
-    mesh(scooter, cylinder, scooterCream, 0, 0.26, z, 0.13, 0.15, 0.13).rotation.z =
-      Math.PI / 2;
+    mesh(
+      scooter,
+      cylinder,
+      scooterCream,
+      0,
+      0.26,
+      z,
+      0.13,
+      0.15,
+      0.13,
+    ).rotation.z = Math.PI / 2;
     scooterWheels.push(tire);
   }
   scooter.rotation.y = 0.5;
@@ -1178,8 +1198,27 @@ export function buildEnvironment(scene) {
     );
   }
   for (const x of [24, 36]) {
-    block(root, m.wood, x, terrainHeight(30, -630) + 1.6, -631, 0.14, 3.2, 0.14);
-    mesh(root, sphere, m.lamp, x, terrainHeight(30, -630) + 3.3, -631, 0.17, 0.22, 0.17);
+    block(
+      root,
+      m.wood,
+      x,
+      terrainHeight(30, -630) + 1.6,
+      -631,
+      0.14,
+      3.2,
+      0.14,
+    );
+    mesh(
+      root,
+      sphere,
+      m.lamp,
+      x,
+      terrainHeight(30, -630) + 3.3,
+      -631,
+      0.17,
+      0.22,
+      0.17,
+    );
   }
 
   // Kadalkotta Fort: laterite walls and a round sea bastion on the headland.
@@ -1215,14 +1254,34 @@ export function buildEnvironment(scene) {
   ]) {
     const y = terrainHeight(bx, bz);
     mesh(root, cylinder, m.laterite, bx, y + hgt / 2, bz, r, hgt, r, true);
-    mesh(root, cylinder, m.lateriteDark, bx, y + hgt + 0.3, bz, r + 0.35, 0.65, r + 0.35, true);
+    mesh(
+      root,
+      cylinder,
+      m.lateriteDark,
+      bx,
+      y + hgt + 0.3,
+      bz,
+      r + 0.35,
+      0.65,
+      r + 0.35,
+      true,
+    );
   }
   const flagY = terrainHeight(-93, -1352) + 8.6;
   block(root, m.darkWood, -93, flagY + 2, -1352, 0.14, 4, 0.14, true);
   mesh(root, plane, m.gold, -92.1, flagY + 3.4, -1352, 1.7, 1, 1).rotation.y =
     Math.PI / 2;
   const fortGate = group("Fort gate", -39, terrainHeight(-39, -1350), -1350);
-  sign(fortGate, "KADALKOTTA FORT", "LATERITE WALLS  /  THE SEA ON THREE SIDES", 2.4, 3.1, 0, 6.2, Math.PI / 2);
+  sign(
+    fortGate,
+    "KADALKOTTA FORT",
+    "LATERITE WALLS  /  THE SEA ON THREE SIDES",
+    2.4,
+    3.1,
+    0,
+    6.2,
+    Math.PI / 2,
+  );
   block(fortGate, m.laterite, 0, 5.9, 0, 2.4, 1.4, 8.4, true);
 
   // The red-banded lighthouse over Kovalam sands.
@@ -1241,7 +1300,18 @@ export function buildEnvironment(scene) {
       true,
     );
   }
-  mesh(root, cylinder, m.darkWood, -70, lightY + 16.3, 646, 2.4, 0.5, 2.4, true);
+  mesh(
+    root,
+    cylinder,
+    m.darkWood,
+    -70,
+    lightY + 16.3,
+    646,
+    2.4,
+    0.5,
+    2.4,
+    true,
+  );
   mesh(root, cylinder, m.glass, -70, lightY + 17.2, 646, 1.35, 1.5, 1.35, true);
   mesh(root, sphere, m.lamp, -70, lightY + 17.2, 646, 0.75, 0.75, 0.75);
   mesh(root, cone, m.lightRed, -70, lightY + 18.6, 646, 1.7, 1.4, 1.7, true);
@@ -1249,13 +1319,36 @@ export function buildEnvironment(scene) {
   // The Theyyam ground: packed earth, torch posts, and a resting headdress.
   const theyyamEarth = ownGeometry(new THREE.CircleGeometry(11, 28));
   theyyamEarth.rotateX(-Math.PI / 2);
-  mesh(root, theyyamEarth, m.sand, 128, terrainHeight(128, -1150) + 0.06, -1150);
-  const theyyam = group("Theyyam figure", 133, terrainHeight(133, -1154), -1154);
+  mesh(
+    root,
+    theyyamEarth,
+    m.sand,
+    128,
+    terrainHeight(128, -1150) + 0.06,
+    -1150,
+  );
+  const theyyam = group(
+    "Theyyam figure",
+    133,
+    terrainHeight(133, -1154),
+    -1154,
+  );
   theyyam.rotation.y = -2.2;
   mesh(theyyam, cylinder, m.theyyamRed, 0, 1.1, 0, 1.15, 2.2, 1.15, true);
   mesh(theyyam, cylinder, m.theyyamRed, 0, 2.6, 0, 0.5, 0.9, 0.5, true);
   mesh(theyyam, sphere, m.gold, 0, 3.25, 0, 0.3, 0.34, 0.3, true);
-  const headdress = mesh(theyyam, cylinder, m.theyyamRed, 0, 4.6, 0.1, 2.6, 2.9, 0.4, true);
+  const headdress = mesh(
+    theyyam,
+    cylinder,
+    m.theyyamRed,
+    0,
+    4.6,
+    0.1,
+    2.6,
+    2.9,
+    0.4,
+    true,
+  );
   headdress.rotation.x = 0.1;
   for (let i = 0; i < 9; i++) {
     const a = -1.35 + i * 0.34;
@@ -1276,7 +1369,17 @@ export function buildEnvironment(scene) {
     const tx = 128 + Math.cos(a) * 9.5;
     const tz = -1150 + Math.sin(a) * 9.5;
     block(root, m.wood, tx, terrainHeight(tx, tz) + 1.1, tz, 0.14, 2.2, 0.14);
-    mesh(root, sphere, m.lamp, tx, terrainHeight(tx, tz) + 2.4, tz, 0.2, 0.28, 0.2);
+    mesh(
+      root,
+      sphere,
+      m.lamp,
+      tx,
+      terrainHeight(tx, tz) + 2.4,
+      tz,
+      0.2,
+      0.28,
+      0.2,
+    );
   }
 
   // The Pooram ground: gopuram-style gate and caparisoned elephants.
@@ -1296,11 +1399,28 @@ export function buildEnvironment(scene) {
     mesh(e, sphere, m.grey, 0, 1.9, 0.3, 1.25, 1.15, 1.75, true);
     mesh(e, sphere, m.grey, 0, 2.3, -1.35, 0.8, 0.85, 0.8, true);
     for (const side of [-1, 1]) {
-      const ear = mesh(e, sphere, m.grey, side * 0.75, 2.4, -1.3, 0.42, 0.55, 0.14, true);
+      const ear = mesh(
+        e,
+        sphere,
+        m.grey,
+        side * 0.75,
+        2.4,
+        -1.3,
+        0.42,
+        0.55,
+        0.14,
+        true,
+      );
       ear.rotation.y = side * 0.5;
       ear.userData.side = side;
       ears.push(ear);
-      beam(e, m.white, [side * 0.3, 1.75, -1.85], [side * 0.42, 1.35, -2.15], 0.07);
+      beam(
+        e,
+        m.white,
+        [side * 0.3, 1.75, -1.85],
+        [side * 0.42, 1.35, -2.15],
+        0.07,
+      );
     }
     beam(e, m.grey, [0, 1.95, -1.95], [0, 1.1, -2.2], 0.17);
     beam(e, m.grey, [0, 1.1, -2.2], [0, 0.35, -2.05], 0.13);
@@ -1363,7 +1483,19 @@ export function buildEnvironment(scene) {
     [634, -176, 2.1],
     [630, -195, 1.8],
   ]) {
-    instance(sphere, m.rock, sx, terrainHeight(sx, sz) - 0.5, sz, s, s * 0.75, s * 0.9, 0.2, sx, 0.1);
+    instance(
+      sphere,
+      m.rock,
+      sx,
+      terrainHeight(sx, sz) - 0.5,
+      sz,
+      s,
+      s * 0.75,
+      s * 0.9,
+      0.2,
+      sx,
+      0.1,
+    );
   }
   const cascadeTop = terrainHeight(644, -185);
   for (const [ox, w] of [
@@ -1411,10 +1543,26 @@ export function buildEnvironment(scene) {
     if (i) {
       const px = 690 + Math.cos(a - 0.24 + Math.PI) * 8;
       const pz = -330 + Math.sin(a - 0.24 + Math.PI) * 8;
-      beam(root, m.wood, [px, terrainHeight(px, pz) + 1.05, pz], [vx, vy + 1.05, vz], 0.06);
+      beam(
+        root,
+        m.wood,
+        [px, terrainHeight(px, pz) + 1.05, pz],
+        [vx, vy + 1.05, vz],
+        0.06,
+      );
     }
   }
-  block(root, m.wood, 693, terrainHeight(693, -327) + 0.45, -327, 2.4, 0.12, 0.8, true);
+  block(
+    root,
+    m.wood,
+    693,
+    terrainHeight(693, -327) + 0.45,
+    -327,
+    2.4,
+    0.12,
+    0.8,
+    true,
+  );
 
   // Ashtamudi: a moored houseboat and a Chinese fishing net on the shore road.
   const lagoonBoat = boat("Ashtamudi houseboat", 4.3, 13);
@@ -1432,9 +1580,29 @@ export function buildEnvironment(scene) {
   netCloth.rotation.x = -1.05;
 
   // Beach market extras: fish table and beached vallams.
-  block(root, m.wood, -44, terrainHeight(-44, -1012) + 0.5, -1012, 3.4, 0.14, 1.4, true);
+  block(
+    root,
+    m.wood,
+    -44,
+    terrainHeight(-44, -1012) + 0.5,
+    -1012,
+    3.4,
+    0.14,
+    1.4,
+    true,
+  );
   for (let i = 0; i < 5; i++)
-    mesh(root, sphere, m.white, -45.3 + i * 0.65, terrainHeight(-44, -1012) + 0.68, -1012, 0.24, 0.1, 0.09);
+    mesh(
+      root,
+      sphere,
+      m.white,
+      -45.3 + i * 0.65,
+      terrainHeight(-44, -1012) + 0.68,
+      -1012,
+      0.24,
+      0.1,
+      0.09,
+    );
   for (let i = 0; i < 3; i++) {
     const vallam = boat(
       "Malabar fishing vallam",
@@ -1455,11 +1623,41 @@ export function buildEnvironment(scene) {
     sign(board, title, subtitle, 0, 2.9, 0.02, 6.4);
     return board;
   }
-  signboard(10, -287, Math.PI, "CENTRAL KERALA", "PALAKKAD  /  THRISSUR  /  ERNAKULAM");
-  signboard(10, -907, Math.PI, "MALABAR COAST", "KOZHIKODE  /  KANNUR  /  KASARAGOD");
-  signboard(10, 294, 0, "TRAVANCORE SOUTH", "KOLLAM  /  PATHANAMTHITTA  /  THIRUVANANTHAPURAM");
-  signboard(384, -108, 2.4, "THE HIGH RANGES", "WAYANAD  /  IDUKKI  /  TEA COUNTRY AHEAD");
-  signboard(10, -160, 0, "THE BACKWATERS", "ALAPPUZHA  /  KOTTAYAM  /  KADAL VILLAGE");
+  signboard(
+    10,
+    -287,
+    Math.PI,
+    "CENTRAL KERALA",
+    "PALAKKAD  /  THRISSUR  /  ERNAKULAM",
+  );
+  signboard(
+    10,
+    -907,
+    Math.PI,
+    "MALABAR COAST",
+    "KOZHIKODE  /  KANNUR  /  KASARAGOD",
+  );
+  signboard(
+    10,
+    294,
+    0,
+    "TRAVANCORE SOUTH",
+    "KOLLAM  /  PATHANAMTHITTA  /  THIRUVANANTHAPURAM",
+  );
+  signboard(
+    384,
+    -108,
+    2.4,
+    "THE HIGH RANGES",
+    "WAYANAD  /  IDUKKI  /  TEA COUNTRY AHEAD",
+  );
+  signboard(
+    10,
+    -160,
+    0,
+    "THE BACKWATERS",
+    "ALAPPUZHA  /  KOTTAYAM  /  KADAL VILLAGE",
+  );
 
   // The people of the wider world.
   resident("Moidu", -46, -1002, m.teal, 0.7);
@@ -1489,10 +1687,26 @@ export function buildEnvironment(scene) {
     if (spot.seat === "none") continue;
     const sx = spot.x + Math.sin(spot.face) * 0.28;
     const sz = spot.z + Math.cos(spot.face) * 0.28;
-    const seat = group(`Rest seat: ${spot.name}`, sx, terrainHeight(sx, sz), sz);
+    const seat = group(
+      `Rest seat: ${spot.name}`,
+      sx,
+      terrainHeight(sx, sz),
+      sz,
+    );
     seat.rotation.y = spot.face;
     if (spot.seat === "log") {
-      const log = mesh(seat, cylinder, m.wood, 0, 0.34, 0, 0.34, 3.8, 0.34, true);
+      const log = mesh(
+        seat,
+        cylinder,
+        m.wood,
+        0,
+        0.34,
+        0,
+        0.34,
+        3.8,
+        0.34,
+        true,
+      );
       log.rotation.z = Math.PI / 2;
     } else {
       block(seat, m.wood, 0, 0.44, 0, 2.6, 0.14, 0.72, true);
@@ -1511,7 +1725,18 @@ export function buildEnvironment(scene) {
       13,
       material(i ? "#4a3222" : "#332417", { side: THREE.DoubleSide }),
     );
-    const prow = mesh(vallam, cone, i ? m.gold : m.rope, 0, 1.6, 6.1, 0.4, 3, 0.35, true);
+    const prow = mesh(
+      vallam,
+      cone,
+      i ? m.gold : m.rope,
+      0,
+      1.6,
+      6.1,
+      0.4,
+      3,
+      0.35,
+      true,
+    );
     prow.rotation.x = -0.5;
     const paddlers = [];
     for (let r = 0; r < 6; r++) {
@@ -1550,7 +1775,18 @@ export function buildEnvironment(scene) {
   beam(peacock, m.teal, [0, 0.6, -0.2], [0, 1.05, -0.34], 0.06);
   mesh(peacock, sphere, m.teal, 0, 1.1, -0.36, 0.11, 0.12, 0.12, true);
   mesh(peacock, sphere, m.gold, 0, 1.28, -0.36, 0.05, 0.09, 0.03);
-  const tailFan = mesh(peacock, cone, m.olive, 0, 0.85, 0.42, 1.15, 1.5, 0.12, true);
+  const tailFan = mesh(
+    peacock,
+    cone,
+    m.olive,
+    0,
+    0.85,
+    0.42,
+    1.15,
+    1.5,
+    0.12,
+    true,
+  );
   tailFan.rotation.x = 0.5;
   for (let i = 0; i < 5; i++) {
     mesh(
@@ -1927,7 +2163,16 @@ export function buildEnvironment(scene) {
   }
   function roundTree(x, z, size) {
     const y = terrainHeight(x, z);
-    instance(cylinder, m.wood, x, y + 1.5 * size, z, 0.2 * size, 3 * size, 0.2 * size);
+    instance(
+      cylinder,
+      m.wood,
+      x,
+      y + 1.5 * size,
+      z,
+      0.2 * size,
+      3 * size,
+      0.2 * size,
+    );
     for (let crown = 0; crown < 3; crown++) {
       const a = (crown * Math.PI * 2) / 3;
       instance(
@@ -1980,8 +2225,26 @@ export function buildEnvironment(scene) {
     const y = terrainHeight(x, z);
     const s = between(0.8, 1.5);
     if (random() < 0.75) {
-      instance(cylinder, m.darkWood, x, y + 1.2 * s, z, 0.16 * s, 2.4 * s, 0.16 * s);
-      instance(cone, m.leaf, x, y + (2.4 + 1.9) * s, z, 1.5 * s, 4.2 * s, 1.5 * s);
+      instance(
+        cylinder,
+        m.darkWood,
+        x,
+        y + 1.2 * s,
+        z,
+        0.16 * s,
+        2.4 * s,
+        0.16 * s,
+      );
+      instance(
+        cone,
+        m.leaf,
+        x,
+        y + (2.4 + 1.9) * s,
+        z,
+        1.5 * s,
+        4.2 * s,
+        1.5 * s,
+      );
     } else {
       instance(
         sphere,
@@ -2068,7 +2331,17 @@ export function buildEnvironment(scene) {
     for (const side of [-1, 1]) {
       block(rickshaw, m.gold, side * 0.68, 1.44, -1, 0.08, 0.93, 0.08);
       block(rickshaw, m.black, side * 0.68, 1.4, 1.04, 0.09, 1, 0.09);
-      mesh(rickshaw, sphere, m.lamp, side * 0.43, 0.91, -1.25, 0.15, 0.12, 0.06);
+      mesh(
+        rickshaw,
+        sphere,
+        m.lamp,
+        side * 0.43,
+        0.91,
+        -1.25,
+        0.15,
+        0.12,
+        0.06,
+      );
     }
     const wheels = [];
     for (const [x, z] of [
@@ -2099,7 +2372,14 @@ export function buildEnvironment(scene) {
     return { group: rickshaw, wheels };
   }
   const rickshaws = [
-    { ...makeRickshaw(m.teal), x: 3.5, from: -120, to: 124, speed: 8, phase: 0 },
+    {
+      ...makeRickshaw(m.teal),
+      x: 3.5,
+      from: -120,
+      to: 124,
+      speed: 8,
+      phase: 0,
+    },
     {
       ...makeRickshaw(m.gold),
       x: 3.5,
@@ -2108,7 +2388,14 @@ export function buildEnvironment(scene) {
       speed: 12,
       phase: 700,
     },
-    { ...makeRickshaw(m.rose), x: 3.5, from: 170, to: 820, speed: 11, phase: 300 },
+    {
+      ...makeRickshaw(m.rose),
+      x: 3.5,
+      from: 170,
+      to: 820,
+      speed: 11,
+      phase: 300,
+    },
   ];
 
   const birds = [];
@@ -2229,7 +2516,8 @@ export function buildEnvironment(scene) {
     walkers.forEach(({ person, limbs, x, from, to, phase }) => {
       const length = to - from;
       const pace = t * 0.85 * hurry;
-      const travel = (((pace + phase) % (length * 2)) + length * 2) % (length * 2);
+      const travel =
+        (((pace + phase) % (length * 2)) + length * 2) % (length * 2);
       const forward = travel < length;
       const z = from + (forward ? travel : length * 2 - travel);
       person.position.set(x, terrainHeight(x, z), z);

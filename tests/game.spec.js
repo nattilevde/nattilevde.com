@@ -496,9 +496,7 @@ test("the canoe can be boarded, paddled forward, and comes to rest", async ({
   // The bow points up the reach, so W paddles into open water.
   const from = await z();
   await page.keyboard.down("w");
-  await expect
-    .poll(z, { timeout: 20000 })
-    .toBeGreaterThan(from + 2);
+  await expect.poll(z, { timeout: 20000 }).toBeGreaterThan(from + 2);
   await page.keyboard.up("w");
   // It glides, then settles, rather than running on for ever.
   await expect

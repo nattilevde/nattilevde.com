@@ -37,9 +37,9 @@ import KeralaMap from "./KeralaMap.jsx";
 import {
   sites as worldSites,
   activities as worldActivities,
-} from "./game/world.js";
+} from "../game/world.js";
 
-const Game = lazy(() => import("./game/Game.jsx"));
+const Game = lazy(() => import("../game/Game.jsx"));
 
 const photo =
   "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=900&q=85";
