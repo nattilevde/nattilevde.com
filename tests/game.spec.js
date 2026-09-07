@@ -203,6 +203,13 @@ test("local food interaction saves and canoe can be boarded and steered", async 
     )
     .toBeGreaterThan(15);
   await page.keyboard.up("w");
+  // The canoe only lets you step ashore near the jetty, so paddle back to it
+  // rather than assuming the boat stayed where it was pushed off from.
+  await page.keyboard.down("s");
+  await expect(page.getByRole("button", { name: "Step ashore" })).toBeEnabled({
+    timeout: 40000,
+  });
+  await page.keyboard.up("s");
   await page.getByRole("button", { name: "Step ashore" }).click();
   await expect(page.getByTestId("kerala-game")).toHaveAttribute(
     "data-boating",

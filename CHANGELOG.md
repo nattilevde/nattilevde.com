@@ -9,7 +9,18 @@ to saved progress or to the world's data shapes.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- The world no longer runs in slow motion on slow hardware. Movement now
+  integrates in fixed steps, as many per frame as real time requires, so walking,
+  riding and paddling cover the same ground per second whatever the frame rate.
+  Previously a frame could advance the simulation by at most 50ms, so a device
+  rendering at 5fps played at a quarter speed.
+- Continuous integration no longer times out. Test runs are serialised on CI,
+  where the 3D world renders in software and parallel browsers starve each
+  other, and local runs are capped to two workers for the same reason.
+- The canoe test now paddles back to the jetty before stepping ashore, instead
+  of assuming the boat drifted nowhere.
 
 ## [0.1.0] — 2026-09-07
 

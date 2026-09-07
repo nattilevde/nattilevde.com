@@ -75,14 +75,22 @@ Playwright starts for you. They are a mix of two things:
   boarding the canoe, fast travel, and whether the soundscape actually makes
   sound.
 
-A note learned the hard way: headless software rendering runs the simulation far
-slower than wall-clock time, so **do not assert that the player travels N units
-in M seconds**. Either assert on the pure model, or compare two measurements
-taken the same way in the same session.
+Three notes learned the hard way.
 
-Another: the game writes its own saved journey to `localStorage` when it
-unmounts. If a test needs to seed a position, seed it _after_ leaving the world,
-not before.
+The engine integrates movement in fixed steps and runs as many as each frame
+needs, so the player covers the same ground per real second whatever the frame
+rate. That makes wall-clock movement assertions workable — but frame rate still
+varies a lot under load, so give them generous timeouts, and prefer asserting on
+the outcome you care about (a discovery recorded, a button enabled) over an
+intermediate coordinate.
+
+Headless Chromium renders the 3D world in software, so each browser is
+CPU-hungry and several at once starve each other. That is why `workers` is
+capped in `playwright.config.js`. If tests time out locally, check what else is
+using your CPU before assuming a real failure.
+
+The game writes its own saved journey to `localStorage` when it unmounts. If a
+test needs to seed a position, seed it _after_ leaving the world, not before.
 
 ## Code style
 

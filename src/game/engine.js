@@ -104,6 +104,9 @@ export function createGame(
     weatherIn = 55 + Math.random() * 70;
   let boatHeading = 0,
     boatSpeed = 0;
+  // The largest slice of time one movement step may cover.
+  const MAX_STEP = 0.05;
+  let moveSpeed = 5.4;
   let invalidatedAt = performance.now();
   const cameraTarget = new THREE.Vector3(),
     desiredCamera = new THREE.Vector3();
@@ -205,6 +208,76 @@ export function createGame(
     velocity.set(0, 0);
     publish();
     return true;
+  }
+  // One fixed step of player movement: read the controls, move the body, and
+  // report how far it turned this step (the scooter leans by it).
+  function integrate(dt) {
+    const inputX = sitting
+      ? 0
+      : Number(keys.has("KeyD") || keys.has("ArrowRight")) -
+        Number(keys.has("KeyA") || keys.has("ArrowLeft")) +
+        touchMove.x;
+    const inputZ = sitting
+      ? 0
+      : Number(keys.has("KeyS") || keys.has("ArrowDown")) -
+        Number(keys.has("KeyW") || keys.has("ArrowUp")) +
+        touchMove.y;
+    if (sitting && (keys.size || Math.hypot(touchMove.x, touchMove.y) > 0.2))
+      stand();
+    const magnitude = Math.max(1, Math.hypot(inputX, inputZ));
+    moveSpeed = riding
+      ? 17.5
+      : sprint || keys.has("ShiftLeft") || keys.has("ShiftRight")
+        ? 10
+        : 5.4;
+    let turned = 0;
+    if (boating) {
+      // A paddled canoe: steer with A/D, paddle with W/S, and glide when you stop.
+      const next = stepBoat({
+        heading: boatHeading,
+        speed: boatSpeed,
+        turn: inputX,
+        thrust: -inputZ,
+        dt,
+      });
+      boatHeading = next.heading;
+      boatSpeed = next.speed;
+      velocity.set(next.dx, next.dz);
+      const wantX = position.x + next.dx * dt;
+      const wantZ = position.z + next.dz * dt;
+      const nx = THREE.MathUtils.clamp(wantX, 32, 44);
+      const nz = THREE.MathUtils.clamp(wantZ, 7, 135);
+      // Nudging a bank scrubs off way rather than pinning you against it.
+      if (nx !== wantX || nz !== wantZ) boatSpeed *= 0.35;
+      position.x = nx;
+      position.z = nz;
+      player.rotation.y = boatHeading;
+      moving = Math.abs(boatSpeed) > 0.25;
+    } else {
+      const vx =
+        ((inputX * Math.cos(yaw) + inputZ * Math.sin(yaw)) / magnitude) *
+        moveSpeed;
+      const vz =
+        ((-inputX * Math.sin(yaw) + inputZ * Math.cos(yaw)) / magnitude) *
+        moveSpeed;
+      velocity.lerp(new THREE.Vector2(vx, vz), 1 - Math.exp(-12 * dt));
+      const nx = position.x + velocity.x * dt,
+        nz = position.z + velocity.y * dt;
+      if (canWalk(nx, position.z)) position.x = nx;
+      if (canWalk(position.x, nz)) position.z = nz;
+      moving = velocity.length() > 0.25;
+    }
+    position.y = boating ? 0.15 : terrainHeight(position.x, position.z);
+    if (moving && !boating) {
+      const target = Math.atan2(-velocity.x, -velocity.y);
+      turned =
+        Math.atan2(
+          Math.sin(target - player.rotation.y),
+          Math.cos(target - player.rotation.y),
+        ) * Math.min(1, dt * (riding ? 9 : 12));
+      player.rotation.y += turned;
+    }
+    return turned;
   }
   function keydown(e) {
     if (paused || e.target?.closest?.("button,input,dialog")) return;
@@ -309,7 +382,10 @@ export function createGame(
   function tick(now) {
     if (disposed) return;
     frame = requestAnimationFrame(tick);
-    const dt = Math.min((now - previous) / 1000, 0.05);
+    // Real time since the last frame. Capped so a long stall (a background tab,
+    // a slow first paint) cannot ask for hundreds of catch-up steps at once.
+    const frameTime = Math.min((now - previous) / 1000, 0.25);
+    const dt = frameTime;
     previous = now;
     if (paused && now - invalidatedAt > 1800) return;
     if (!paused) {
@@ -333,70 +409,16 @@ export function createGame(
         }
         yaw += dt * 0.075;
       }
-      const inputX = sitting
-        ? 0
-        : Number(keys.has("KeyD") || keys.has("ArrowRight")) -
-          Number(keys.has("KeyA") || keys.has("ArrowLeft")) +
-          touchMove.x;
-      const inputZ = sitting
-        ? 0
-        : Number(keys.has("KeyS") || keys.has("ArrowDown")) -
-          Number(keys.has("KeyW") || keys.has("ArrowUp")) +
-          touchMove.y;
-      if (sitting && (keys.size || Math.hypot(touchMove.x, touchMove.y) > 0.2))
-        stand();
-      const magnitude = Math.max(1, Math.hypot(inputX, inputZ));
-      const speed = riding
-        ? 17.5
-        : sprint || keys.has("ShiftLeft") || keys.has("ShiftRight")
-          ? 10
-          : 5.4;
-      if (boating) {
-        // A paddled canoe: steer with A/D, paddle with W/S, and glide when you stop.
-        const next = stepBoat({
-          heading: boatHeading,
-          speed: boatSpeed,
-          turn: inputX,
-          thrust: -inputZ,
-          dt,
-        });
-        boatHeading = next.heading;
-        boatSpeed = next.speed;
-        velocity.set(next.dx, next.dz);
-        const wantX = position.x + next.dx * dt;
-        const wantZ = position.z + next.dz * dt;
-        const nx = THREE.MathUtils.clamp(wantX, 32, 44);
-        const nz = THREE.MathUtils.clamp(wantZ, 7, 135);
-        // Nudging a bank scrubs off way rather than pinning you against it.
-        if (nx !== wantX || nz !== wantZ) boatSpeed *= 0.35;
-        position.x = nx;
-        position.z = nz;
-        player.rotation.y = boatHeading;
-        moving = Math.abs(boatSpeed) > 0.25;
-      } else {
-        const vx =
-          ((inputX * Math.cos(yaw) + inputZ * Math.sin(yaw)) / magnitude) *
-          speed;
-        const vz =
-          ((-inputX * Math.sin(yaw) + inputZ * Math.cos(yaw)) / magnitude) *
-          speed;
-        velocity.lerp(new THREE.Vector2(vx, vz), 1 - Math.exp(-12 * dt));
-        const nx = position.x + velocity.x * dt,
-          nz = position.z + velocity.y * dt;
-        if (canWalk(nx, position.z)) position.x = nx;
-        if (canWalk(position.x, nz)) position.z = nz;
-        moving = velocity.length() > 0.25;
-      }
-      position.y = boating ? 0.15 : terrainHeight(position.x, position.z);
+      // Movement advances in fixed steps of at most MAX_STEP, as many as the
+      // frame needs. A step that small cannot tunnel through a wall, and running
+      // several of them ties the player's speed to real time rather than to the
+      // frame rate — so the world plays at the same pace under a software
+      // renderer or on a weak phone as it does on a fast GPU.
       let turn = 0;
-      if (moving && !boating) {
-        const target = Math.atan2(-velocity.x, -velocity.y);
-        turn =
-          Math.atan2(
-            Math.sin(target - player.rotation.y),
-            Math.cos(target - player.rotation.y),
-          ) * Math.min(1, dt * (riding ? 9 : 12));
-        player.rotation.y += turn;
+      for (let budget = frameTime; budget > 0; ) {
+        const step = Math.min(budget, MAX_STEP);
+        budget -= step;
+        turn = integrate(step);
       }
       player.position.copy(position);
       if (riding) player.position.y += 0.55;
@@ -414,7 +436,7 @@ export function createGame(
               ? -1.5
               : -0.18 + Math.sin(elapsed * 0.7) * 0.05
             : moving && !boating
-              ? Math.sin(elapsed * (speed > 6 ? 14 : 9)) *
+              ? Math.sin(elapsed * (moveSpeed > 6 ? 14 : 9)) *
                 (i % 2 ? -1 : 1) *
                 0.5
               : 0;
