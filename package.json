@@ -1,5 +1,5 @@
 {
-  "name": "kerala-unfolded",
+  "name": "nattilevde",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,10 +9,10 @@
   "homepage": "https://nattilevde.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OWNER/REPO.git"
+    "url": "git+https://github.com/nattilevde/nattilevde.com"
   },
   "bugs": {
-    "url": "https://github.com/OWNER/REPO/issues"
+    "url": "https://github.com/nattilevde/nattilevde.com/issues"
   },
   "keywords": [
     "kerala",

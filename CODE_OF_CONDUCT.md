@@ -61,7 +61,7 @@ an individual is officially representing the community in public spaces.
 
 Instances of abusive, harassing, or otherwise unacceptable behaviour may be
 reported to the maintainers responsible for enforcement at
-**nabeel.creator@gmail.com**. All complaints will be reviewed and investigated
+**muhammednabeelc05@gmail.com**. All complaints will be reviewed and investigated
 promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
