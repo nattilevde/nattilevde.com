@@ -25,67 +25,161 @@ import {
   X,
 } from "lucide-react";
 import { createGame } from "./engine.js";
-import { REGION, sites, activities, readJourney } from "./world.js";
+import {
+  REGION,
+  sites,
+  activities,
+  readJourney,
+  rankFor,
+  regionAt,
+  roads,
+  HIGHWAY,
+  coastX,
+} from "./world.js";
 import "./game.css";
 
+const MAP = (() => {
+  const b = REGION.bounds;
+  const W = b.maxX - b.minX;
+  const H = b.maxZ - b.minZ;
+  let coastPath = `M0 0`;
+  for (let z = b.minZ; z <= b.maxZ; z += 60)
+    coastPath += ` L${coastX(z) - b.minX} ${z - b.minZ}`;
+  coastPath += ` L${coastX(b.maxZ) - b.minX} ${H} L0 ${H} Z`;
+  const roadPaths = roads.map((road) =>
+    road.points
+      .map(
+        ([x, z], i) => `${i ? "L" : "M"}${x - b.minX} ${z - b.minZ}`,
+      )
+      .join(" "),
+  );
+  return { b, W, H, coastPath, roadPaths };
+})();
+
+const MAP_LABELS = [
+  { x: 210, z: -1200, name: "MALABAR COAST", sub: "Kasaragod · Kannur · Kozhikode" },
+  { x: 210, z: -720, name: "CENTRAL KERALA", sub: "Palakkad · Thrissur · Ernakulam" },
+  { x: 585, z: -580, name: "THE HIGH RANGES", sub: "Wayanad · Idukki" },
+  { x: 220, z: 60, name: "THE BACKWATERS", sub: "Alappuzha · Kottayam" },
+  { x: 210, z: 720, name: "TRAVANCORE SOUTH", sub: "Kollam · Thiruvananthapuram" },
+];
+
 function WorldMap({ state, journey, large = false }) {
+  const { b, W, H, coastPath, roadPaths } = MAP;
   const explored = new Set(journey.cells);
+  const cs = REGION.cellSize;
+  const cols = Math.ceil(W / cs);
+  const rows = Math.ceil(H / cs);
+  const px = state.x - b.minX;
+  const pz = state.z - b.minZ;
+  const crop = 210;
+  const view = large
+    ? `0 0 ${W} ${H}`
+    : `${px - crop / 2} ${pz - crop / 2} ${crop} ${crop}`;
+  const c0 = large ? 0 : Math.max(0, Math.floor((px - crop / 2) / cs));
+  const c1 = large ? cols : Math.min(cols, Math.ceil((px + crop / 2) / cs));
+  const r0 = large ? 0 : Math.max(0, Math.floor((pz - crop / 2) / cs));
+  const r1 = large ? rows : Math.min(rows, Math.ceil((pz + crop / 2) / cs));
+  const fog = [];
+  for (let cx = c0; cx < c1; cx++)
+    for (let cz = r0; cz < r1; cz++)
+      if (!explored.has(`${cx},${cz}`))
+        fog.push(
+          <rect
+            key={`${cx},${cz}`}
+            x={cx * cs}
+            y={cz * cs}
+            width={cs + 0.7}
+            height={cs + 0.7}
+            fill="#213f37"
+            opacity={large ? ".62" : ".94"}
+          />,
+        );
+  const marker = large ? 3.2 : 1;
   return (
     <svg
       className={`game-map ${large ? "game-map-large" : ""}`}
-      viewBox="0 0 224 304"
+      viewBox={view}
+      preserveAspectRatio="xMidYMid meet"
       role="img"
-      aria-label={`Exploration map. ${journey.discoveries.length} of ${sites.length} locations discovered. Undiscovered terrain is concealed.`}
+      aria-label={`Exploration map of Kerala. ${journey.discoveries.length} of ${sites.length} locations discovered. Undiscovered terrain is concealed.`}
     >
-      <rect width="224" height="304" rx="6" fill="#a8b882" />
-      <path d="M0 0H28V304H0Z" fill="#559d9b" />
-      <path d="M142 0H158V304H142Z" fill="#64a6a0" />
-      <path d="M28 0H42V304H28Z" fill="#e3d4a2" />
+      <rect width={W} height={H} fill="#a8b882" />
+      {/* Highlands tint east, laterite tint north */}
+      <rect x={540} width={W - 540} height={H} fill="#8ba06b" opacity=".55" />
+      <rect width={540} height={520} fill="#b3a06b" opacity=".3" />
+      <path d={coastPath} fill="#559d9b" />
       <path
-        d="M112 17V288M38 152H208M38 62H208M170 28V270"
+        d={coastPath}
+        fill="none"
+        stroke="#e3d4a2"
+        strokeWidth={10}
+        opacity=".9"
+      />
+      {/* canal, river, lagoon, pond, pool */}
+      <rect x={30 - b.minX} y={-155 - b.minZ} width="16" height="310" fill="#64a6a0" />
+      <rect x={0} y={-614 - b.minZ} width={590} height="28" fill="#64a6a0" />
+      <ellipse cx={250 - b.minX} cy={450 - b.minZ} rx="92" ry="137" fill="#64a6a0" />
+      <circle cx={620 - b.minX} cy={-185 - b.minZ} r="8" fill="#64a6a0" />
+      {/* the coastal highway and branching roads */}
+      <path
+        d={`M${HIGHWAY.x - b.minX} ${HIGHWAY.from - b.minZ}V${HIGHWAY.to - b.minZ}`}
         fill="none"
         stroke="#dec998"
-        strokeWidth="5"
+        strokeWidth="8"
       />
-      <path d="M139 152H162M139 62H162" stroke="#eee3bc" strokeWidth="7" />
-      {Array.from({ length: 14 * 19 }, (_, i) => {
-        const x = i % 14,
-          y = Math.floor(i / 14);
-        return (
-          !explored.has(`${x},${y}`) && (
-            <rect
-              key={i}
-              x={x * 16}
-              y={y * 16}
-              width="16.3"
-              height="16.3"
-              fill="#213f37"
-              opacity=".94"
-            />
-          )
-        );
-      })}
+      {roadPaths.map((d, i) => (
+        <path key={i} d={d} fill="none" stroke="#dec998" strokeWidth="6" />
+      ))}
+      {fog}
+      {large &&
+        MAP_LABELS.map((label) => (
+          <g key={label.name}>
+            <text
+              x={label.x}
+              y={label.z - b.minZ}
+              textAnchor="middle"
+              fill="#d8e4c2"
+              fontSize="30"
+              letterSpacing="4"
+              fontWeight="700"
+              opacity=".85"
+            >
+              {label.name}
+            </text>
+            <text
+              x={label.x}
+              y={label.z - b.minZ + 30}
+              textAnchor="middle"
+              fill="#b9c9a4"
+              fontSize="20"
+              opacity=".8"
+            >
+              {label.sub}
+            </text>
+          </g>
+        ))}
       {sites
         .filter((s) => journey.discoveries.includes(s.id))
         .map((s) => (
           <g key={s.id}>
             <circle
-              cx={s.x + 112}
-              cy={s.z + 152}
-              r={s.kind === "hidden" ? 4 : 3}
+              cx={s.x - b.minX}
+              cy={s.z - b.minZ}
+              r={(s.kind === "hidden" ? 4 : 3) * (large ? 2.4 : 1.2)}
               fill={s.kind === "hidden" ? "#f3cc79" : "#fff4d4"}
               stroke="#294e3b"
-              strokeWidth="1.5"
+              strokeWidth={large ? 3 : 1.5}
             />
             {large && (
               <text
-                x={s.x + 112}
-                y={s.z + 164}
+                x={s.x - b.minX}
+                y={s.z - b.minZ + 28}
                 textAnchor="middle"
                 fill="#fff4d4"
-                fontSize="5"
+                fontSize="17"
                 stroke="#294e3b"
-                strokeWidth="1.5"
+                strokeWidth="3.5"
                 paintOrder="stroke"
               >
                 {s.name}
@@ -93,8 +187,15 @@ function WorldMap({ state, journey, large = false }) {
             )}
           </g>
         ))}
+      {state.scooter && !state.riding && (
+        <g
+          transform={`translate(${state.scooter.x - b.minX},${state.scooter.z - b.minZ}) scale(${marker})`}
+        >
+          <circle r="5" fill="#3f8f86" stroke="#eee4ca" strokeWidth="1.6" />
+        </g>
+      )}
       <g
-        transform={`translate(${state.x + 112},${state.z + 152}) rotate(${(-state.heading * 180) / Math.PI})`}
+        transform={`translate(${px},${pz}) rotate(${(-state.heading * 180) / Math.PI}) scale(${marker})`}
       >
         <circle r="8" fill="#f6e8bc" opacity=".2" />
         <path
@@ -104,10 +205,19 @@ function WorldMap({ state, journey, large = false }) {
           strokeWidth="1"
         />
       </g>
-      <text x="12" y="19" fill="#e9edcf" fontSize="8">
-        N
-      </text>
-      <path d="M14 25V39M11 28L14 25 17 28" stroke="#e9edcf" fill="none" />
+      {large && (
+        <>
+          <text x="26" y="52" fill="#e9edcf" fontSize="26">
+            N
+          </text>
+          <path
+            d="M34 70V110M24 80L34 70 44 80"
+            stroke="#e9edcf"
+            strokeWidth="4"
+            fill="none"
+          />
+        </>
+      )}
     </svg>
   );
 }
@@ -150,6 +260,9 @@ export default function Game({ onExit, onRecord }) {
     heading: 0,
     nearby: null,
     boating: false,
+    riding: false,
+    nearScooter: false,
+    scooter: journey.scooter,
     night: false,
     moving: false,
   });
@@ -167,6 +280,8 @@ export default function Game({ onExit, onRecord }) {
     [stick, setStick] = useState({ x: 0, y: 0 });
   const lastSave = useRef(0),
     noticeTimer = useRef(null);
+  const region = regionAt(state.x, state.z);
+  const lastRegion = useRef(region.id);
   const completed = activities.filter((a) =>
     a.requires.every((id) => journey[a.source].includes(id)),
   );
@@ -192,6 +307,7 @@ export default function Game({ onExit, onRecord }) {
     const old = journeyRef.current;
     if (old[kind].includes(id)) return;
     const next = { ...old, [kind]: [...old[kind], id] };
+    const oldRank = rankFor(old);
     save(next);
     const site = sites.find((s) => s.id === id);
     callbacks.current.onRecord(kind, site);
@@ -201,6 +317,7 @@ export default function Game({ onExit, onRecord }) {
         !a.requires.every((id) => old[a.source].includes(id)),
     );
     newlyCompleted.forEach((a) => callbacks.current.onRecord("activity", a));
+    const newRank = rankFor(next);
     announce(
       newlyCompleted.length
         ? {
@@ -209,7 +326,14 @@ export default function Game({ onExit, onRecord }) {
             text: newlyCompleted[0].name,
             badge: true,
           }
-        : {
+        : newRank.title !== oldRank.title
+          ? {
+              title: newRank.title,
+              subtitle: "TRAVELLER RANK EARNED",
+              text: `${site.name} tipped the scales. Your passport remembers.`,
+              badge: true,
+            }
+          : {
             title: site.name,
             subtitle:
               kind === "discoveries"
@@ -236,6 +360,7 @@ export default function Game({ onExit, onRecord }) {
             save({
               ...journeyRef.current,
               cells: next.cells,
+              scooter: next.riding ? journeyRef.current.scooter : next.scooter,
               position: game?.getPosition() || journeyRef.current.position,
             });
             lastSave.current = Date.now();
@@ -275,8 +400,17 @@ export default function Game({ onExit, onRecord }) {
     engine.current?.setPaused(!started || !!panel || !!error);
   }, [started, panel, error, ready]);
   useEffect(() => {
+    if (!started || lastRegion.current === region.id) return;
+    lastRegion.current = region.id;
+    announce({
+      title: region.name,
+      subtitle: "ENTERING A NEW REGION",
+      text: region.districts,
+    });
+  }, [region.id, started]);
+  useEffect(() => {
     const shortcut = (e) => {
-      if (!started || e.repeat || e.target.closest("input")) return;
+      if (!started || e.repeat || e.target?.closest?.("input")) return;
       if (e.code === "Escape" && !panel) {
         e.preventDefault();
         setPanel("pause");
@@ -335,6 +469,7 @@ export default function Game({ onExit, onRecord }) {
       data-x={state.x.toFixed(1)}
       data-z={state.z.toFixed(1)}
       data-boating={state.boating}
+      data-riding={state.riding}
     >
       <div className="game-canvas-host" ref={container} />
       <div className="game-vignette" />
@@ -385,9 +520,10 @@ export default function Game({ onExit, onRecord }) {
             More <em>wandering.</em>
           </h1>
           <p>
-            The sea to your left. A village ahead.
+            The sea to your left. A village ahead. And beyond it, a whole
+            Kerala —
             <br />
-            And somewhere beyond the palms, a story you haven't found.
+            the long road north to the fort, the hill road east into the tea.
           </p>
           <button
             className="game-primary"
@@ -402,7 +538,8 @@ export default function Game({ onExit, onRecord }) {
             <ArrowRight size={18} />
           </button>
           <div className="game-intro-meta">
-            <MapPin size={13} /> KADAL VILLAGE <span /> ALAPPUZHA-INSPIRED
+            <MapPin size={13} /> KADAL VILLAGE <span /> FIVE REGIONS <span />{" "}
+            FOURTEEN DISTRICTS
           </div>
           <div className="game-intro-controls">
             <span>
@@ -422,11 +559,11 @@ export default function Game({ onExit, onRecord }) {
       {started && !error && (
         <>
           <div className="game-region">
-            <span>ALAPPUZHA / COASTAL CHAPTER</span>
+            <span>{region.districts.toUpperCase()}</span>
             <h2>
               {state.boating
                 ? "Along the backwaters"
-                : nearby?.name || "Kadal Village"}
+                : nearby?.name || region.name}
             </h2>
             <div>
               <span className="game-live-dot" />
@@ -487,6 +624,9 @@ export default function Game({ onExit, onRecord }) {
             <span>
               <kbd>SHIFT</kbd> Run
             </span>
+            <span>
+              <kbd>R</kbd> Scooter
+            </span>
             <span>Drag to look</span>
             <button
               onClick={() => setPanel("help")}
@@ -495,7 +635,24 @@ export default function Game({ onExit, onRecord }) {
               <HelpCircle size={15} />
             </button>
           </div>
-          {!panel && nearby && !state.boating && (
+          {!panel &&
+            !state.boating &&
+            (state.riding || (!nearby && state.nearScooter)) && (
+              <button
+                className="game-interaction"
+                onClick={() => engine.current?.ride()}
+              >
+                <kbd>R</kbd>
+                <span>
+                  {state.riding ? "Park the scooter" : "The village scooter"}
+                  <strong>
+                    {state.riding ? "Step off here" : "Borrow it for a ride"}
+                  </strong>
+                </span>
+                <ArrowRight size={17} />
+              </button>
+            )}
+          {!panel && nearby && !state.boating && !state.riding && (
             <button
               className="game-interaction"
               onClick={() => engine.current?.interact()}
@@ -618,13 +775,10 @@ export default function Game({ onExit, onRecord }) {
                 <blockquote>{encounterSite.hint}</blockquote>
               )}
               {encounterSite.kind === "culture" &&
+                encounterSite.handsOn &&
                 !journey.interactions.includes(encounter) && (
                   <div className="game-hands-on">
-                    <span>
-                      {encounter === "courtyard"
-                        ? "Three beats. One small beginning."
-                        : "Three turns of the spindle. Watch the fibres twist."}
-                    </span>
+                    <span>{encounterSite.handsOn.prompt}</span>
                     <div>
                       {[0, 1, 2].map((i) => (
                         <i key={i} className={beats > i ? "done" : ""}>
@@ -642,10 +796,8 @@ export default function Game({ onExit, onRecord }) {
                 >
                   {journey.interactions.includes(encounter)
                     ? "A moment in your passport"
-                    : encounterSite.kind === "culture"
-                      ? encounter === "courtyard"
-                        ? `Play beat ${beats + 1} of 3`
-                        : `Turn the spindle ${beats + 1} of 3`
+                    : encounterSite.kind === "culture" && encounterSite.handsOn
+                      ? `${encounterSite.handsOn.button} ${beats + 1} of 3`
                       : encounterSite.action}
                   {journey.interactions.includes(encounter) ? (
                     <Check size={17} />
@@ -679,7 +831,7 @@ export default function Game({ onExit, onRecord }) {
               <div className="game-large-map-wrap">
                 <WorldMap state={state} journey={journey} large />
                 <div>
-                  <span className="game-overline">KADAL VILLAGE</span>
+                  <span className="game-overline">KERALA, END TO END</span>
                   <h3>
                     {journey.discoveries.length}
                     <small> / {sites.length}</small>
@@ -696,12 +848,14 @@ export default function Game({ onExit, onRecord }) {
                     </span>
                   </div>
                   <p className="game-map-hint">
-                    Look for bridges, follow sounds, and ask people for
-                    directions. The quietest places have no markers until you
-                    find them.
+                    The coastal highway runs the whole length of the map, from
+                    the fort in the far north to the lighthouse in the south.
+                    The hill road climbs east into tea country. Locals point
+                    the way; the quietest places have no markers until you find
+                    them.
                   </p>
                   <small>
-                    Coastal chapter / Alappuzha
+                    Five regions / fourteen districts
                     <br />
                     Illustrative world, not a navigation map
                   </small>
@@ -714,6 +868,26 @@ export default function Game({ onExit, onRecord }) {
               <span className="game-overline">NOT SOUVENIRS. STORIES.</span>
               <h2>Your Kerala Passport</h2>
               <p>A record of the Kerala you found on foot.</p>
+              {(() => {
+                const rank = rankFor(journey);
+                return (
+                  <div className="game-rank">
+                    <Trophy size={18} />
+                    <div>
+                      <strong>{rank.title}</strong>
+                      <small>
+                        {rank.next
+                          ? `${rank.next.at - rank.score} more ${
+                              rank.next.at - rank.score === 1
+                                ? "moment"
+                                : "moments"
+                            } to become ${rank.next.title}`
+                          : "The village knows your name."}
+                      </small>
+                    </div>
+                  </div>
+                );
+              })()}
               <div className="game-passport-stats">
                 <span>
                   <strong>
@@ -744,7 +918,12 @@ export default function Game({ onExit, onRecord }) {
                 </span>
                 <span>
                   <strong>
-                    {journey.discoveries.includes("pond") ? 1 : 0}
+                    {
+                      journey.discoveries.filter(
+                        (id) =>
+                          sites.find((s) => s.id === id)?.kind === "hidden",
+                      ).length
+                    }
                   </strong>
                   Secrets
                 </span>
@@ -832,6 +1011,10 @@ export default function Game({ onExit, onRecord }) {
                 <span>
                   <kbd>E</kbd>
                   <strong>Interact nearby</strong>
+                </span>
+                <span>
+                  <kbd>R</kbd>
+                  <strong>Ride / park the scooter</strong>
                 </span>
                 <span>
                   <kbd>M</kbd>

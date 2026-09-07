@@ -26,7 +26,7 @@ export function createGame(
   container.appendChild(canvas);
   const scene = new THREE.Scene();
   scene.background = new THREE.Color("#bfd8ce");
-  scene.fog = new THREE.FogExp2("#bfd8ce", 0.005);
+  scene.fog = new THREE.FogExp2("#bfd8ce", 0.004);
   const camera = new THREE.PerspectiveCamera(55, 1, 0.2, 620);
   const hemisphere = new THREE.HemisphereLight("#d4e9e4", "#6c7651", 2.6);
   scene.add(hemisphere);
@@ -45,12 +45,24 @@ export function createGame(
   sun.shadow.normalBias = 0.06;
   scene.add(sun, sun.target);
   const environment = buildEnvironment(scene);
-  const { player, playerLimbs, canoe } = environment;
+  const { player, playerLimbs, canoe, scooter, scooterWheels, beacons } =
+    environment;
   const position = new THREE.Vector3(initial.position.x, 0, initial.position.z);
   const velocity = new THREE.Vector2();
   const keys = new Set();
   const discovered = new Set(initial.discoveries);
   const cells = new Set(initial.cells);
+  discovered.forEach((id) => {
+    const beacon = beacons.get(id);
+    if (beacon) beacon.visible = false;
+  });
+  if (initial.scooter) {
+    scooter.position.set(
+      initial.scooter.x,
+      terrainHeight(initial.scooter.x, initial.scooter.z),
+      initial.scooter.z,
+    );
+  }
   let paused = true,
     disposed = false,
     yaw = 0,
@@ -63,6 +75,7 @@ export function createGame(
   let nearest = null,
     moving = false,
     boating = false,
+    riding = false,
     sprint = false,
     night = false,
     sound = false,
@@ -96,10 +109,34 @@ export function createGame(
     pointer = null;
   };
   function interaction() {
-    if (!paused && nearest) onInteract(nearest.id);
+    if (!paused && nearest && !riding) onInteract(nearest.id);
+  }
+  const nearScooter = () =>
+    !boating &&
+    Math.hypot(position.x - scooter.position.x, position.z - scooter.position.z) <
+      4;
+  function ride() {
+    if (paused || boating) return false;
+    if (riding) {
+      riding = false;
+      scooter.position.set(
+        position.x + Math.sin(player.rotation.y + 1.5) * 1.1,
+        terrainHeight(position.x, position.z),
+        position.z + Math.cos(player.rotation.y + 1.5) * 1.1,
+      );
+      scooter.rotation.set(0, player.rotation.y, 0.07);
+    } else {
+      if (!nearScooter()) return false;
+      riding = true;
+      scooter.rotation.z = 0;
+      chime();
+    }
+    velocity.set(0, 0);
+    publish();
+    return true;
   }
   function keydown(e) {
-    if (paused || e.target.closest("button,input,dialog")) return;
+    if (paused || e.target?.closest?.("button,input,dialog")) return;
     if (
       [
         "KeyW",
@@ -112,6 +149,7 @@ export function createGame(
         "ArrowRight",
         "Space",
         "KeyE",
+        "KeyR",
         "ShiftLeft",
         "ShiftRight",
       ].includes(e.code)
@@ -119,6 +157,7 @@ export function createGame(
       e.preventDefault();
     keys.add(e.code);
     if (e.code === "KeyE" && !e.repeat) interaction();
+    if (e.code === "KeyR" && !e.repeat) ride();
   }
   const keyup = (e) => keys.delete(e.code);
   const pointerDown = (e) => {
@@ -238,6 +277,9 @@ export function createGame(
       heading: yaw,
       nearby: nearest?.id || null,
       boating,
+      riding,
+      nearScooter: nearScooter(),
+      scooter: { x: scooter.position.x, z: scooter.position.z },
       night,
       moving,
       cells: [...cells],
@@ -271,9 +313,11 @@ export function createGame(
       const magnitude = Math.max(1, Math.hypot(inputX, inputZ));
       const speed = boating
         ? 10
-        : sprint || keys.has("ShiftLeft") || keys.has("ShiftRight")
-          ? 10
-          : 5.4;
+        : riding
+          ? 17.5
+          : sprint || keys.has("ShiftLeft") || keys.has("ShiftRight")
+            ? 10
+            : 5.4;
       const vx =
         ((inputX * Math.cos(yaw) + inputZ * Math.sin(yaw)) / magnitude) * speed;
       const vz =
@@ -291,18 +335,24 @@ export function createGame(
       }
       moving = velocity.length() > 0.25;
       position.y = boating ? 0.15 : terrainHeight(position.x, position.z);
+      let turn = 0;
       if (moving) {
         const target = Math.atan2(-velocity.x, -velocity.y);
-        player.rotation.y +=
+        turn =
           Math.atan2(
             Math.sin(target - player.rotation.y),
             Math.cos(target - player.rotation.y),
-          ) * Math.min(1, dt * 12);
+          ) * Math.min(1, dt * (riding ? 9 : 12));
+        player.rotation.y += turn;
       }
       player.position.copy(position);
+      if (riding) player.position.y += 0.55;
       playerLimbs.forEach((limb, i) => {
-        limb.rotation.x =
-          moving && !boating
+        limb.rotation.x = riding
+          ? i < 2
+            ? -1.05
+            : -0.55
+          : moving && !boating
             ? Math.sin(elapsed * (speed > 6 ? 14 : 9)) * (i % 2 ? -1 : 1) * 0.5
             : 0;
       });
@@ -314,6 +364,19 @@ export function createGame(
           position.z,
         );
         canoe.rotation.y = player.rotation.y;
+      }
+      if (riding) {
+        scooter.position.set(position.x, position.y + 0.02, position.z);
+        scooter.rotation.y = player.rotation.y;
+        scooter.rotation.z = THREE.MathUtils.lerp(
+          scooter.rotation.z,
+          moving ? THREE.MathUtils.clamp(turn * 6, -0.24, 0.24) : 0,
+          Math.min(1, dt * 8),
+        );
+        const spin = moving ? velocity.length() * dt * 3.4 : 0;
+        scooterWheels.forEach((tire) => {
+          tire.rotation.x += spin;
+        });
       }
       nearest =
         sites
@@ -333,6 +396,8 @@ export function createGame(
           Math.hypot(position.x - site.x, position.z - site.z) < site.radius
         ) {
           discovered.add(site.id);
+          const beacon = beacons.get(site.id);
+          if (beacon) beacon.visible = false;
           chime();
           onDiscover(site.id);
         }
@@ -361,7 +426,7 @@ export function createGame(
     scene.background.lerp(night ? nightColor : dayColor, dt * 1.6);
     scene.fog.color.copy(scene.background);
     sun.color.set(night ? "#acc8ed" : "#ffe5b6");
-    sun.position.set(position.x - 45, 65, position.z + 30);
+    sun.position.set(position.x - 45, position.y + 65, position.z + 30);
     sun.target.position.copy(position);
     cameraTarget.set(position.x, position.y + 1.65, position.z);
     desiredCamera.set(
@@ -443,7 +508,9 @@ export function createGame(
     chime,
     playBeat,
     interact: interaction,
+    ride,
     board() {
+      if (riding) return false;
       if (!boating && Math.hypot(position.x - 24, position.z - 5) > 13)
         return false;
       boating = !boating;

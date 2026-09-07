@@ -586,8 +586,10 @@
   margin-top: 22px;
 }
 .game-map-large {
-  height: auto;
-  max-height: 56dvh;
+  height: 58dvh;
+  width: auto;
+  max-width: 100%;
+  margin-inline: auto;
   background: #1f4134;
   border: 5px solid #d2dcc0;
   border-radius: 9px;
@@ -635,6 +637,28 @@
   font-size: 8px;
   line-height: 1.8;
   color: #8b997c;
+}
+.game-rank {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 18px;
+  padding: 13px 16px;
+  border-radius: 6px;
+  background: linear-gradient(120deg, #f7edd2, #f2e3b8);
+  border: 1px solid #e3cf9b;
+  color: #8a6a1f;
+}
+.game-rank strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 500;
+  color: #6d5314;
+}
+.game-rank small {
+  font-size: 10.5px;
+  color: #98803f;
 }
 .game-passport-stats {
   display: grid;

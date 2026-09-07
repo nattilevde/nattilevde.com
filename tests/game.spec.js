@@ -5,6 +5,7 @@ import {
   cellAt,
   sites,
   activities,
+  regionAt,
 } from "../src/game/world.js";
 
 test.describe.configure({ mode: "serial" });
@@ -43,8 +44,18 @@ test("world collision and activity definitions are traversable", () => {
   expect(canWalk(-18, 30)).toBe(false);
   expect(canWalk(-85, 0)).toBe(false);
   expect(canWalk(77, -122)).toBe(false);
+  expect(canWalk(2, -600)).toBe(true); // highway bridge over the river
+  expect(canWalk(60, -600)).toBe(false); // the river itself
+  expect(canWalk(250, 450)).toBe(false); // Ashtamudi lagoon
+  expect(canWalk(-62, -1350)).toBe(true); // fort interior
+  expect(canWalk(-91, -1352)).toBe(false); // fort wall
   expect(terrainHeight(83, 111)).toBe(9);
-  expect(cellAt(0, 0)).toBe("7,9");
+  expect(terrainHeight(700, -300)).toBeGreaterThan(30); // the High Ranges climb
+  expect(regionAt(0, -1200).id).toBe("malabar");
+  expect(regionAt(600, -260).id).toBe("highlands");
+  expect(regionAt(0, 600).id).toBe("south");
+  expect(regionAt(0, 76).id).toBe("backwaters");
+  expect(cellAt(0, 0)).toBe("4,37");
   sites.forEach((s) => expect(canWalk(s.x, s.z), s.name).toBe(true));
   activities.forEach((a) =>
     a.requires.forEach((id) =>
@@ -72,7 +83,7 @@ test("3D player walks, discovers, pauses, and preserves the portal passport", as
     "Kadal Village",
   );
   await page.keyboard.press("p");
-  await expect(page.getByRole("dialog")).toContainText("1/8");
+  await expect(page.getByRole("dialog")).toContainText(`1/${sites.length}`);
   const z = Number(await game.getAttribute("data-z"));
   await page.keyboard.down("w");
   await page.waitForTimeout(500);
@@ -231,4 +242,48 @@ test("finding the hidden pond unlocks its map marker and reload restores the jou
   await expect(page.locator(".game-map-large")).toContainText(
     "The Lotus Hideaway",
   );
+});
+
+test("scooter can be borrowed, ridden fast, and parked", async ({ page }) => {
+  test.setTimeout(60000);
+  await enter(page, { x: 7, z: 73 });
+  const game = page.getByTestId("kerala-game");
+  await expect(page.locator(".game-interaction")).toContainText(
+    "village scooter",
+  );
+  await page.keyboard.press("r");
+  await expect(game).toHaveAttribute("data-riding", "true");
+  await page.keyboard.down("w");
+  await expect
+    .poll(async () => Number(await game.getAttribute("data-z")), {
+      timeout: 15000,
+    })
+    .toBeLessThan(50);
+  await page.keyboard.up("w");
+  await page.keyboard.press("r");
+  await expect(game).toHaveAttribute("data-riding", "false");
+  await expect(page.locator(".game-interaction")).toContainText(
+    "village scooter",
+  );
+});
+
+test("the highway bridge carries the player across the river into Central Kerala", async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await enter(page, { x: 2, z: -580 });
+  const game = page.getByTestId("kerala-game");
+  await expect(page.locator(".game-region")).toContainText("Central Kerala");
+  await page.keyboard.down("Shift");
+  await page.keyboard.down("w");
+  await expect
+    .poll(async () => Number(await game.getAttribute("data-z")), {
+      timeout: 60000,
+    })
+    .toBeLessThan(-625);
+  await page.keyboard.up("w");
+  await page.keyboard.up("Shift");
+  expect(errors).toEqual([]);
 });
