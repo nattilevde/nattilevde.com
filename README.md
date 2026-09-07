@@ -28,17 +28,20 @@ npm test
 - A five-region open world spanning all fourteen districts in miniature: the Malabar Coast (Bekal-style sea fort, beach market, Theyyam ground), Central Kerala (river, ghat, Pooram ground with caparisoned elephants, Spice Lane), the High Ranges (contoured tea slopes, waterfall, cloud viewpoint, forest belt), the Backwaters (the original Kadal Village chapter), and Travancore South (Ashtamudi lagoon, heritage street, red-banded lighthouse).
 - A coastal highway running the full length of the world, a winding hill road east, branching spur roads, railed river bridges, and region signboards along the way.
 - Third-person walking/running, camera orbit, building/water collisions, bridges, a playable canoe, and a borrowable village scooter (R to ride or park) that makes the long roads genuinely travelable.
-- Twenty-three discoverable places, two hidden ones, eight exploration activities, and food and cultural interactions with locals across every region.
+- Twenty-three discoverable places, two hidden ones, nine exploration activities, and food and cultural interactions with locals across every region — including hands-on moments: chenda beats, the coir spindle, blending masala on Spice Lane, and plucking two leaves and a bud in the tea.
+- A naadan bus network (B, any roadside stand, or straight off the map) for fast travel. Five region stands open as your journey grows — three discoveries anywhere opens Central Kerala, six opens Malabar, and so on — and reaching a region yourself opens its stand early. On top of that, every place you have already found becomes a destination of its own, so first visits are earned and return trips are free. Open the map, tap a gold stand or a pale dot, and choose **Travel here**.
+- Seven quiet rest spots. Sit (E) on a driftwood log, a ghat step, or a cloudline bench and the camera settles into a slow, low, drifting view; linger and the moment is kept in your passport.
+- A living world: monsoon showers roll in and pass, dimming the light and greying the sky; chundan vallam crews race the canal in surging strokes; dolphins arc off the coast; a peacock struts the Pooram ground and fans its tail; elephants breathe and flap their ears; and fireflies come out at night in the kavu, the lotus pond, and the forest.
 - Floating golden glints mark undiscovered stops and disappear as each place is found; region-entry notices and a per-region HUD track where you are.
-- Traveller ranks in the game passport, from New Arrival to Naattukaaran, earned through discoveries, encounters, and badges.
+- Traveller ranks in the game passport, from New Arrival to Naattukaaran, earned through discoveries, encounters, quiet moments, and badges.
 - Moving villagers, drummers, boats, birds, dogs, highway auto-rickshaws, and wild and festival elephants.
 - Kerala-shaped fog-of-discovery map with region labels, local minimap, saved journey, shared portal passport, day/night atmosphere, and lightweight graphics mode.
 
 ## Play
 
-Select **Enter the 3D World**, then **Step into Kerala**. Use WASD or arrow keys to walk, Shift to run, drag to look around, and E to interact when near a local or landmark. M opens the map, P opens the passport, and Escape pauses. Touch devices have a movement joystick and a running toggle; drag the scenery to look around.
+Select **Enter the 3D World**, then **Step into Kerala**. Use WASD or arrow keys to walk, Shift to run, drag to look around, and E to interact when near a local, a landmark, or a place to sit. R borrows or parks the scooter, B calls up the bus network, M opens the map, P opens the passport, and Escape pauses. Touch devices have a movement joystick and a running toggle; drag the scenery to look around.
 
-Start along the village lane. The tea shop is to the left; locals offer clues to the courtyard, jetty, paddies, kavu, and quieter corners beyond the canal. A scooter is parked beside the spawn lane — press R (or tap its prompt) to borrow it, and R again to park anywhere on land; its parked spot is saved and marked on the map. The coastal highway leads north through Spice Lane, the river bridge, and the beach market to the sea fort, and south past Ashtamudi to the lighthouse; the hill road east climbs to the tea estate, the falls, and the cloud viewpoint. Borrow the canoe from Binu at the jetty and return there to step ashore. The canoe explores the southern canal reach; timber footbridges are not navigable by boat.
+Start along the village lane. The tea shop is to the left; locals offer clues to the courtyard, jetty, paddies, kavu, and quieter corners beyond the canal. A scooter is parked beside the spawn lane — press R (or tap its prompt) to borrow it, and R again to park anywhere on land; its parked spot is saved and marked on the map. The coastal highway leads north through Spice Lane, the river bridge, and the beach market to the sea fort, and south past Ashtamudi to the lighthouse; the hill road east climbs to the tea estate, the falls, and the cloud viewpoint. Borrow the canoe from Binu at the jetty and return there to step ashore. It handles like a paddled boat rather than a speedboat: A and D steer, W and S paddle, it takes a few strokes to build way, tops out at well under a run, and keeps gliding after you stop. The canoe explores the southern canal reach; timber footbridges are not navigable by boat.
 
 ## World Structure
 
@@ -48,7 +51,7 @@ Start along the village lane. The tea shop is to the left; locals offer clues to
 - `src/game/Game.jsx`: minimal HUD, encounters, fog map, saved journey, and portal passport integration.
 - `src/game/game.css`: full-screen game presentation and touch controls.
 
-Add future connected regions through world definitions, terrain, and landmarks rather than separate destination pages. Transportation is walking, the canoe, and the land scooter, all handled in the controller; additional vehicles will need their own collision and handling rules.
+Add future connected regions through world definitions, terrain, and landmarks rather than separate destination pages. Transportation is walking, the canoe, and the land scooter, all handled in the controller; additional vehicles will need their own collision and handling rules. Canoe handling is a pure function (`stepBoat` in `world.js`) so its feel can be tuned and unit-tested without the renderer. Fast-travel unlocks come from `travelDestinations(journey)`; adding a region means adding one gateway with a progress threshold, and new landmarks become destinations automatically once discovered.
 
 ## Scope
 

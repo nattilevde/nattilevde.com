@@ -7,6 +7,8 @@ import {
   coastX,
   roads,
   HIGHWAY,
+  REGION_GATEWAYS,
+  REST_SPOTS,
 } from "./world.js";
 
 export function buildEnvironment(scene) {
@@ -1286,14 +1288,18 @@ export function buildEnvironment(scene) {
   block(root, m.roof, 78, gateY + 6.5, -750, 2.3, 0.8, 12, true);
   block(root, m.roofDark, 78, gateY + 7.2, -750, 1.7, 0.7, 8, true);
   block(root, m.gold, 78, gateY + 7.9, -750, 0.5, 0.8, 3, true);
+  const elephants = [];
   function elephant(x, z, yaw, dressed = false) {
     const e = group("Elephant", x, terrainHeight(x, z), z);
     e.rotation.y = yaw;
+    const ears = [];
     mesh(e, sphere, m.grey, 0, 1.9, 0.3, 1.25, 1.15, 1.75, true);
     mesh(e, sphere, m.grey, 0, 2.3, -1.35, 0.8, 0.85, 0.8, true);
     for (const side of [-1, 1]) {
       const ear = mesh(e, sphere, m.grey, side * 0.75, 2.4, -1.3, 0.42, 0.55, 0.14, true);
       ear.rotation.y = side * 0.5;
+      ear.userData.side = side;
+      ears.push(ear);
       beam(e, m.white, [side * 0.3, 1.75, -1.85], [side * 0.42, 1.35, -2.15], 0.07);
     }
     beam(e, m.grey, [0, 1.95, -1.95], [0, 1.1, -2.2], 0.17);
@@ -1310,6 +1316,7 @@ export function buildEnvironment(scene) {
       block(e, m.darkWood, 0, 3, 0.3, 0.1, 0.7, 0.1);
       mesh(e, cone, m.teal, 0, 3.7, 0.3, 1, 0.7, 1, true);
     }
+    elephants.push({ group: e, ears, baseY: e.position.y });
     return e;
   }
   elephant(98, -742, 0.35, true);
@@ -1459,6 +1466,183 @@ export function buildEnvironment(scene) {
   resident("Fatima", -20, -868, m.rose, Math.PI / 2, true);
   resident("Thanka", 561, -259, m.gold, -0.7, true);
   resident("Ammini", 30, 558, m.rose, -Math.PI / 2, true);
+
+  // ---- A living Kerala: bus stops, rest spots, wildlife, and weather ----
+  for (const stop of REGION_GATEWAYS) {
+    const shelter = group(
+      `Bus stand: ${stop.name}`,
+      stop.x + 2.6,
+      terrainHeight(stop.x + 2.6, stop.z),
+      stop.z,
+    );
+    for (const side of [-1.6, 1.6])
+      block(shelter, m.darkWood, side, 1.35, -0.8, 0.15, 2.7, 0.15, true);
+    block(shelter, m.roofLight, 0, 2.8, -0.5, 4.4, 0.14, 2.4, true);
+    block(shelter, m.wood, 0, 0.62, -1.15, 3.4, 0.1, 0.5);
+    for (const side of [-1.4, 1.4])
+      block(shelter, m.wood, side, 0.31, -1.15, 0.12, 0.62, 0.12);
+    block(shelter, m.gold, 0, 2.2, 0.9, 0.12, 4.4, 0.12, true);
+    sign(shelter, "BUS", stop.name.toUpperCase(), 0, 4.1, 0.9, 3.2);
+  }
+  // Seats sit slightly behind where the player settles, so they read as sat-upon.
+  for (const spot of REST_SPOTS) {
+    if (spot.seat === "none") continue;
+    const sx = spot.x + Math.sin(spot.face) * 0.28;
+    const sz = spot.z + Math.cos(spot.face) * 0.28;
+    const seat = group(`Rest seat: ${spot.name}`, sx, terrainHeight(sx, sz), sz);
+    seat.rotation.y = spot.face;
+    if (spot.seat === "log") {
+      const log = mesh(seat, cylinder, m.wood, 0, 0.34, 0, 0.34, 3.8, 0.34, true);
+      log.rotation.z = Math.PI / 2;
+    } else {
+      block(seat, m.wood, 0, 0.44, 0, 2.6, 0.14, 0.72, true);
+      block(seat, m.wood, 0, 0.82, 0.32, 2.6, 0.62, 0.1, true);
+      for (const side of [-1, 1])
+        block(seat, m.darkWood, side, 0.21, 0, 0.15, 0.42, 0.52);
+    }
+  }
+
+  // Chundan vallam practice on the southern canal reach.
+  const snakeBoats = [];
+  for (let i = 0; i < 2; i++) {
+    const vallam = boat(
+      `Chundan vallam ${i + 1}`,
+      1.1,
+      13,
+      material(i ? "#4a3222" : "#332417", { side: THREE.DoubleSide }),
+    );
+    const prow = mesh(vallam, cone, i ? m.gold : m.rope, 0, 1.6, 6.1, 0.4, 3, 0.35, true);
+    prow.rotation.x = -0.5;
+    const paddlers = [];
+    for (let r = 0; r < 6; r++) {
+      const rower = group("Rower");
+      vallam.add(rower);
+      rower.position.set(0, 0.42, -4.4 + r * 1.5);
+      block(rower, r % 2 ? m.cream : m.teal, 0, 0.3, 0, 0.42, 0.6, 0.34, true);
+      mesh(rower, sphere, m.skin, 0, 0.78, 0, 0.16, 0.18, 0.16);
+      const paddle = group("Paddle");
+      rower.add(paddle);
+      paddle.position.set(0.3, 0.45, 0);
+      beam(paddle, m.wood, [0.12, 0.3, 0], [0.3, -0.75, 0], 0.035);
+      paddlers.push(paddle);
+    }
+    snakeBoats.push({ vallam, paddlers, lane: i ? 41.2 : 34.8, phase: i * 40 });
+  }
+
+  // Dolphins arcing off the coast.
+  const dolphins = [];
+  for (const [dx, dz] of [
+    [-102, 34],
+    [-108, 610],
+    [-118, -1040],
+  ]) {
+    const pod = group("Coastal dolphin");
+    mesh(pod, sphere, m.stone, 0, 0, 0, 0.32, 0.3, 0.75, true);
+    mesh(pod, cone, m.stone, 0, 0.34, 0.1, 0.14, 0.34, 0.08, true);
+    const tail = mesh(pod, cone, m.stone, 0, 0.05, 0.85, 0.3, 0.24, 0.1, true);
+    tail.rotation.x = Math.PI / 2;
+    dolphins.push({ pod, x: dx, z: dz, phase: dz });
+  }
+
+  // A peacock strutting the Pooram ground.
+  const peacock = group("Pooram peacock");
+  mesh(peacock, sphere, m.teal, 0, 0.5, 0, 0.24, 0.26, 0.34, true);
+  beam(peacock, m.teal, [0, 0.6, -0.2], [0, 1.05, -0.34], 0.06);
+  mesh(peacock, sphere, m.teal, 0, 1.1, -0.36, 0.11, 0.12, 0.12, true);
+  mesh(peacock, sphere, m.gold, 0, 1.28, -0.36, 0.05, 0.09, 0.03);
+  const tailFan = mesh(peacock, cone, m.olive, 0, 0.85, 0.42, 1.15, 1.5, 0.12, true);
+  tailFan.rotation.x = 0.5;
+  for (let i = 0; i < 5; i++) {
+    mesh(
+      peacock,
+      sphere,
+      m.teal,
+      -0.6 + i * 0.3,
+      1.15 + Math.sin((i / 4) * Math.PI) * 0.32,
+      0.52,
+      0.07,
+      0.07,
+      0.03,
+    );
+  }
+  for (const lx of [-0.1, 0.1])
+    beam(peacock, m.gold, [lx, 0.3, 0], [lx, 0, 0.02], 0.025);
+
+  // Fireflies that wake with the night in the quiet green corners.
+  const fireflyClusters = [];
+  const glowCanvas = document.createElement("canvas");
+  glowCanvas.width = glowCanvas.height = 64;
+  const glowContext = glowCanvas.getContext("2d");
+  const glowGradient = glowContext.createRadialGradient(32, 32, 0, 32, 32, 32);
+  glowGradient.addColorStop(0, "rgba(255,250,214,1)");
+  glowGradient.addColorStop(0.35, "rgba(255,226,140,0.75)");
+  glowGradient.addColorStop(1, "rgba(255,214,120,0)");
+  glowContext.fillStyle = glowGradient;
+  glowContext.fillRect(0, 0, 64, 64);
+  const glowTexture = new THREE.CanvasTexture(glowCanvas);
+  glowTexture.colorSpace = THREE.SRGBColorSpace;
+  textures.add(glowTexture);
+  const fireflyMaterial = new THREE.PointsMaterial({
+    map: glowTexture,
+    color: "#ffe9a0",
+    size: 0.7,
+    transparent: true,
+    opacity: 0.9,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  materials.add(fireflyMaterial);
+  for (const [fx, fz] of [
+    [92, -70],
+    [77, -118],
+    [470, -500],
+  ]) {
+    const positions = [];
+    for (let i = 0; i < 14; i++)
+      positions.push(
+        (random() - 0.5) * 12,
+        1 + random() * 2.6,
+        (random() - 0.5) * 12,
+      );
+    const geometry = ownGeometry(new THREE.BufferGeometry());
+    geometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(positions, 3),
+    );
+    const cloud = new THREE.Points(geometry, fireflyMaterial);
+    cloud.name = "Fireflies";
+    cloud.position.set(fx, terrainHeight(fx, fz), fz);
+    cloud.visible = false;
+    root.add(cloud);
+    fireflyClusters.push(cloud);
+  }
+
+  // Monsoon shower: a curtain of slanted streaks that travels with the player.
+  const rainCount = 1100;
+  const rainPositions = new Float32Array(rainCount * 6);
+  for (let i = 0; i < rainCount; i++) {
+    const x = (Math.random() - 0.5) * 52;
+    const y = Math.random() * 26;
+    const z = (Math.random() - 0.5) * 52;
+    rainPositions.set([x, y, z, x + 0.16, y - 1.15, z + 0.1], i * 6);
+  }
+  const rainGeometry = ownGeometry(new THREE.BufferGeometry());
+  rainGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(rainPositions, 3),
+  );
+  const rainMaterial = new THREE.LineBasicMaterial({
+    color: "#e6f2ee",
+    transparent: true,
+    opacity: 0.5,
+    depthWrite: false,
+  });
+  materials.add(rainMaterial);
+  const rain = new THREE.LineSegments(rainGeometry, rainMaterial);
+  rain.name = "Monsoon shower";
+  rain.frustumCulled = false;
+  rain.visible = false;
+  root.add(rain);
 
   const trunkCurve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(0, 0, 0),
@@ -1960,7 +2144,11 @@ export function buildEnvironment(scene) {
     lagoonBoat,
     ...rickshaws.map((r) => r.group),
     scooter,
+    peacock,
     ...beacons.values(),
+    ...elephants.map((e) => e.group),
+    ...snakeBoats.map((s) => s.vallam),
+    ...dolphins.map((d) => d.pod),
     ...boats,
     ...bunting,
     ...walkers.map((walker) => walker.person),
@@ -2011,7 +2199,7 @@ export function buildEnvironment(scene) {
   }
   batches.clear();
   let disposed = false;
-  function update(time = 0, dt = 0, night = 0) {
+  function update(time = 0, dt = 0, night = 0, world = {}) {
     if (disposed) return;
     const t = Number.isFinite(time) ? time : 0;
     const darkness = THREE.MathUtils.clamp(Number(night) || 0, 0, 1);
@@ -2098,8 +2286,80 @@ export function buildEnvironment(scene) {
       beacon.rotation.y = t * 0.9 + phase;
       beacon.material.opacity = 0.62 + Math.sin(t * 2.4 + phase) * 0.22;
     });
+    // Chundan vallams race the canal in long, surging strokes.
+    snakeBoats.forEach(({ vallam, paddlers, lane, phase }, i) => {
+      const stroke = t * 1.9 + i;
+      const surge = 0.72 + Math.max(0, Math.sin(stroke)) * 0.55;
+      const travel = ((t * 9 * surge + phase) % 300) - 140;
+      vallam.position.set(lane, -0.05 + Math.sin(t * 1.6 + i) * 0.05, travel);
+      vallam.rotation.y = Math.PI;
+      vallam.rotation.z = Math.sin(stroke) * 0.035;
+      paddlers.forEach((p, j) => {
+        p.rotation.x = Math.sin(stroke - j * 0.12) * 0.85;
+      });
+    });
+    // Dolphins arc out of the sea and slip back under.
+    dolphins.forEach(({ pod, x, z, phase }, i) => {
+      const cycle = (t * 0.5 + phase) % 9;
+      const leap = cycle < 2.4 ? Math.sin((cycle / 2.4) * Math.PI) : 0;
+      pod.visible = leap > 0.02;
+      pod.position.set(
+        x + Math.sin(t * 0.2 + i) * 5,
+        -0.5 + leap * 2.1,
+        z + cycle * 4 - 8,
+      );
+      pod.rotation.x = Math.cos((cycle / 2.4) * Math.PI) * 0.8;
+      pod.rotation.y = 0.3 + i;
+    });
+    // Elephants breathe, sway, and flap their ears.
+    elephants.forEach(({ group: e, ears, baseY }, i) => {
+      e.position.y = baseY + Math.sin(t * 0.9 + i) * 0.045;
+      ears.forEach((ear) => {
+        ear.rotation.y =
+          ear.userData.side * (0.5 + Math.sin(t * 1.7 + i * 2) * 0.35);
+      });
+    });
+    // The peacock patrols the Pooram ground and fans its tail now and then.
+    const strut = t * 0.16 + 1;
+    peacock.position.set(
+      95 + Math.cos(strut) * 7,
+      terrainHeight(95, -740) + 0.1,
+      -740 + Math.sin(strut) * 7,
+    );
+    peacock.rotation.y = -strut + Math.PI / 2;
+    const fan = Math.max(0, Math.sin(t * 0.25));
+    tailFan.scale.set(0.5 + fan * 1.4, 1.5, 0.12);
+    tailFan.rotation.x = 0.5 + fan * 0.5;
+    // Fireflies only come out at night.
+    const fireflyOn = darkness > 0.45;
+    fireflyClusters.forEach((cloud, i) => {
+      cloud.visible = fireflyOn;
+      if (fireflyOn) cloud.rotation.y = t * 0.12 + i;
+    });
+    fireflyMaterial.opacity = 0.35 + Math.sin(t * 2.2) * 0.25 + darkness * 0.3;
+    // Monsoon drizzle falls around the player while a rain event is running.
+    const wet = THREE.MathUtils.clamp(Number(world.rain) || 0, 0, 1);
+    rain.visible = wet > 0.01;
+    if (rain.visible) {
+      const rx = world.x || 0;
+      const rz = world.z || 0;
+      rain.position.set(rx, terrainHeight(rx, rz) - 1, rz);
+      rainMaterial.opacity = 0.62 * wet;
+      const array = rainGeometry.attributes.position.array;
+      const fall = dt * 34;
+      for (let i = 1; i < array.length; i += 3) {
+        array[i] -= fall;
+        if (array[i] < -1.2) array[i] += 26;
+      }
+      rainGeometry.attributes.position.needsUpdate = true;
+    }
     // Player movement, limb gait, canoe visibility and scene lighting belong to the engine.
-    if (canoe.visible) paddle.rotation.z = -0.7 + Math.sin(t * 2.5) * 0.25;
+    // The paddle only works when the canoe is actually being driven along.
+    if (canoe.visible) {
+      const rowing = THREE.MathUtils.clamp(Number(world.rowing) || 0, 0, 1);
+      paddle.rotation.z =
+        -0.7 + Math.sin(t * (1.4 + rowing * 3.2)) * (0.06 + rowing * 0.42);
+    }
   }
   function dispose() {
     if (disposed) return;

@@ -3,12 +3,15 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
+  Bus,
   Check,
+  CloudRain,
   Compass,
   Flag,
   Footprints,
   HelpCircle,
   Leaf,
+  Lock,
   Map,
   MapPin,
   Maximize,
@@ -32,9 +35,13 @@ import {
   readJourney,
   rankFor,
   regionAt,
+  regions,
   roads,
   HIGHWAY,
   coastX,
+  REGION_GATEWAYS,
+  REST_SPOTS,
+  travelDestinations,
 } from "./world.js";
 import "./game.css";
 
@@ -64,7 +71,14 @@ const MAP_LABELS = [
   { x: 210, z: 720, name: "TRAVANCORE SOUTH", sub: "Kollam · Thiruvananthapuram" },
 ];
 
-function WorldMap({ state, journey, large = false }) {
+function WorldMap({
+  state,
+  journey,
+  large = false,
+  destinations = [],
+  picked = null,
+  onPick,
+}) {
   const { b, W, H, coastPath, roadPaths } = MAP;
   const explored = new Set(journey.cells);
   const cs = REGION.cellSize;
@@ -163,14 +177,17 @@ function WorldMap({ state, journey, large = false }) {
         .filter((s) => journey.discoveries.includes(s.id))
         .map((s) => (
           <g key={s.id}>
-            <circle
-              cx={s.x - b.minX}
-              cy={s.z - b.minZ}
-              r={(s.kind === "hidden" ? 4 : 3) * (large ? 2.4 : 1.2)}
-              fill={s.kind === "hidden" ? "#f3cc79" : "#fff4d4"}
-              stroke="#294e3b"
-              strokeWidth={large ? 3 : 1.5}
-            />
+            {/* On the large map the travel targets draw these dots instead. */}
+            {!large && (
+              <circle
+                cx={s.x - b.minX}
+                cy={s.z - b.minZ}
+                r={(s.kind === "hidden" ? 4 : 3) * 1.2}
+                fill={s.kind === "hidden" ? "#f3cc79" : "#fff4d4"}
+                stroke="#294e3b"
+                strokeWidth={1.5}
+              />
+            )}
             {large && (
               <text
                 x={s.x - b.minX}
@@ -187,6 +204,61 @@ function WorldMap({ state, journey, large = false }) {
             )}
           </g>
         ))}
+      {/* Travel targets: click one on the large map to ride the bus there. */}
+      {large &&
+        destinations.map((dest) => {
+          const cx = dest.x - b.minX;
+          const cy = dest.z - b.minZ;
+          const isPicked = picked?.id === dest.id;
+          const gateway = dest.kind === "gateway";
+          return (
+            <g
+              key={dest.id}
+              className={
+                dest.unlocked ? "game-map-target" : "game-map-target locked"
+              }
+              role={dest.unlocked ? "button" : undefined}
+              tabIndex={dest.unlocked ? 0 : undefined}
+              aria-label={
+                dest.unlocked
+                  ? `Travel to ${dest.name}`
+                  : `${dest.name}, locked`
+              }
+              onClick={() => dest.unlocked && onPick?.(dest)}
+              onKeyDown={(e) => {
+                if (dest.unlocked && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  onPick?.(dest);
+                }
+              }}
+            >
+              {isPicked && (
+                <circle cx={cx} cy={cy} r="26" fill="#f6e8bc" opacity=".28" />
+              )}
+              {gateway ? (
+                <rect
+                  x={cx - 11}
+                  y={cy - 11}
+                  width="22"
+                  height="22"
+                  rx="5"
+                  fill={dest.unlocked ? "#e8b755" : "#5c6f58"}
+                  stroke={isPicked ? "#fff4d4" : "#294e3b"}
+                  strokeWidth={isPicked ? 5 : 3.5}
+                />
+              ) : (
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r="9"
+                  fill="#fff4d4"
+                  stroke={isPicked ? "#e8b755" : "#294e3b"}
+                  strokeWidth={isPicked ? 5 : 3.5}
+                />
+              )}
+            </g>
+          );
+        })}
       {state.scooter && !state.riding && (
         <g
           transform={`translate(${state.scooter.x - b.minX},${state.scooter.z - b.minZ}) scale(${marker})`}
@@ -261,6 +333,10 @@ export default function Game({ onExit, onRecord }) {
     nearby: null,
     boating: false,
     riding: false,
+    sitting: null,
+    restSpot: null,
+    busStop: null,
+    rain: 0,
     nearScooter: false,
     scooter: journey.scooter,
     night: false,
@@ -277,7 +353,8 @@ export default function Game({ onExit, onRecord }) {
     [low, setLow] = useState(false),
     [running, setRunning] = useState(false);
   const [beats, setBeats] = useState(0),
-    [stick, setStick] = useState({ x: 0, y: 0 });
+    [stick, setStick] = useState({ x: 0, y: 0 }),
+    [picked, setPicked] = useState(null);
   const lastSave = useRef(0),
     noticeTimer = useRef(null);
   const region = regionAt(state.x, state.z);
@@ -288,6 +365,11 @@ export default function Game({ onExit, onRecord }) {
   const objective = activities.find((a) => !completed.includes(a));
   const nearby = sites.find((s) => s.id === state.nearby);
   const encounterSite = sites.find((s) => s.id === encounter);
+  const restSpot = REST_SPOTS.find(
+    (s) => s.id === (state.sitting || state.restSpot),
+  );
+  const destinations = travelDestinations(journey);
+  const openDestinations = destinations.filter((d) => d.unlocked);
 
   function save(next) {
     journeyRef.current = next;
@@ -309,8 +391,12 @@ export default function Game({ onExit, onRecord }) {
     const next = { ...old, [kind]: [...old[kind], id] };
     const oldRank = rankFor(old);
     save(next);
-    const site = sites.find((s) => s.id === id);
-    callbacks.current.onRecord(kind, site);
+    const site =
+      kind === "moments"
+        ? REST_SPOTS.find((s) => s.id === id)
+        : sites.find((s) => s.id === id);
+    // Rest moments stay in the game passport; places and encounters reach the portal.
+    if (kind !== "moments") callbacks.current.onRecord(kind, site);
     const newlyCompleted = activities.filter(
       (a) =>
         a.requires.every((id) => next[a.source].includes(id)) &&
@@ -334,15 +420,17 @@ export default function Game({ onExit, onRecord }) {
               badge: true,
             }
           : {
-            title: site.name,
-            subtitle:
-              kind === "discoveries"
-                ? site.kind === "hidden"
-                  ? "A LITTLE SECRET, FOUND"
-                  : "NEW PLACE DISCOVERED"
-                : "A LITTLE KERALA, COLLECTED",
-            text: site.line,
-          },
+              title: site.name,
+              subtitle:
+                kind === "moments"
+                  ? "A QUIET MOMENT, KEPT"
+                  : kind === "discoveries"
+                    ? site.kind === "hidden"
+                      ? "A LITTLE SECRET, FOUND"
+                      : "NEW PLACE DISCOVERED"
+                    : "A LITTLE KERALA, COLLECTED",
+              text: site.line,
+            },
     );
   }
 
@@ -372,6 +460,23 @@ export default function Game({ onExit, onRecord }) {
           setEncounter(id);
           setPanel("encounter");
         },
+        onMoment: (id) => record("moments", id),
+        onEvent: (kind) =>
+          announce(
+            kind === "rain-start"
+              ? {
+                  title: "A shower rolls in",
+                  subtitle: "THE SKY CHANGES ITS MIND",
+                  text: "Kerala rain arrives without asking. Find a veranda, or just keep walking.",
+                  weather: true,
+                }
+              : {
+                  title: "The rain passes",
+                  subtitle: "AFTER THE SHOWER",
+                  text: "Everything smells green again.",
+                  weather: true,
+                },
+          ),
         onError: setError,
       });
       engine.current = game;
@@ -421,6 +526,10 @@ export default function Game({ onExit, onRecord }) {
           e.code === "KeyM" ? "map" : e.code === "KeyP" ? "passport" : "help",
         );
       }
+      if (!panel && e.code === "KeyB" && engine.current) {
+        e.preventDefault();
+        setPanel("travel");
+      }
     };
     const visibility = () => {
       if (document.hidden && started) setPanel((p) => p || "pause");
@@ -436,7 +545,18 @@ export default function Game({ onExit, onRecord }) {
   const closePanel = () => {
     setPanel(null);
     setEncounter(null);
+    setPicked(null);
   };
+  function travel(destination) {
+    if (!destination?.unlocked) return;
+    engine.current?.travelTo(destination);
+    closePanel();
+    announce({
+      title: destination.name,
+      subtitle: "THE BUS DROPS YOU OFF",
+      text: "Mind the step. Good exploring.",
+    });
+  }
   function completeEncounter() {
     if (encounterSite.kind === "culture" && beats < 2) {
       setBeats((b) => b + 1);
@@ -470,6 +590,7 @@ export default function Game({ onExit, onRecord }) {
       data-z={state.z.toFixed(1)}
       data-boating={state.boating}
       data-riding={state.riding}
+      data-sitting={state.sitting || ""}
     >
       <div className="game-canvas-host" ref={container} />
       <div className="game-vignette" />
@@ -493,6 +614,13 @@ export default function Game({ onExit, onRecord }) {
                 onClick={() => setPanel("map")}
               >
                 <Map size={19} />
+              </button>
+              <button
+                aria-label="Open bus network"
+                title="Fast travel (B)"
+                onClick={() => setPanel("travel")}
+              >
+                <Bus size={19} />
               </button>
               <button
                 aria-label="Open game passport"
@@ -567,9 +695,11 @@ export default function Game({ onExit, onRecord }) {
             </h2>
             <div>
               <span className="game-live-dot" />
-              {state.night
-                ? "Moonlit wandering"
-                : "A little golden-hour wandering"}
+              {state.rain > 0.15
+                ? "Monsoon shower passing through"
+                : state.night
+                  ? "Moonlit wandering"
+                  : "A little golden-hour wandering"}
             </div>
           </div>
           <div className="game-objective">
@@ -627,6 +757,9 @@ export default function Game({ onExit, onRecord }) {
             <span>
               <kbd>R</kbd> Scooter
             </span>
+            <span>
+              <kbd>B</kbd> Bus
+            </span>
             <span>Drag to look</span>
             <button
               onClick={() => setPanel("help")}
@@ -635,9 +768,52 @@ export default function Game({ onExit, onRecord }) {
               <HelpCircle size={15} />
             </button>
           </div>
+          {state.sitting && restSpot && !panel && (
+            <div className="game-rest-overlay" role="status">
+              <span className="game-overline">SITTING FOR A WHILE</span>
+              <h3>{restSpot.name}</h3>
+              <p>{restSpot.line}</p>
+              <button onClick={() => engine.current?.stand()}>
+                <kbd>E</kbd> Stand up
+              </button>
+            </div>
+          )}
+          {!panel && !state.sitting && !nearby && state.restSpot && (
+            <button
+              className="game-interaction"
+              onClick={() => engine.current?.sit()}
+            >
+              <kbd>E</kbd>
+              <span>
+                Sit a while
+                <strong>{restSpot?.name || "Rest here"}</strong>
+              </span>
+              <ArrowRight size={17} />
+            </button>
+          )}
           {!panel &&
+            !state.sitting &&
+            !nearby &&
+            !state.restSpot &&
+            state.busStop &&
+            !state.riding &&
+            !state.boating && (
+              <button
+                className="game-interaction"
+                onClick={() => setPanel("travel")}
+              >
+                <kbd>B</kbd>
+                <span>
+                  The naadan bus stop
+                  <strong>Ride to anywhere you've been</strong>
+                </span>
+                <ArrowRight size={17} />
+              </button>
+            )}
+          {!panel &&
+            !state.sitting &&
             !state.boating &&
-            (state.riding || (!nearby && state.nearScooter)) && (
+            (state.riding || (!nearby && !state.restSpot && !state.busStop && state.nearScooter)) && (
               <button
                 className="game-interaction"
                 onClick={() => engine.current?.ride()}
@@ -652,7 +828,7 @@ export default function Game({ onExit, onRecord }) {
                 <ArrowRight size={17} />
               </button>
             )}
-          {!panel && nearby && !state.boating && !state.riding && (
+          {!panel && nearby && !state.boating && !state.riding && !state.sitting && (
             <button
               className="game-interaction"
               onClick={() => engine.current?.interact()}
@@ -727,7 +903,13 @@ export default function Game({ onExit, onRecord }) {
           role="status"
         >
           <span className="game-discovery-symbol">
-            {notice.badge ? <Trophy size={27} /> : <Compass size={27} />}
+            {notice.badge ? (
+              <Trophy size={27} />
+            ) : notice.weather ? (
+              <CloudRain size={27} />
+            ) : (
+              <Compass size={27} />
+            )}
           </span>
           <div>
             <small>{notice.subtitle}</small>
@@ -756,7 +938,9 @@ export default function Game({ onExit, onRecord }) {
                 ? "Kerala game passport"
                 : panel === "map"
                   ? "Exploration map"
-                  : "Game menu"
+                  : panel === "travel"
+                    ? "Naadan bus network"
+                    : "Game menu"
           }
           onClose={closePanel}
           className={`game-panel-${panel}`}
@@ -823,14 +1007,110 @@ export default function Game({ onExit, onRecord }) {
               </button>
             </>
           )}
+          {panel === "travel" && (
+            <>
+              <span className="game-overline">THE BUS KNOWS EVERY ROAD</span>
+              <h2>Where to, then?</h2>
+              <p>
+                Region stands open as your journey grows. Every place you've
+                already found is a stop of its own — go once, return whenever.
+              </p>
+              <h3 className="game-passport-heading">Region stands</h3>
+              <div className="game-travel-list">
+                {destinations
+                  .filter((d) => d.kind === "gateway")
+                  .map((dest) => (
+                    <button
+                      key={dest.id}
+                      disabled={!dest.unlocked}
+                      className={dest.unlocked ? "open" : "locked"}
+                      onClick={() => travel(dest)}
+                    >
+                      {dest.unlocked ? <Bus size={18} /> : <Lock size={16} />}
+                      <span>
+                        <strong>{dest.name}</strong>
+                        <small>
+                          {dest.unlocked
+                            ? regions.find((r) => r.id === dest.region)
+                                ?.districts
+                            : `Opens after ${dest.remaining} more ${
+                                dest.remaining === 1 ? "discovery" : "discoveries"
+                              }`}
+                        </small>
+                      </span>
+                      {dest.unlocked && <ArrowRight size={16} />}
+                    </button>
+                  ))}
+              </div>
+              <h3 className="game-passport-heading">Places you've found</h3>
+              {destinations.some((d) => d.kind === "site") ? (
+                <div className="game-travel-list">
+                  {destinations
+                    .filter((d) => d.kind === "site")
+                    .map((dest) => (
+                      <button
+                        key={dest.id}
+                        className="open"
+                        onClick={() => travel(dest)}
+                      >
+                        <MapPin size={17} />
+                        <span>
+                          <strong>{dest.name}</strong>
+                          <small>
+                            {regions.find((r) => r.id === dest.region)?.name}
+                          </small>
+                        </span>
+                        <ArrowRight size={16} />
+                      </button>
+                    ))}
+                </div>
+              ) : (
+                <p className="game-map-hint">
+                  Nothing yet. Find a place once and it joins the timetable.
+                </p>
+              )}
+              <p className="game-save-note">
+                {openDestinations.length} destination
+                {openDestinations.length === 1 ? "" : "s"} open. You can also
+                pick any of them straight off the map. The scooter stays
+                wherever you parked it.
+              </p>
+            </>
+          )}
           {panel === "map" && (
             <>
               <span className="game-overline">THE WORLD, AS YOU KNOW IT</span>
               <h2>Let it unfold.</h2>
-              <p>Only the paths you've walked and the places you've found.</p>
+              <p>
+                Only the paths you've walked and the places you've found. Tap a
+                marker to ride there.
+              </p>
               <div className="game-large-map-wrap">
-                <WorldMap state={state} journey={journey} large />
+                <WorldMap
+                  state={state}
+                  journey={journey}
+                  large
+                  destinations={destinations}
+                  picked={picked}
+                  onPick={setPicked}
+                />
                 <div>
+                  {picked ? (
+                    <div className="game-map-pick">
+                      <span className="game-overline">SELECTED</span>
+                      <strong>{picked.name}</strong>
+                      <small>
+                        {regions.find((r) => r.id === picked.region)?.name}
+                      </small>
+                      <button
+                        className="game-primary"
+                        onClick={() => travel(picked)}
+                      >
+                        <Bus size={17} />
+                        Travel here
+                      </button>
+                    </div>
+                  ) : null}
                   <span className="game-overline">KERALA, END TO END</span>
                   <h3>
                     {journey.discoveries.length}
@@ -848,11 +1128,14 @@ export default function Game({ onExit, onRecord }) {
                     </span>
                   </div>
                   <p className="game-map-hint">
-                    The coastal highway runs the whole length of the map, from
-                    the fort in the far north to the lighthouse in the south.
-                    The hill road climbs east into tea country. Locals point
-                    the way; the quietest places have no markers until you find
-                    them.
+                    {openDestinations.length} bus destination
+                    {openDestinations.length === 1 ? "" : "s"} open.
+                  </p>
+                  <p className="game-map-hint">
+                    Gold squares are region bus stands; pale dots are places
+                    you've found. Pick one, then <em>Travel here</em>. The
+                    highway and the hill road are still there when you feel
+                    like the long way round.
                   </p>
                   <small>
                     Five regions / fourteen districts
@@ -917,6 +1200,10 @@ export default function Game({ onExit, onRecord }) {
                   Culture
                 </span>
                 <span>
+                  <strong>{(journey.moments || []).length}</strong>
+                  Moments
+                </span>
+                <span>
                   <strong>
                     {
                       journey.discoveries.filter(
@@ -960,6 +1247,18 @@ export default function Game({ onExit, onRecord }) {
                     )}
                   </div>
                 ))}
+              </div>
+              <h3 className="game-passport-heading">Quiet moments</h3>
+              <div className="game-moment-list">
+                {REST_SPOTS.map((spot) => {
+                  const kept = (journey.moments || []).includes(spot.id);
+                  return (
+                    <span key={spot.id} className={kept ? "kept" : ""}>
+                      {kept ? <Check size={13} /> : <Moon size={13} />}
+                      {kept ? spot.name : "A place to sit, somewhere"}
+                    </span>
+                  );
+                })}
               </div>
               <h3 className="game-passport-heading">Little adventures</h3>
               <div className="game-activity-list">
@@ -1015,6 +1314,10 @@ export default function Game({ onExit, onRecord }) {
                 <span>
                   <kbd>R</kbd>
                   <strong>Ride / park the scooter</strong>
+                </span>
+                <span>
+                  <kbd>B</kbd>
+                  <strong>Naadan bus fast travel</strong>
                 </span>
                 <span>
                   <kbd>M</kbd>

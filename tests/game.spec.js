@@ -6,24 +6,31 @@ import {
   sites,
   activities,
   regionAt,
+  REGION_GATEWAYS,
+  REST_SPOTS,
+  travelDestinations,
+  stepBoat,
+  BOAT,
 } from "../src/game/world.js";
 
 test.describe.configure({ mode: "serial" });
 
-async function enter(page, position) {
+async function enter(page, position, discoveries = []) {
   if (position)
     await page.addInitScript(
-      (position) =>
+      ([position, discoveries]) =>
         localStorage.setItem(
           "kerala-world-journey",
           JSON.stringify({
+            v: 2,
             position,
-            discoveries: [],
+            discoveries,
             interactions: [],
+            moments: [],
             cells: [],
           }),
         ),
-      position,
+      [position, discoveries],
     );
   await page.goto("/#world");
   await expect(page.getByTestId("kerala-game")).toHaveAttribute(
@@ -59,9 +66,49 @@ test("world collision and activity definitions are traversable", () => {
   sites.forEach((s) => expect(canWalk(s.x, s.z), s.name).toBe(true));
   activities.forEach((a) =>
     a.requires.forEach((id) =>
-      expect(sites.some((s) => s.id === id)).toBe(true),
+      expect(
+        a.source === "moments"
+          ? REST_SPOTS.some((s) => s.id === id)
+          : sites.some((s) => s.id === id),
+        `${a.id} requires ${id}`,
+      ).toBe(true),
     ),
   );
+  // Every bus stand must sit on walkable ground inside the region it serves.
+  REGION_GATEWAYS.forEach((stop) => {
+    expect(canWalk(stop.x, stop.z), stop.name).toBe(true);
+    expect(regionAt(stop.x, stop.z).id, stop.name).toBe(stop.region);
+  });
+  REST_SPOTS.forEach((spot) =>
+    expect(canWalk(spot.x, spot.z), spot.name).toBe(true),
+  );
+});
+
+test("fast travel opens up through progress, not by walking to every stop", () => {
+  const at = (discoveries) => travelDestinations({ discoveries });
+  // A brand new journey can still ride home, but no further.
+  const fresh = at([]);
+  expect(fresh.filter((d) => d.unlocked).map((d) => d.id)).toEqual([
+    "gw-backwaters",
+  ]);
+  // Three discoveries anywhere open the next region stand — no trek required.
+  const three = at(["village", "beach", "jetty"]);
+  expect(three.find((d) => d.id === "gw-central").unlocked).toBe(true);
+  expect(three.find((d) => d.id === "gw-malabar").unlocked).toBe(false);
+  expect(three.find((d) => d.id === "gw-malabar").remaining).toBe(3);
+  // Reaching a region yourself opens its stand ahead of the progress gate.
+  expect(at(["fort"]).find((d) => d.id === "gw-malabar").unlocked).toBe(true);
+  // Every place already found is its own destination.
+  const found = at(["village", "fort", "teahills"]);
+  const places = found.filter((d) => d.kind === "site");
+  expect(places.map((d) => d.siteId).sort()).toEqual([
+    "fort",
+    "teahills",
+    "village",
+  ]);
+  places.forEach((d) => expect(canWalk(d.x, d.z), d.name).toBe(true));
+  // Undiscovered places never become destinations.
+  expect(found.some((d) => d.siteId === "pond")).toBe(false);
 });
 
 test("3D player walks, discovers, pauses, and preserves the portal passport", async ({
@@ -147,13 +194,15 @@ test("local food interaction saves and canoe can be boarded and steered", async 
     "data-boating",
     "true",
   );
-  await page.keyboard.down("s");
+  await page.keyboard.down("w");
   await expect
-    .poll(async () =>
-      Number(await page.getByTestId("kerala-game").getAttribute("data-z")),
+    .poll(
+      async () =>
+        Number(await page.getByTestId("kerala-game").getAttribute("data-z")),
+      { timeout: 15000 },
     )
     .toBeGreaterThan(15);
-  await page.keyboard.up("s");
+  await page.keyboard.up("w");
   await page.getByRole("button", { name: "Step ashore" }).click();
   await expect(page.getByTestId("kerala-game")).toHaveAttribute(
     "data-boating",
@@ -286,4 +335,180 @@ test("the highway bridge carries the player across the river into Central Kerala
   await page.keyboard.up("w");
   await page.keyboard.up("Shift");
   expect(errors).toEqual([]);
+});
+
+test("the bus network unlocks with discovery and fast travels across Kerala", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await enter(page, { x: 8, z: 84 });
+  const game = page.getByTestId("kerala-game");
+  await expect(page.locator(".game-interaction")).toContainText(
+    "naadan bus stop",
+  );
+  await page.keyboard.press("b");
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("Where to, then?");
+  // Far region stands stay closed until the journey has grown.
+  await expect(
+    dialog.getByRole("button", { name: /Elavara Hill Stand/ }),
+  ).toBeDisabled();
+  await page.keyboard.press("Escape");
+  // Progress alone opens them — no walk to the stand required.
+  // Seed after leaving: the world writes its own journey back on exit.
+  await page.getByRole("button", { name: "Back to Kerala" }).click();
+  await page.evaluate(() =>
+    localStorage.setItem(
+      "kerala-world-journey",
+      JSON.stringify({
+        v: 2,
+        position: { x: 0, z: 76 },
+        discoveries: [
+          "village",
+          "beach",
+          "jetty",
+          "tea-shop",
+          "courtyard",
+          "coir",
+          "paddy",
+          "kavu",
+          "lookout",
+        ],
+        interactions: [],
+        moments: [],
+        cells: [],
+      }),
+    ),
+  );
+  await page
+    .getByRole("button", { name: /Don't just discover Kerala/ })
+    .click();
+  await page.getByRole("button", { name: /Continue your journey/ }).click();
+  await page.keyboard.press("b");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: /Elavara Hill Stand/ })
+    .click();
+  await expect
+    .poll(async () => Number(await game.getAttribute("data-x")))
+    .toBeGreaterThan(500);
+  expect(errors).toEqual([]);
+});
+
+test("a discovered place can be picked straight off the map and travelled to", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await enter(page, { x: 0, z: 76 }, ["village", "beach"]);
+  const game = page.getByTestId("kerala-game");
+  await page.keyboard.press("m");
+  const dialog = page.getByRole("dialog");
+  await dialog
+    .getByRole("button", { name: "Travel to The Quiet Shore" })
+    .click({ force: true });
+  await expect(dialog.locator(".game-map-pick")).toContainText(
+    "The Quiet Shore",
+  );
+  await dialog.getByRole("button", { name: "Travel here" }).click();
+  await expect
+    .poll(async () => Number(await game.getAttribute("data-x")))
+    .toBeLessThan(-60);
+});
+
+test("sitting at a rest spot records a quiet moment in the passport", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await enter(page, { x: -70, z: 21 });
+  await expect(page.locator(".game-interaction")).toContainText("Sit a while");
+  await page.keyboard.press("e");
+  await expect(page.locator(".game-rest-overlay")).toContainText(
+    "The Driftwood Log",
+  );
+  await expect(page.getByTestId("kerala-game")).toHaveAttribute(
+    "data-sitting",
+    "beach-log",
+  );
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            JSON.parse(localStorage.getItem("kerala-world-journey")).moments,
+        ),
+      { timeout: 20000 },
+    )
+    .toContain("beach-log");
+  await page.keyboard.press("e");
+  await expect(page.locator(".game-rest-overlay")).toHaveCount(0);
+  await page.keyboard.press("p");
+  await expect(page.getByRole("dialog")).toContainText("The Driftwood Log");
+});
+
+test("the canoe paddles like a boat: slow to build way, long to lose it", () => {
+  const dt = 1 / 60;
+  const run = (steps, input, from = { heading: 0, speed: 0 }) => {
+    let state = { ...from };
+    for (let i = 0; i < steps; i++) {
+      const next = stepBoat({ ...state, ...input, dt });
+      state = { heading: next.heading, speed: next.speed };
+    }
+    return state;
+  };
+  // Way builds over several strokes rather than snapping to full speed.
+  const afterHalfSecond = run(30, { thrust: 1 }).speed;
+  expect(afterHalfSecond).toBeGreaterThan(0.3);
+  expect(afterHalfSecond).toBeLessThan(BOAT.forward * 0.6);
+  // Top speed stays well under a 10/s land sprint, and never exceeds its cap.
+  const flatOut = run(600, { thrust: 1 }).speed;
+  expect(flatOut).toBeCloseTo(BOAT.forward, 1);
+  expect(flatOut).toBeLessThan(6);
+  // Reverse is slower still.
+  expect(Math.abs(run(600, { thrust: -1 }).speed)).toBeCloseTo(BOAT.reverse, 1);
+  // Releasing the paddle glides down instead of stopping dead or running on.
+  const cruising = { heading: 0, speed: BOAT.forward };
+  const oneSecond = run(60, { thrust: 0 }, cruising).speed;
+  const fourSeconds = run(240, { thrust: 0 }, cruising).speed;
+  expect(oneSecond).toBeLessThan(BOAT.forward);
+  expect(oneSecond).toBeGreaterThan(BOAT.forward * 0.4);
+  expect(fourSeconds).toBeLessThan(oneSecond);
+  expect(fourSeconds).toBeLessThan(0.7);
+  // With no input at all the canoe simply sits still.
+  expect(run(120, { thrust: 0 }).speed).toBe(0);
+  // Steering a stationary canoe turns it without moving it.
+  const turned = stepBoat({ heading: 0, speed: 0, turn: 1, dt });
+  expect(turned.heading).toBeLessThan(0);
+  expect(Math.hypot(turned.dx, turned.dz)).toBe(0);
+});
+
+test("the canoe can be boarded, paddled forward, and comes to rest", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  await enter(page, { x: 24, z: 5 });
+  const game = page.getByTestId("kerala-game");
+  const z = async () => Number(await game.getAttribute("data-z"));
+  await page.keyboard.press("e");
+  await page.getByRole("button", { name: "Borrow the canoe" }).click();
+  await expect(game).toHaveAttribute("data-boating", "true");
+  // The bow points up the reach, so W paddles into open water.
+  const from = await z();
+  await page.keyboard.down("w");
+  await expect
+    .poll(z, { timeout: 20000 })
+    .toBeGreaterThan(from + 2);
+  await page.keyboard.up("w");
+  // It glides, then settles, rather than running on for ever.
+  await expect
+    .poll(
+      async () => {
+        const a = await z();
+        await page.waitForTimeout(700);
+        return Math.abs((await z()) - a);
+      },
+      { timeout: 30000 },
+    )
+    .toBeLessThan(0.1);
 });

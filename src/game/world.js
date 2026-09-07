@@ -406,6 +406,14 @@ export const activities = [
     source: "discoveries",
     badge: "Southern Soul",
   },
+  {
+    id: "quiet-moments",
+    name: "Sit With Kerala",
+    description: "Rest at the driftwood log, the ghat step, and the cloudline bench.",
+    requires: ["beach-log", "ghat-step", "viewpoint-bench"],
+    source: "moments",
+    badge: "Still Water",
+  },
 ];
 
 export const ranks = [
@@ -422,8 +430,9 @@ export function rankFor(journey) {
   const score =
     journey.discoveries.length +
     journey.interactions.length +
+    (journey.moments || []).length +
     activities.filter((a) =>
-      a.requires.every((id) => journey[a.source].includes(id)),
+      a.requires.every((id) => (journey[a.source] || []).includes(id)),
     ).length;
   let current = ranks[0];
   for (const rank of ranks) if (score >= rank.at) current = rank;
@@ -432,6 +441,174 @@ export function rankFor(journey) {
 }
 
 export const SCOOTER_HOME = { x: 9, z: 70 };
+
+// A paddled canoe, not a speedboat: it builds way over several strokes, tops
+// out well below a run, and keeps gliding for a while after you stop paddling.
+export const BOAT = {
+  forward: 4.6,
+  reverse: 2,
+  turn: 1.15,
+  accelerate: 1.5,
+  glide: 0.55,
+};
+
+export function stepBoat({ heading, speed, turn = 0, thrust = 0, dt }) {
+  const nextHeading = heading - turn * dt * BOAT.turn;
+  const target = thrust > 0 ? thrust * BOAT.forward : thrust * BOAT.reverse;
+  const gaining = Math.abs(target) > Math.abs(speed);
+  const response = gaining ? BOAT.accelerate : BOAT.glide;
+  let nextSpeed = speed + (target - speed) * Math.min(1, dt * response);
+  if (Math.abs(nextSpeed) < 0.02) nextSpeed = 0;
+  return {
+    heading: nextHeading,
+    speed: nextSpeed,
+    dx: -Math.sin(nextHeading) * nextSpeed,
+    dz: -Math.cos(nextHeading) * nextSpeed,
+  };
+}
+
+// Naadan bus stands: one gateway per region, opened by overall progress so the
+// map keeps widening as you explore. Reaching a region yourself opens it early.
+export const REGION_GATEWAYS = [
+  {
+    id: "gw-backwaters",
+    region: "backwaters",
+    name: "Kadal Village Stand",
+    x: 10,
+    z: 84,
+    at: 0,
+  },
+  {
+    id: "gw-central",
+    region: "central",
+    name: "Periyar Bridge Stand",
+    x: 20,
+    z: -632,
+    at: 3,
+  },
+  {
+    id: "gw-malabar",
+    region: "malabar",
+    name: "Chandhapura Beach Stand",
+    x: -36,
+    z: -1000,
+    at: 6,
+  },
+  {
+    id: "gw-highlands",
+    region: "highlands",
+    name: "Elavara Hill Stand",
+    x: 554,
+    z: -252,
+    at: 9,
+  },
+  {
+    id: "gw-south",
+    region: "south",
+    name: "Ashtamudi Jetty Stand",
+    x: 128,
+    z: 452,
+    at: 12,
+  },
+];
+
+// Everywhere the bus will take you: region stands you have unlocked, plus every
+// place you have already found. First visits are earned; return trips are free.
+export function travelDestinations(journey) {
+  const found = new Set(journey?.discoveries || []);
+  const gateways = REGION_GATEWAYS.map((gateway) => {
+    const reached = sites.some(
+      (s) => found.has(s.id) && regionAt(s.x, s.z).id === gateway.region,
+    );
+    return {
+      ...gateway,
+      kind: "gateway",
+      unlocked: gateway.at === 0 || reached || found.size >= gateway.at,
+      remaining: Math.max(0, gateway.at - found.size),
+    };
+  });
+  const visited = sites
+    .filter((s) => found.has(s.id))
+    .map((s) => ({
+      id: `site-${s.id}`,
+      siteId: s.id,
+      name: s.name,
+      x: s.x,
+      z: s.z,
+      region: regionAt(s.x, s.z).id,
+      kind: "site",
+      unlocked: true,
+    }));
+  return [...gateways, ...visited];
+}
+
+// Quiet rest spots: sit, breathe, and let the camera drink in the view.
+// `face` is the yaw the seated player looks along; the seat prop goes behind them.
+export const REST_SPOTS = [
+  {
+    id: "beach-log",
+    name: "The Driftwood Log",
+    x: -70,
+    z: 18,
+    face: Math.PI / 2,
+    seat: "log",
+    line: "The fishing boats rock. The sea keeps its own slow time.",
+  },
+  {
+    id: "lookout-bench",
+    name: "The Lookout Bench",
+    x: 80.5,
+    z: 114,
+    face: Math.PI,
+    seat: "none",
+    line: "Coast, village, canal — the whole first chapter in one view.",
+  },
+  {
+    id: "paddy-bund",
+    name: "The Paddy Bund",
+    x: -47,
+    z: -95,
+    face: Math.PI,
+    seat: "bench",
+    line: "Wind writes moving lines across the young rice.",
+  },
+  {
+    id: "ghat-step",
+    name: "The Ghat Step",
+    x: 30,
+    z: -628,
+    face: Math.PI,
+    seat: "none",
+    line: "Cool stone underfoot. The river goes about its business.",
+  },
+  {
+    id: "kavu-roots",
+    name: "The Kavu Roots",
+    x: 88,
+    z: -74,
+    face: -Math.PI / 2,
+    seat: "log",
+    line: "Under the old tree, even your breathing slows down.",
+  },
+  {
+    id: "viewpoint-bench",
+    name: "The Cloudline Bench",
+    x: 691,
+    z: -326,
+    face: -2.2,
+    seat: "bench",
+    line: "From up here, the road you travelled is a thin gold thread.",
+  },
+  {
+    id: "lighthouse-rail",
+    name: "The Lighthouse Rail",
+    x: -66,
+    z: 634,
+    face: Math.PI / 2,
+    seat: "bench",
+    line: "Surf below, beam above, and the evening going soft.",
+  },
+];
 
 export const buildings = [
   // Kadal Village (the original backwater chapter)
@@ -679,7 +856,9 @@ export function readJourney() {
               data[key].filter((id) =>
                 key === "cells"
                   ? /^\d+,\d+$/.test(id)
-                  : sites.some((s) => s.id === id),
+                  : key === "moments"
+                    ? REST_SPOTS.some((s) => s.id === id)
+                    : sites.some((s) => s.id === id),
               ),
             ),
           ]
@@ -689,6 +868,7 @@ export function readJourney() {
       v: 2,
       discoveries: clean("discoveries"),
       interactions: clean("interactions"),
+      moments: clean("moments"),
       // Cell coordinates changed when the world grew; older fog resets, discoveries stay.
       cells: data?.v === 2 ? clean("cells") : [],
       position:
@@ -711,6 +891,7 @@ export function readJourney() {
       v: 2,
       discoveries: [],
       interactions: [],
+      moments: [],
       cells: [],
       position: REGION.spawn,
       scooter: SCOOTER_HOME,

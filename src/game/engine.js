@@ -1,10 +1,19 @@
 import * as THREE from "three";
 import { buildEnvironment } from "./environment.js";
-import { REGION, sites, canWalk, terrainHeight, cellAt } from "./world.js";
+import {
+  REGION,
+  sites,
+  canWalk,
+  terrainHeight,
+  cellAt,
+  REGION_GATEWAYS,
+  REST_SPOTS,
+  stepBoat,
+} from "./world.js";
 
 export function createGame(
   container,
-  { initial, onUpdate, onDiscover, onInteract, onError },
+  { initial, onUpdate, onDiscover, onInteract, onMoment, onEvent, onError },
 ) {
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
@@ -51,6 +60,7 @@ export function createGame(
   const velocity = new THREE.Vector2();
   const keys = new Set();
   const discovered = new Set(initial.discoveries);
+  const rested = new Set(initial.moments || []);
   const cells = new Set(initial.cells);
   discovered.forEach((id) => {
     const beacon = beacons.get(id);
@@ -85,12 +95,24 @@ export function createGame(
     pointer = null,
     viewReady = false,
     timeMode = "day";
+  let sitting = null,
+    satFor = 0,
+    nearestRest = null,
+    nearestStop = null;
+  let rain = 0,
+    rainTarget = 0,
+    weatherIn = 55 + Math.random() * 70;
+  let boatHeading = 0,
+    boatSpeed = 0;
   let invalidatedAt = performance.now();
   let lastDrum = 0;
   const cameraTarget = new THREE.Vector3(),
     desiredCamera = new THREE.Vector3();
   const dayColor = new THREE.Color("#bfd8ce"),
-    nightColor = new THREE.Color("#172a3a");
+    nightColor = new THREE.Color("#172a3a"),
+    rainColor = new THREE.Color("#8ea7a8");
+  let viewDistance = 13,
+    viewPitch = 0.43;
 
   function resize() {
     const { width, height } = container.getBoundingClientRect();
@@ -109,14 +131,66 @@ export function createGame(
     pointer = null;
   };
   function interaction() {
-    if (!paused && nearest && !riding) onInteract(nearest.id);
+    if (paused || riding) return;
+    if (sitting) return stand();
+    if (nearest) onInteract(nearest.id);
+    else if (nearestRest) sit();
+  }
+  function sit() {
+    if (paused || riding || boating || !nearestRest) return false;
+    sitting = nearestRest;
+    satFor = 0;
+    // Settle onto the seat and turn to the view it was placed for.
+    position.set(
+      sitting.x,
+      terrainHeight(sitting.x, sitting.z),
+      sitting.z,
+    );
+    player.position.copy(position);
+    player.rotation.y = sitting.face;
+    yaw = sitting.face;
+    velocity.set(0, 0);
+    clearInput();
+    publish();
+    return true;
+  }
+  function stand() {
+    if (!sitting) return false;
+    sitting = null;
+    publish();
+    return true;
+  }
+  // Fast travel: the naadan bus drops you anywhere the journey has opened up.
+  function travelTo(destination) {
+    if (
+      !destination ||
+      !Number.isFinite(destination.x) ||
+      !Number.isFinite(destination.z) ||
+      !canWalk(destination.x, destination.z) ||
+      riding ||
+      boating
+    )
+      return false;
+    sitting = null;
+    position.set(
+      destination.x,
+      terrainHeight(destination.x, destination.z),
+      destination.z,
+    );
+    player.position.copy(position);
+    velocity.set(0, 0);
+    clearInput();
+    viewReady = false;
+    chime();
+    publish();
+    return true;
   }
   const nearScooter = () =>
     !boating &&
     Math.hypot(position.x - scooter.position.x, position.z - scooter.position.z) <
       4;
   function ride() {
-    if (paused || boating) return false;
+    if (paused || boating || sitting) return false;
     if (riding) {
       riding = false;
       scooter.position.set(
@@ -278,6 +352,10 @@ export function createGame(
       nearby: nearest?.id || null,
       boating,
       riding,
+      sitting: sitting?.id || null,
+      restSpot: !sitting && nearestRest ? nearestRest.id : null,
+      busStop: nearestStop?.id || null,
+      rain,
       nearScooter: nearScooter(),
       scooter: { x: scooter.position.x, z: scooter.position.z },
       night,
@@ -302,41 +380,81 @@ export function createGame(
         playBeat();
         lastDrum = elapsed;
       }
-      const inputX =
-        Number(keys.has("KeyD") || keys.has("ArrowRight")) -
-        Number(keys.has("KeyA") || keys.has("ArrowLeft")) +
-        touchMove.x;
-      const inputZ =
-        Number(keys.has("KeyS") || keys.has("ArrowDown")) -
-        Number(keys.has("KeyW") || keys.has("ArrowUp")) +
-        touchMove.y;
+      // Weather drifts between clear spells and short monsoon showers.
+      weatherIn -= dt;
+      if (weatherIn <= 0) {
+        rainTarget = rainTarget > 0.05 ? 0 : 0.55 + Math.random() * 0.45;
+        weatherIn = rainTarget > 0.05 ? 26 + Math.random() * 24 : 70 + Math.random() * 90;
+        if (rainTarget > 0.05) onEvent?.("rain-start");
+        else if (rain > 0.05) onEvent?.("rain-stop");
+      }
+      rain = THREE.MathUtils.lerp(rain, rainTarget, Math.min(1, dt * 1.3));
+      if (sitting) {
+        satFor += dt;
+        if (satFor > 3.2 && !rested.has(sitting.id)) {
+          rested.add(sitting.id);
+          chime();
+          onMoment?.(sitting.id);
+        }
+        yaw += dt * 0.075;
+      }
+      const inputX = sitting
+        ? 0
+        : Number(keys.has("KeyD") || keys.has("ArrowRight")) -
+          Number(keys.has("KeyA") || keys.has("ArrowLeft")) +
+          touchMove.x;
+      const inputZ = sitting
+        ? 0
+        : Number(keys.has("KeyS") || keys.has("ArrowDown")) -
+          Number(keys.has("KeyW") || keys.has("ArrowUp")) +
+          touchMove.y;
+      if (sitting && (keys.size || Math.hypot(touchMove.x, touchMove.y) > 0.2))
+        stand();
       const magnitude = Math.max(1, Math.hypot(inputX, inputZ));
-      const speed = boating
-        ? 10
-        : riding
-          ? 17.5
-          : sprint || keys.has("ShiftLeft") || keys.has("ShiftRight")
-            ? 10
-            : 5.4;
-      const vx =
-        ((inputX * Math.cos(yaw) + inputZ * Math.sin(yaw)) / magnitude) * speed;
-      const vz =
-        ((-inputX * Math.sin(yaw) + inputZ * Math.cos(yaw)) / magnitude) *
-        speed;
-      velocity.lerp(new THREE.Vector2(vx, vz), 1 - Math.exp(-12 * dt));
-      const nx = position.x + velocity.x * dt,
-        nz = position.z + velocity.y * dt;
+      const speed = riding
+        ? 17.5
+        : sprint || keys.has("ShiftLeft") || keys.has("ShiftRight")
+          ? 10
+          : 5.4;
       if (boating) {
-        position.x = THREE.MathUtils.clamp(nx, 32, 44);
-        position.z = THREE.MathUtils.clamp(nz, 7, 135);
+        // A paddled canoe: steer with A/D, paddle with W/S, and glide when you stop.
+        const next = stepBoat({
+          heading: boatHeading,
+          speed: boatSpeed,
+          turn: inputX,
+          thrust: -inputZ,
+          dt,
+        });
+        boatHeading = next.heading;
+        boatSpeed = next.speed;
+        velocity.set(next.dx, next.dz);
+        const wantX = position.x + next.dx * dt;
+        const wantZ = position.z + next.dz * dt;
+        const nx = THREE.MathUtils.clamp(wantX, 32, 44);
+        const nz = THREE.MathUtils.clamp(wantZ, 7, 135);
+        // Nudging a bank scrubs off way rather than pinning you against it.
+        if (nx !== wantX || nz !== wantZ) boatSpeed *= 0.35;
+        position.x = nx;
+        position.z = nz;
+        player.rotation.y = boatHeading;
+        moving = Math.abs(boatSpeed) > 0.25;
       } else {
+        const vx =
+          ((inputX * Math.cos(yaw) + inputZ * Math.sin(yaw)) / magnitude) *
+          speed;
+        const vz =
+          ((-inputX * Math.sin(yaw) + inputZ * Math.cos(yaw)) / magnitude) *
+          speed;
+        velocity.lerp(new THREE.Vector2(vx, vz), 1 - Math.exp(-12 * dt));
+        const nx = position.x + velocity.x * dt,
+          nz = position.z + velocity.y * dt;
         if (canWalk(nx, position.z)) position.x = nx;
         if (canWalk(position.x, nz)) position.z = nz;
+        moving = velocity.length() > 0.25;
       }
-      moving = velocity.length() > 0.25;
       position.y = boating ? 0.15 : terrainHeight(position.x, position.z);
       let turn = 0;
-      if (moving) {
+      if (moving && !boating) {
         const target = Math.atan2(-velocity.x, -velocity.y);
         turn =
           Math.atan2(
@@ -347,14 +465,22 @@ export function createGame(
       }
       player.position.copy(position);
       if (riding) player.position.y += 0.55;
+      if (sitting) {
+        player.position.y -= 0.5;
+        player.rotation.y = sitting.face;
+      }
       playerLimbs.forEach((limb, i) => {
         limb.rotation.x = riding
           ? i < 2
             ? -1.05
             : -0.55
-          : moving && !boating
-            ? Math.sin(elapsed * (speed > 6 ? 14 : 9)) * (i % 2 ? -1 : 1) * 0.5
-            : 0;
+          : sitting
+            ? i < 2
+              ? -1.5
+              : -0.18 + Math.sin(elapsed * 0.7) * 0.05
+            : moving && !boating
+              ? Math.sin(elapsed * (speed > 6 ? 14 : 9)) * (i % 2 ? -1 : 1) * 0.5
+              : 0;
       });
       canoe.visible = boating;
       if (boating) {
@@ -378,6 +504,14 @@ export function createGame(
           tire.rotation.x += spin;
         });
       }
+      nearestRest =
+        REST_SPOTS.find(
+          (s) => Math.hypot(position.x - s.x, position.z - s.z) < 4.2,
+        ) || null;
+      nearestStop =
+        REGION_GATEWAYS.find(
+          (s) => Math.hypot(position.x - s.x, position.z - s.z) < 7,
+        ) || null;
       nearest =
         sites
           .filter(
@@ -407,7 +541,12 @@ export function createGame(
           cells.add(cellAt(position.x + dx, position.z + dz));
       night =
         timeMode === "night" || (timeMode === "cycle" && elapsed % 240 > 150);
-      environment.update(elapsed, dt, night);
+      environment.update(elapsed, dt, night, {
+        rain,
+        x: position.x,
+        z: position.z,
+        rowing: boating ? Math.min(1, Math.abs(boatSpeed) / 3.4) : 0,
+      });
       if (now - lastPublish > 160) {
         publish();
         lastPublish = now;
@@ -424,15 +563,34 @@ export function createGame(
       dt * 2,
     );
     scene.background.lerp(night ? nightColor : dayColor, dt * 1.6);
+    if (rain > 0.01) scene.background.lerp(rainColor, rain * 0.55);
     scene.fog.color.copy(scene.background);
+    scene.fog.density = 0.004 + rain * 0.006;
+    sun.intensity *= 1 - rain * 0.5;
+    hemisphere.intensity *= 1 - rain * 0.25;
     sun.color.set(night ? "#acc8ed" : "#ffe5b6");
     sun.position.set(position.x - 45, position.y + 65, position.z + 30);
     sun.target.position.copy(position);
-    cameraTarget.set(position.x, position.y + 1.65, position.z);
+    // Sitting eases the camera into a low, close, slowly drifting view.
+    viewDistance = THREE.MathUtils.lerp(
+      viewDistance,
+      sitting ? 5.6 : distance,
+      Math.min(1, dt * 1.6),
+    );
+    viewPitch = THREE.MathUtils.lerp(
+      viewPitch,
+      sitting ? 0.22 : pitch,
+      Math.min(1, dt * 1.6),
+    );
+    cameraTarget.set(
+      position.x,
+      position.y + (sitting ? 1.15 : 1.65),
+      position.z,
+    );
     desiredCamera.set(
-      position.x + Math.sin(yaw) * distance * Math.cos(pitch),
-      position.y + 2 + Math.sin(pitch) * distance,
-      position.z + Math.cos(yaw) * distance * Math.cos(pitch),
+      position.x + Math.sin(yaw) * viewDistance * Math.cos(viewPitch),
+      position.y + 2 + Math.sin(viewPitch) * viewDistance,
+      position.z + Math.cos(yaw) * viewDistance * Math.cos(viewPitch),
     );
     desiredCamera.y = Math.max(
       desiredCamera.y,
@@ -509,12 +667,19 @@ export function createGame(
     playBeat,
     interact: interaction,
     ride,
+    sit,
+    stand,
+    travelTo,
     board() {
-      if (riding) return false;
+      if (riding || sitting) return false;
       if (!boating && Math.hypot(position.x - 24, position.z - 5) > 13)
         return false;
       boating = !boating;
+      boatSpeed = 0;
       if (boating) {
+        // Binu points the bow up the reach, so W paddles into open water.
+        boatHeading = Math.PI;
+        player.rotation.y = boatHeading;
         position.set(38, 0, 12);
       } else {
         if (Math.abs(position.z - 5) > 18) {
