@@ -1,3 +1,5 @@
+import { STORIES, storyById } from "./stories.js";
+import StoryCard from "./StoryCard.jsx";
 import { FISH_LANDING } from "./fishing.js";
 import { AUTO_STOPS, autoOpen } from "./auto.js";
 import React, { useEffect, useRef, useState } from "react";
@@ -453,6 +455,19 @@ export default function Game({ onExit, onRecord }) {
     encounterDetail || sites.find((s) => s.id === encounter);
   const life = state.life;
   const memories = life?.memories || [];
+  const [storyId, setStoryId] = useState(null);
+  const activeStory = storyById(storyId);
+  const nearbyStory = STORIES.find(
+    (s) => Math.hypot(state.x - s.x, state.z - s.z) < 6,
+  );
+  const openStory = (id) => {
+    setStoryId(id);
+    setPanel("story");
+  };
+  const keepStory = () => {
+    if (engine.current?.keepPhotoStory(storyId))
+      save({ ...journeyRef.current, life: engine.current.getLife() });
+  };
   const cue = state.cue;
   const cueDirection = cue
     ? (() => {
@@ -961,6 +976,16 @@ export default function Game({ onExit, onRecord }) {
           )}
           {life && !panel && (
             <div className="game-life-actions">
+              {nearbyStory &&
+                !state.autoPassenger &&
+                !state.busPassenger &&
+                !state.ferryPassenger &&
+                !state.boating &&
+                !state.riding && (
+                  <button onClick={() => openStory(nearbyStory.id)}>
+                    Inspect {nearbyStory.label}
+                  </button>
+                )}
               {!state.autoPassenger &&
                 !state.busPassenger &&
                 !state.ferryPassenger &&
@@ -1319,19 +1344,29 @@ export default function Game({ onExit, onRecord }) {
       {panel && (
         <GameDialog
           title={
-            panel === "encounter"
-              ? encounterSite.name
-              : panel === "passport"
-                ? "Kerala game passport"
-                : panel === "map"
-                  ? "Exploration map"
-                  : panel === "travel"
-                    ? "Naadan bus network"
-                    : "Game menu"
+            panel === "story"
+              ? activeStory?.title || "Photo story"
+              : panel === "encounter"
+                ? encounterSite.name
+                : panel === "passport"
+                  ? "Kerala game passport"
+                  : panel === "map"
+                    ? "Exploration map"
+                    : panel === "travel"
+                      ? "Naadan bus network"
+                      : "Game menu"
           }
           onClose={closePanel}
           className={`game-panel-${panel}`}
         >
+          {panel === "story" && activeStory && (
+            <StoryCard
+              key={storyId}
+              story={activeStory}
+              kept={memories.some((m) => m.id === `story-${storyId}`)}
+              onKeep={keepStory}
+            />
+          )}
           {panel === "encounter" && encounterSite && (
             <>
               <span className="game-overline">
@@ -1656,6 +1691,12 @@ export default function Game({ onExit, onRecord }) {
                         DAY {memory.day} · {memory.place}
                       </small>
                       <p>{memory.text}</p>
+                      {memory.id.startsWith("story-") &&
+                        storyById(memory.id.slice(6)) && (
+                          <button onClick={() => openStory(memory.id.slice(6))}>
+                            Reopen photo story
+                          </button>
+                        )}
                       <button
                         aria-pressed={memory.pinned}
                         onClick={() => engine.current?.pinMemory(memory.id)}

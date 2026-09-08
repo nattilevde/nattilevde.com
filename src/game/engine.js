@@ -1,3 +1,5 @@
+import { teaOpen, teaProgramme } from "./tea-shop.js";
+import { keepPhotoStory } from "./life.js";
 import { createTransportMotion } from "./transport-motion.js";
 import { fishMarketOpen } from "./fishing.js";
 import { AUTO_STOPS, autoPosition } from "./auto.js";
@@ -684,9 +686,9 @@ export function createGame(
             ...ferryPosition(life),
             moving: life.ferry.phase === "crossing",
           },
-          teaOpen: life.residents.some(
-            (r) => r.id === "leela" && r.mode === "working",
-          ),
+          teaOpen: teaOpen(life),
+          teaTV: teaOpen(life) && teaProgramme(life),
+          teaPour: life.tea.pouring > 0,
         });
       if (now - lastPublish > 160) {
         publish();
@@ -877,6 +879,11 @@ export function createGame(
       viewReady = false;
       rain = life.weather.rain;
       publish();
+    },
+    keepPhotoStory(id) {
+      const result = keepPhotoStory(life, id, position);
+      if (result) publish();
+      return result;
     },
     pinMemory(id) {
       const m = life.memories.find((m) => m.id === id);

@@ -1,3 +1,5 @@
+import { teaOpen, teaProgramme, teaMenu } from "./tea-shop.js";
+import { STORIES, storyImage } from "./stories.js";
 import { fishingPosition, fishMarketOpen, FISH_MARKET } from "./fishing.js";
 import { AUTO_STOPS, autoPosition } from "./auto.js";
 import * as THREE from "three";
@@ -662,6 +664,170 @@ export function buildEnvironment(scene) {
       ),
     ]),
   );
+  const teaProps = group(
+    "Tea service and snack tray",
+    -12,
+    terrainHeight(-12, 32),
+    32,
+  );
+  block(teaProps, m.wood, 0.75, 0.75, 0, 0.8, 0.12, 2.2);
+  block(teaProps, m.grey, 0.75, 0.84, -0.35, 0.65, 0.04, 1.2);
+  const snacks = Array.from({ length: 8 }, (_, i) =>
+    mesh(
+      teaProps,
+      sphere,
+      m.gold,
+      0.6 + (i % 2) * 0.28,
+      0.94,
+      -0.8 + Math.floor(i / 2) * 0.28,
+      0.08,
+      0.07,
+      0.2,
+    ),
+  );
+  const menuSigns = ["Pazham pori", "Parippuvada"].map((label) =>
+    sign(teaProps, label, "LEELA'S TRAY", 0.78, 1.25, -1.1, 1.2, Math.PI / 2),
+  );
+  const pourProps = new THREE.Group();
+  villagers.get("leela").person.add(pourProps);
+  const topCup = mesh(
+    pourProps,
+    cylinder,
+    m.grey,
+    -0.43,
+    1.8,
+    -0.4,
+    0.09,
+    0.19,
+    0.09,
+  );
+  mesh(pourProps, cylinder, m.grey, 0.43, 1.02, -0.4, 0.09, 0.19, 0.09);
+  const teaStream = beam(
+    pourProps,
+    m.rope,
+    [-0.43, 1.8, -0.4],
+    [0.43, 1.12, -0.4],
+    0.014,
+  );
+  const tv = group("Tea-shop television", -12.4, terrainHeight(-12.4, 28), 28);
+  tv.rotation.y = Math.PI / 2;
+  block(tv, m.darkWood, 0, 1.9, 0, 1.65, 1.15, 0.55);
+  const tvCanvas = document.createElement("canvas");
+  tvCanvas.width = 256;
+  tvCanvas.height = 160;
+  const tvContext = tvCanvas.getContext("2d");
+  const tvTexture = new THREE.CanvasTexture(tvCanvas);
+  tvTexture.colorSpace = THREE.SRGBColorSpace;
+  textures.add(tvTexture);
+  const tvSurface = material("#ffffff", {
+    map: tvTexture,
+    emissive: "#ffffff",
+    emissiveMap: tvTexture,
+    emissiveIntensity: 0.35,
+  });
+  mesh(tv, plane, tvSurface, 0, 1.9, 0.29, 1.42, 0.92);
+  sign(tv, "KADAL TV", "LOCAL FILM CLUB", 0, 1.05, 0.3, 1.6);
+  let tvFrame = "";
+  function updateTea(life) {
+    const open = teaOpen(life),
+      programme = open ? teaProgramme(life) : null;
+    snacks.forEach((snack, i) => {
+      snack.visible = open && i < life.tea.stock;
+      snack.scale.z = teaMenu(life) === "Pazham pori" ? 0.2 : 0.09;
+    });
+    menuSigns.forEach((label, i) => {
+      label.visible = open && i === (teaMenu(life) === "Pazham pori" ? 0 : 1);
+    });
+    pourProps.visible = open && life.tea.pouring > 0;
+    if (pourProps.visible) {
+      const lift = Math.sin((1 - life.tea.pouring / 4) * Math.PI);
+      const armAngle = 1.5 + lift * 0.85;
+      topCup.position.y = 1.6 - 0.56 * Math.cos(armAngle);
+      topCup.position.z = -0.56 * Math.sin(armAngle);
+      const a = new THREE.Vector3(
+        -0.43,
+        topCup.position.y - 0.09,
+        topCup.position.z,
+      );
+      const b = new THREE.Vector3(0.43, 1.12, -0.4);
+      teaStream.position.copy(a).add(b).multiplyScalar(0.5);
+      teaStream.scale.y = a.distanceTo(b);
+      teaStream.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        b.sub(a).normalize(),
+      );
+      const arms = villagers.get("leela").limbs;
+      arms[2].rotation.x = armAngle;
+      arms[3].rotation.x = 0.8;
+    }
+    const frame = `${programme}-${Math.floor(life.clock * 2)}`;
+    if (frame === tvFrame) return;
+    tvFrame = frame;
+    const c = tvContext,
+      phase = life.clock * 0.3;
+    c.fillStyle =
+      programme === "football"
+        ? "#397954"
+        : programme === "cinema"
+          ? "#688d91"
+          : "#182526";
+    c.fillRect(0, 0, 256, 160);
+    if (programme === "football") {
+      c.strokeStyle = "#f2e8c8";
+      c.lineWidth = 2;
+      c.strokeRect(12, 24, 232, 120);
+      c.beginPath();
+      c.arc(128, 84, 22, 0, Math.PI * 2);
+      c.stroke();
+      c.fillStyle = "#fff2c9";
+      for (let i = 0; i < 8; i++)
+        c.fillRect(
+          30 + i * 27 + Math.sin(phase + i) * 8,
+          48 + (i % 3) * 28,
+          6,
+          10,
+        );
+      c.beginPath();
+      c.arc(
+        128 + Math.sin(phase) * 70,
+        88 + Math.cos(phase) * 32,
+        4,
+        0,
+        Math.PI * 2,
+      );
+      c.fill();
+    } else if (programme === "cinema") {
+      c.fillStyle = "#3c6556";
+      c.fillRect(0, 85, 256, 75);
+      c.fillStyle = "#c0ae86";
+      c.beginPath();
+      c.moveTo(116, 85);
+      c.lineTo(142, 85);
+      c.lineTo(205, 160);
+      c.lineTo(50, 160);
+      c.fill();
+      c.strokeStyle = "#adcbd0";
+      for (let i = 0; i < 22; i++) {
+        const y = (i * 19 + phase * 40) % 160;
+        c.beginPath();
+        c.moveTo(i * 13, y);
+        c.lineTo(i * 13 - 3, y + 9);
+        c.stroke();
+      }
+    }
+    c.fillStyle = "#fff2c9";
+    c.font = "12px sans-serif";
+    c.fillText(
+      programme === "football"
+        ? "KADAL CLUB • ANIMATED FOOTBALL"
+        : programme === "cinema"
+          ? "FILM CLUB • THE RAINY ROAD"
+          : "KADAL TV • OFF",
+      8,
+      15,
+    );
+    tvTexture.needsUpdate = true;
+  }
   const coirCover = block(root, m.teal, 60.7, 0.62, -43, 1.7, 0.12, 2.5);
   coirCover.visible = false;
 
@@ -942,6 +1108,23 @@ export function buildEnvironment(scene) {
     mesh(marketFish, sphere, m.grey, (i - 2) * 0.5, 0.98, 0, 0.1, 0.08, 0.32);
   const fishBuyer = human("Fish buyer", m.gold);
   // A buyer approaches only while stock and trading conditions allow it.
+
+  const storyLoader = new THREE.TextureLoader();
+  const storyFrames = STORIES.map((story) => {
+    const frame = group(
+      story.label,
+      story.frame.x,
+      terrainHeight(story.frame.x, story.frame.z),
+      story.frame.z,
+    );
+    block(frame, m.wood, 0, 1.6, 0, 3.2, 2.5, 0.16, true);
+    for (const x of [-1.3, 1.3])
+      block(frame, m.darkWood, x, 0.6, 0, 0.12, 1.2, 0.12);
+    const surface = material("#f4e4be", { side: THREE.DoubleSide });
+    const photo = mesh(frame, plane, surface, 0, 1.75, 0.09, 2.9, 1.94, 1);
+    sign(frame, "PHOTO STORY", story.label.toUpperCase(), 0, 0.65, 0.1, 2.8);
+    return { story, frame, surface, photo, loaded: false };
+  });
 
   const pondGeometry = ownGeometry(new THREE.CircleGeometry(4.5, 48));
   pondGeometry.rotateX(-Math.PI / 2);
@@ -2693,6 +2876,9 @@ export function buildEnvironment(scene) {
   }
 
   const animated = new Set([
+    teaProps,
+    tv,
+    ...storyFrames.map((p) => p.frame),
     catchBoat,
     fisher.person,
     fishBasket,
@@ -2769,6 +2955,35 @@ export function buildEnvironment(scene) {
   function update(time = 0, dt = 0, night = 0, world = {}) {
     if (disposed) return;
     const t = Number.isFinite(time) ? time : 0;
+    for (const item of storyFrames) {
+      if (
+        !item.loaded &&
+        Math.hypot(
+          (world.x ?? 0) - item.story.x,
+          (world.z ?? 0) - item.story.z,
+        ) < 45
+      ) {
+        item.loaded = true;
+        storyLoader.load(
+          storyImage(item.story, true),
+          (texture) => {
+            if (disposed) {
+              texture.dispose();
+              return;
+            }
+            texture.colorSpace = THREE.SRGBColorSpace;
+            textures.add(texture);
+            item.surface.map = texture;
+            item.surface.color.set("#ffffff");
+            item.surface.needsUpdate = true;
+            item.photo.scale.y =
+              (2.9 * texture.image.height) / texture.image.width;
+          },
+          undefined,
+          () => {},
+        );
+      }
+    }
     const darkness = THREE.MathUtils.clamp(Number(night) || 0, 0, 1);
     const wetness = THREE.MathUtils.clamp(Number(world.rain) || 0, 0, 1);
     if (world.life) {
@@ -2897,6 +3112,7 @@ export function buildEnvironment(scene) {
             limb.rotation.x = -0.9 + Math.sin(t * 3) * 0.3;
         });
       });
+      updateTea(life);
     }
     waterTime.value = t;
     waterNight.value = darkness;

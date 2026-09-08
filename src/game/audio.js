@@ -407,6 +407,31 @@ export function createSoundscape() {
         );
       },
     })),
+    {
+      id: "tea-tv",
+      range: 24,
+      level: 0.24,
+      at: { x: -12.4, z: 28 },
+      when: (l) => !!l.teaTV,
+      every: () => 7,
+      fire(out, l) {
+        // Original short tones; no sampled broadcast or actor voices.
+        [330, 440, l.teaTV === "football" ? 660 : 392].forEach((f, i) =>
+          tone(out, { from: f, peak: 0.035, decay: 0.22, at: i * 0.18 }),
+        );
+      },
+    },
+    {
+      id: "tea-pour",
+      range: 12,
+      level: 0.3,
+      at: { x: -12, z: 32 },
+      when: (l) => !!l.teaPour,
+      every: () => 2,
+      fire(out) {
+        tone(out, { from: 1800, to: 1500, peak: 0.025, decay: 0.12 });
+      },
+    },
     // The chaayakkada: a stove hiss, glass on glass, and unhurried talk.
     {
       id: "chaayakkada",

@@ -1,0 +1,72 @@
+const commons = (name) => `https://commons.wikimedia.org/wiki/File:${name}`;
+export const STORIES = [
+  {
+    id: "shore-photo",
+    label: "The shore album",
+    title: "Boats between journeys",
+    mlTitle: "കടൽത്തീരത്തെ വള്ളങ്ങൾ",
+    x: -74,
+    z: 12,
+    frame: { x: -76, z: 16 },
+    place: "Kadal fishing shore",
+    location: "Kerala coast",
+    date: "12 October 2019",
+    image: "shore",
+    author: "Josephgeorge23",
+    license: "4.0",
+    source: commons("Fishing_boats_in_Kerala,_India.jpg"),
+    alt: "Fishing boats resting together along a Kerala beach.",
+    en: "This real photograph records fishing boats on a Kerala beach in 2019. Look at the different hulls and the space between the boats. In Kadal, Sasi's journey is a fictional interpretation, with simplified work and weather.",
+    ml: "2019-ൽ കേരളത്തിലെ ഒരു കടൽത്തീരത്ത് എടുത്ത ചിത്രമാണിത്. വള്ളങ്ങളുടെ രൂപങ്ങൾ ശ്രദ്ധിക്കൂ. കളിയിലെ ശശിയും അദ്ദേഹത്തിന്റെ യാത്രയും സാങ്കൽപ്പികമാണ്.",
+    notice:
+      "Back in the village, notice what changes at the shore while Sasi is away.",
+  },
+  {
+    id: "coir-photo",
+    label: "The coir photograph",
+    title: "A coconut becomes a thread",
+    mlTitle: "തൊണ്ടിൽ നിന്ന് കയറിലേക്ക്",
+    x: 62,
+    z: -44,
+    frame: { x: 62, z: -49 },
+    place: "Radha's Coir Yard",
+    location: "Kollam",
+    date: "28 November 2005",
+    image: "coir",
+    author: "albert (The Netherlands)",
+    license: "2.0",
+    source: commons(
+      "Women_at_work_in_a_small_scale_coir_spinning_unit_at_kollam.jpg",
+    ),
+    factSource: "https://coirboard.gov.in/?page_id=60",
+    alt: "Two women at work in a coir-spinning unit in Kollam.",
+    en: "Coir is fibre from the coconut's outer husk. It is used in rope, mats and other products. This photograph shows coir-spinning work in Kollam. The material connects coconut trees with the work you see in Radha's fictional yard.",
+    ml: "തേങ്ങയുടെ തൊണ്ടിൽ നിന്നാണ് ചകിരിനാര് ലഭിക്കുന്നത്. കയറും പായയും ഉണ്ടാക്കാൻ ഇത് ഉപയോഗിക്കുന്നു. കൊല്ലത്തെ കയർനിർമാണത്തിന്റെ ഒരു ചിത്രമാണിത്.",
+    notice:
+      "Look again at the fibre, the finished rope and the coconut palms around the yard.",
+  },
+  {
+    id: "tea-photo",
+    label: "Leela's photo wall",
+    title: "A pause at Thattekkaad",
+    mlTitle: "തട്ടേക്കാട്ടെ ചായക്കട",
+    x: -10,
+    z: 30,
+    frame: { x: -11, z: 25 },
+    place: "Leela's Chaya",
+    location: "Thattekkaad · Ernakulam",
+    date: "23 December 2016",
+    image: "tea",
+    author: "Shagil Kannur",
+    license: "4.0",
+    source: commons("A_village_tea_shop_in_Kerala.jpg"),
+    alt: "A village tea shop at Thattekkaad, photographed in 2016.",
+    en: "The photographer identifies this as a tea shop at Thattekkaad, photographed in 2016. Spend a moment looking at its setting and everyday details. Leela's shop is fictional; this is a real place to compare with it, not a photograph of Kadal.",
+    ml: "2016-ൽ തട്ടേക്കാട്ടെ ഒരു ചായക്കടയിൽ എടുത്ത ചിത്രമാണിത്. കടയും ചുറ്റുപാടും ശ്രദ്ധിക്കൂ. കളിയിലെ ലീലയുടെ കട സാങ്കൽപ്പികമാണ്.",
+    notice:
+      "Step back outside and listen to the conversations around Leela's veranda.",
+  },
+];
+export const storyById = (id) => STORIES.find((s) => s.id === id);
+export const storyImage = (story, small = false) =>
+  `/stories/${story.image}${small ? "-small" : ""}.jpg`;

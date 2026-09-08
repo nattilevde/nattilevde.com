@@ -1635,3 +1635,96 @@
     font-size: 12px;
   }
 }
+
+/* Quiet, optional photo stories: the world pauses while the album is open. */
+.game-panel-story {
+  width: min(720px, calc(100vw - 24px));
+  background: #f5ecd8;
+  color: #28483f;
+}
+.kerala-story {
+  text-align: left;
+}
+.kerala-story h2 {
+  font-family: Georgia, serif;
+  font-size: clamp(1.7rem, 5vw, 2.6rem);
+  line-height: 1.2;
+  margin: 12px 0;
+}
+.kerala-story figure {
+  margin: 20px 0;
+  padding: 10px;
+  background: #fffaf0;
+  box-shadow: 0 4px 16px #342c1918;
+}
+.kerala-story img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: contain;
+}
+.kerala-story figcaption {
+  font-size: 0.72rem;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+.kerala-story a {
+  color: #28644f;
+  text-decoration: underline;
+}
+.story-place,
+.story-context {
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.story-copy {
+  font-size: 1rem;
+  line-height: 1.85;
+}
+.story-languages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+.kerala-story button {
+  transition: none;
+  border: 1px solid #42664e;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #fffaf0;
+  color: #28483f;
+  cursor: pointer;
+  min-height: 44px;
+}
+.kerala-story button[aria-pressed="true"],
+.kerala-story .story-keep {
+  background: #284f43;
+  color: #fff4dc;
+}
+.kerala-story button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+.kerala-story details {
+  margin: 20px 0;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+.kerala-story summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+.story-notice {
+  border-left: 3px solid #bf935c;
+  padding-left: 16px;
+  font-style: italic;
+  line-height: 1.7;
+}
+.story-image-fallback {
+  min-height: 140px;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
