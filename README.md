@@ -88,19 +88,31 @@ already found becomes a destination of its own, so first visits are earned and
 return trips are free.
 
 **A world that is doing something** — monsoon showers roll in and pass while
-villagers hurry with an arm over their heads; snake-boat crews race the canal;
-dolphins arc off the coast; a peacock fans its tail on the Pooram ground;
+villagers seek shelter, Radha covers her fibre, and practice pauses; a passenger
+boat connects the village landings; dolphins arc off the coast; a peacock fans its tail on the Pooram ground;
 fireflies come out at night in the sacred grove.
 
 **Sound** — a layered soundscape synthesised entirely in the browser from noise
 buffers and oscillators. Surf that follows the nearest shoreline, chenda melam
 that accelerates the way a real one builds, a chaayakkada's stove and glasses,
-market calls, autos and bus horns, vanchipattu from a boat crew, rain and
-distant thunder, and a train somewhere inland.
+market calls, regional autos and bus horns, a passenger boat's oars, rain and
+distant thunder. Village practice and passenger-boat cues follow actual activity.
 
 **Kerala overheard, not explained** — short transliterated Malayalam surfaces as
 a subtitle when you pass the right place, glossed only where the meaning would
 be lost, with dialect that shifts north to south. Nothing to dismiss.
+
+## The living village prototype
+
+The next development phase starts in Kadal: twelve persistent residents, a shared
+clock, sheltering and interrupted work, available rehearsal partners, and a small
+passenger service. Follow the activity, or leave it to carry on. Contextual moments
+join the existing passport, and the day resumes when you return.
+
+Exploration assistance and directional captions are available in the pause menu.
+The default view keeps objectives and discovery counts out of the landscape.
+See [the design](docs/NEXT_EVOLUTION_DESIGN.md) and
+[what is implemented and still needs playtesting](docs/KADAL_PHASE_ONE.md).
 
 ## Project structure
 
@@ -195,3 +207,4 @@ scan the code.
 Source code is [MIT](LICENSE). Photographs, fonts and other third-party material
 keep their own licences — see [docs/CREDITS.md](docs/CREDITS.md) before you fork
 or redeploy.
+
