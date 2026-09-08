@@ -1,3 +1,5 @@
+import { TOWN_BUILDINGS, TOWN_ROADS, TOWN_SITES } from "./town-data.js";
+import { HIGHLAND_ROADS, HIGHLAND_SITES } from "./highland-data.js";
 import { PADDY_HOMES } from "./paddy-data.js";
 import { FAITH_SPACES } from "./community-data.js";
 export const REGION = {
@@ -44,6 +46,8 @@ export const regions = [
 export const regionAt = (x, z) => regions.find((r) => r.test(x, z));
 
 export const sites = [
+  ...HIGHLAND_SITES,
+  ...TOWN_SITES,
   {
     id: "village",
     name: "Kadal Village",
@@ -551,6 +555,15 @@ export function travelDestinations(journey) {
 // `face` is the yaw the seated player looks along; the seat prop goes behind them.
 export const REST_SPOTS = [
   {
+    id: "ridge-bench",
+    name: "The Ridge Bench",
+    x: 724,
+    z: 143,
+    face: -Math.PI / 2,
+    seat: "bench",
+    line: "The foothills fall away. For a moment, the drive can wait.",
+  },
+  {
     id: "beach-log",
     name: "The Driftwood Log",
     x: -70,
@@ -616,6 +629,7 @@ export const REST_SPOTS = [
 ];
 
 export const buildings = [
+  ...TOWN_BUILDINGS,
   ...PADDY_HOMES,
   // Kadal Village (the original backwater chapter)
   { x: -18, z: 30, w: 8, d: 9, color: "#f0d7a0", type: "shop" },
@@ -672,6 +686,8 @@ export const solids = [
 
 // Roads beyond the straight coastal highway, as polylines for the map and the builder.
 export const roads = [
+  ...HIGHLAND_ROADS,
+  ...TOWN_ROADS,
   {
     id: "hill-road",
     width: 4,

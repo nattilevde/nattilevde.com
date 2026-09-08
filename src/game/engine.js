@@ -351,6 +351,7 @@ export function createGame(
           ...life.residents.filter((r) => r.mode !== "passenger"),
           ...life.community.people,
           ...life.paddy.people,
+          ...life.town.people,
           life.paddy.delivery,
           busPosition(life.bus),
           autoPosition(life.auto),

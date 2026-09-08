@@ -231,3 +231,25 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
       view, walk closer and cancel guidance. This is a bearing, not a routed path.
 - [ ] Reload after parking: the shortcut should use the saved location. Returning
       should be unavailable while seated or using another vehicle. Check on phone.
+
+## Harbour quarter and inland drive
+
+- [ ] Drive north from Kadal on the main road. The harbour quarter begins near
+      (0, -190) and continues to (-355 on the z-axis). Explore cross-streets,
+      harbour-front/back-lane loop, shopfronts, two-storey buildings and parking.
+- [ ] Walk the waterfront near (-66, -287): moored boats and working residents
+      should be visible after morning arrivals. Rain sends workers home by streets.
+- [ ] At (0, -190), turn east to (150, -190), then follow the inland road south
+      past homes to the laterite loop and Paddy Lane. Try the return journey too.
+- [ ] Check new discoveries appear on the map, roadside scenery avoids the road,
+      jeep lights/steering remain usable and parked-jeep return still works.
+- [ ] Check phone performance and distant building appearance. Report blocked
+      turns, clipping, empty-looking streets or repetitive scenery for refinement.
+
+## Highland drive
+
+- [ ] Drive east beyond Paddy Lane (381, 110). Follow the climb to the ridge and continue north to the older hill road; return to the coast through the foothills.
+- [ ] Take the red-earth branch at (448, 140). Check narrow turns, uphill grip, downhill braking and its rejoin at (555, 85), in dry weather and rain.
+- [ ] At (705, 90), take the ridge spur. Park, exit, find the viewpoint and sit at the bench. Reload and check parked-jeep access and discoveries.
+- [ ] Check roads do not disappear into terrain, foliage avoids the bends, and headlights illuminate the road at night. Edge posts are visual markers only.
+- [ ] Check camera comfort and phone performance through the woodland and ridge. Report sharp turns, visual clipping or repetitive scenery.

@@ -1,3 +1,4 @@
+import { createTown, stepTown, townCue } from "./town.js";
 import { createPaddy, stepPaddy, paddyCue } from "./paddy.js";
 import { PADDY_VILLAGE } from "./paddy-data.js";
 import { createJeep } from "./jeep.js";
@@ -123,6 +124,7 @@ export function createLife(saved, seed = 7391) {
     bus: createBus(valid ? saved.bus : null),
     auto: createAuto(valid ? saved.auto : null),
     fishing: createFishing(valid ? saved.fishing : null),
+    town: createTown(valid ? saved.town : null),
     paddy: createPaddy(valid ? saved.paddy : null),
     jeep: createJeep(valid ? saved.jeep : null),
     community: createCommunity(valid ? saved.community : null),
@@ -537,6 +539,7 @@ function tickLife(state, dt, player) {
   stepTea(state, dt);
   stepCommunity(state, dt);
   stepPaddy(state, dt);
+  stepTown(state, dt);
   updateRehearsal(state);
   stepFishing(state.fishing, dt, lifeHour(state), w.rain);
   stepFerry(state, dt);
@@ -739,6 +742,8 @@ export function actOnLife(state, action, player) {
 }
 
 export function villageCue(state, player) {
+  const harbour = townCue(state, player);
+  if (harbour) return harbour;
   const village = paddyCue(state, player);
   if (village) return village;
   const nearbyCommunity = communityCue(state, player);

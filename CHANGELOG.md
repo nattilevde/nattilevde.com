@@ -178,3 +178,19 @@ the 3D world — are playable end to end.
 
 - Added “Find my jeep” with optional direction/distance guidance and direct return
   to a walkable spot beside the saved parked vehicle.
+
+- Expanded the coast north of Kadal into a harbour quarter with 23 town/inland
+  buildings, waterfront props, moored boats, ten local residents, parking and
+  connected roads toward Paddy Lane; added three optional place discoveries.
+
+### Connected highland drive
+
+- Added a winding road from Paddy Lane to the existing highland route, with an alternate laterite estate track and ridge parking spur.
+- Added woodland, cultivated bands, road-edge reflectors, two discoveries and a ridge resting bench.
+- Added curved-route jeep clearance, gradient and browser checks; appended the deferred manual checklist.
+
+### Portal readability and SEO foundation
+
+- Separated the map introduction/filters from map labels and reduced floating-guide overlap on smaller screens.
+- Added crawlable district and place guides with existing food/culture context, related links, unique metadata, canonical URLs and structured data.
+- Build now emits a sitemap, robots rules, branded sharing metadata and a 404 document; added automated output validation and a deployment/manual checklist.

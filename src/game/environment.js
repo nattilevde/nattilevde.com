@@ -1,3 +1,5 @@
+import { buildTownView } from "./town-view.js";
+import { buildHighlandView } from "./highland-view.js";
 import { buildPaddyView } from "./paddy-view.js";
 import { buildCommunityView } from "./community-view.js";
 import { communityClearance } from "./community-data.js";
@@ -422,7 +424,8 @@ export function buildEnvironment(scene) {
     const { x, z, w, d, color, type } = building;
     const home = group(type || "Tiled village home", x, terrainHeight(x, z), z);
     const wall = material(color);
-    const height = type === "pavilion" ? 3.5 : 3.1;
+    const height =
+      building.floors === 2 ? 5.8 : type === "pavilion" ? 3.5 : 3.1;
     block(home, m.earth, 0, 0.13, 0, w + 0.25, 0.26, d + 0.25, true);
     // A buried plinth keeps homes seated on gently rolling ground.
     block(home, m.earth, 0, -1.1, 0, w + 0.4, 2.2, d + 0.4);
@@ -1405,7 +1408,7 @@ export function buildEnvironment(scene) {
   }
 
   // ---- The wider Kerala: long roads and regional landmarks ----
-  function roadStrip(name, pts, width) {
+  function roadStrip(name, pts, width, surface = m.path) {
     const curve = new THREE.CatmullRomCurve3(
       pts.map(([x, z]) => new THREE.Vector3(x, 0, z)),
       false,
@@ -1437,7 +1440,7 @@ export function buildEnvironment(scene) {
     );
     geometry.setIndex(indices);
     geometry.computeVertexNormals();
-    const object = mesh(root, geometry, m.path, 0, 0, 0);
+    const object = mesh(root, geometry, surface, 0, 0, 0);
     object.name = name;
     return object;
   }
@@ -1457,7 +1460,13 @@ export function buildEnvironment(scene) {
     ],
     HIGHWAY.width,
   );
-  for (const road of roads) roadStrip(road.id, road.points, road.width);
+  for (const road of roads)
+    roadStrip(
+      road.id,
+      road.points,
+      road.width,
+      road.surface === "laterite" ? m.laterite : m.path,
+    );
 
   // River bridge causeways: railed decks so the crossings read as bridges.
   for (const bx of [2, 155]) {
@@ -2396,7 +2405,21 @@ export function buildEnvironment(scene) {
   function clampT(v) {
     return Math.max(0, Math.min(1, v));
   }
+  const hillRoadSamples = roads
+    .filter((r) =>
+      ["ridge-climb", "estate-track", "ridge-view-spur"].includes(r.id),
+    )
+    .flatMap((r) =>
+      new THREE.CatmullRomCurve3(
+        r.points.map(([x, z]) => new THREE.Vector3(x, 0, z)),
+        false,
+        "catmullrom",
+        0.12,
+      ).getSpacedPoints(220),
+    );
   function nearRoad(x, z, margin = 6) {
+    if (hillRoadSamples.some((p) => Math.hypot(p.x - x, p.z - z) < margin + 3))
+      return true;
     if (Math.abs(x - HIGHWAY.x) < margin + 1) return true;
     for (const road of roads) {
       for (let i = 1; i < road.points.length; i++) {
@@ -2415,6 +2438,8 @@ export function buildEnvironment(scene) {
     return false;
   }
   function clearWide(x, z) {
+    if (Math.hypot(x - 731, z - 136) < 35) return false;
+    if (x > -80 && x < 32 && z > -390 && z < -175) return false;
     if (communityClearance(x, z)) return false;
     if (x > 230 && x < 385 && z > 60 && z < 181) return false;
     if (x > 120 && x < 228 && z > 47 && z < 149) return false;
@@ -3059,6 +3084,32 @@ export function buildEnvironment(scene) {
   ])
     palm(x, z, scale);
   roundTree(302, 89, 1.1);
+  buildHighlandView({
+    group,
+    block,
+    ground,
+    sign,
+    roundTree,
+    instance,
+    sphere,
+    m,
+    terrainHeight,
+  });
+  const townView = buildTownView({
+    group,
+    block,
+    mesh,
+    roof,
+    sign,
+    ground,
+    human,
+    palm,
+    roundTree,
+    sphere,
+    cylinder,
+    m,
+    terrainHeight,
+  });
   const paddyView = buildPaddyView({
     group,
     block,
@@ -3091,6 +3142,7 @@ export function buildEnvironment(scene) {
     terrainHeight,
   });
   const animated = new Set([
+    ...townView.animated,
     ...paddyView.animated,
     jeep,
     ...communityView.animated,
@@ -3333,6 +3385,7 @@ export function buildEnvironment(scene) {
       updateTea(life);
       communityView.update(life, dt);
       paddyView.update(life, dt);
+      townView.update(life, dt);
     }
     waterTime.value = t;
     waterNight.value = darkness;

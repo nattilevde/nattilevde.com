@@ -619,6 +619,34 @@ export default function App() {
                 <Map size={14} /> World view <ChevronDown size={13} />
               </button>
             </div>
+            <div className="map-intro">
+              <span className="map-kicker">14 DISTRICTS. ENDLESS STORIES.</span>
+              <h2>
+                Where will your <br />
+                curiosity take you?
+              </h2>
+              <p>
+                Pick a district. <br />
+                Let the unfolding begin.
+              </p>
+              <div className="map-filter">
+                {["All", "Nature", "Culture", "Food", "Heritage"].map(
+                  (name) => {
+                    const Icon = icons[name];
+                    return (
+                      <button
+                        key={name}
+                        className={filter === name ? "chosen" : ""}
+                        onClick={() => setFilter(name)}
+                      >
+                        <Icon size={14} />
+                        {name === "All" ? "Everything" : name}
+                      </button>
+                    );
+                  },
+                )}
+              </div>
+            </div>
             <div className="map-canvas">
               <KeralaMap
                 selected={selected}
@@ -626,38 +654,6 @@ export default function App() {
                 visited={progress.districts}
                 zoom={zoom}
               />
-              <div className="map-intro">
-                <span className="map-kicker">
-                  14 DISTRICTS. ENDLESS STORIES.
-                </span>
-                <h2>
-                  Where will your
-                  <br />
-                  curiosity take you?
-                </h2>
-                <p>
-                  Pick a district.
-                  <br />
-                  Let the unfolding begin.
-                </p>
-                <div className="map-filter">
-                  {["All", "Nature", "Culture", "Food", "Heritage"].map(
-                    (name) => {
-                      const Icon = icons[name];
-                      return (
-                        <button
-                          key={name}
-                          className={filter === name ? "chosen" : ""}
-                          onClick={() => setFilter(name)}
-                        >
-                          <Icon size={14} />
-                          {name === "All" ? "Everything" : name}
-                        </button>
-                      );
-                    },
-                  )}
-                </div>
-              </div>
               <div className="map-district-card" key={district.id}>
                 <div className="district-cover">
                   <img
@@ -854,6 +850,31 @@ export default function App() {
             </button>
           </section>
           <footer className="page-footer">
+            <div className="project-support">
+              <p>
+                Open source. Made with care for Kerala. Explore the code,
+                contribute, or support the project.
+              </p>
+              <nav aria-label="Project and support">
+                <a
+                  href="https://github.com/nattilevde/nattilevde.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open source on GitHub ↗
+                </a>
+                <a
+                  href="https://buymeacoffee.com/nabeelc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Buy me a coffee ↗
+                </a>
+              </nav>
+            </div>
+            <a className="credits-link" href="/districts/">
+              Browse district guides
+            </a>
             <span>Made for the curious. Rooted in Kerala.</span>
             <button
               className="credits-link"
@@ -913,6 +934,12 @@ export default function App() {
               </div>
               <div className="modal-content">
                 <p className="district-description">{district.description}</p>
+                <a
+                  className="story-page-link"
+                  href={`/districts/${district.id}/`}
+                >
+                  Open the full district guide ↗
+                </a>
                 <div className="fact-box">
                   <Sparkles size={20} />
                   <p>
@@ -992,6 +1019,9 @@ export default function App() {
               </div>
               <div className="modal-content">
                 <p className="district-description">{place.description}</p>
+                <a className="story-page-link" href={`/places/${place.id}/`}>
+                  Read the full story and share this place ↗
+                </a>
                 <div className="fact-box">
                   <Sun size={21} />
                   <p>
