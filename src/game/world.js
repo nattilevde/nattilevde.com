@@ -868,6 +868,9 @@ export function readJourney() {
     const position = data?.position;
     return {
       v: 2,
+      life: data?.life,
+      assistance: data?.assistance === true,
+      captions: data?.captions === true,
       discoveries: clean("discoveries"),
       interactions: clean("interactions"),
       moments: clean("moments"),

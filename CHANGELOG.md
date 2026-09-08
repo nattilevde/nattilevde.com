@@ -11,6 +11,42 @@ to saved progress or to the world's data shapes.
 
 ### Fixed
 
+- Smoothed bus, auto and ferry rendering between simulation steps, keeping riders
+  attached to their vehicles; eased camera aim for all movement, including canoe
+  rides, and reset visual interpolation after shortened journeys.
+
+### Added
+
+- Kadal fishing-to-market cycle: weather-dependent catches, visible basket
+  deliveries, perishable stall stock, buyer activity and connected memories.
+
+- Village auto connecting the Kadal bus stand and far-bank landing, responding
+  to transport arrivals with rain-sensitive travel, yielding and saved rides.
+
+- Physical Kadal–Periyar local bus with commuters, daylight service, rain-sensitive
+  speed, pedestrian yielding, saved rides and completed-trip memories.
+- Village banana plants, flowering gardens, canal reeds and varied terrain greens.
+
+- First Kadal living-village prototype: a saved clock and seeded weather, twelve
+  persistent residents, work/break/home routes, reserved shelters, interrupted
+  coir work and participant-dependent rehearsal.
+- A short passenger-boat service with boarding, optional shortened rides and
+  safe landing; two residents use it for their cross-canal commute.
+- Contextual memories, local recognition, memory pinning and portal summaries.
+- Quiet exploration by default, optional assistance and directional captions,
+  a development-only state inspector, and single-writer protection on browsers
+  with Web Locks.
+- Model and browser checks for the village simulation and existing-save migration.
+
+### Changed
+
+- Village sound cues follow actual practice and boat movement. The perpetual
+  canal race, detached boat-song and unreachable train cues are held back.
+- The canoe return check waits for the boat to return, rather than a button
+  temporarily enabled while it is still gliding away from the landing.
+
+### Fixed
+
 - The world no longer runs in slow motion on slow hardware. Movement now
   integrates in fixed steps, as many per frame as real time requires, so walking,
   riding and paddling cover the same ground per second whatever the frame rate.

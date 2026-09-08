@@ -125,6 +125,57 @@ export function createSoundscape() {
   // sets stereo position, and far-away layers are rolled off so they read as far.
   const layers = [
     {
+      id: "village-auto",
+      range: 35,
+      level: 0.5,
+      at: (l) => l.auto || { x: 1e6, z: 1e6 },
+      when: (l) => !!l.auto?.running,
+      drone(out) {
+        const osc = ctx.createOscillator();
+        osc.type = "sawtooth";
+        osc.frequency.value = 85;
+        const low = filter("lowpass", 230, 1),
+          body = gain(0.025);
+        osc.connect(low).connect(body).connect(out);
+        osc.start();
+        return () => osc.stop();
+      },
+    },
+    {
+      id: "local-bus",
+      range: 75,
+      level: 0.5,
+      at: (l) => l.bus || { x: 1e6, z: 1e6 },
+      when: (l) => !!l.bus?.running,
+      drone(out) {
+        const osc = ctx.createOscillator();
+        osc.type = "sawtooth";
+        osc.frequency.value = 43;
+        const low = filter("lowpass", 230, 1),
+          body = gain(0.045);
+        osc.connect(low).connect(body).connect(out);
+        osc.start();
+        return () => osc.stop();
+      },
+    },
+    {
+      id: "passenger-boat",
+      range: 65,
+      level: 0.65,
+      at: (l) => l.ferry || { x: 1e6, z: 1e6 },
+      when: (l) => !!l.ferry?.moving,
+      every: () => 1.2,
+      fire(out) {
+        hit(out, {
+          kind: "brown",
+          type: "lowpass",
+          freq: 750,
+          peak: 0.15,
+          decay: 0.5,
+        });
+      },
+    },
+    {
       id: "surf",
       range: 150,
       level: 0.85,
@@ -297,6 +348,7 @@ export function createSoundscape() {
       range: spot.range,
       level: 0.9,
       at: { x: spot.x, z: spot.z },
+      when: (l) => spot.id !== "chenda-courtyard" || !!l.rehearsal,
       state: { beat: 0 },
       every(l, state) {
         const cycle = (state.beat % 96) / 96;
@@ -358,6 +410,7 @@ export function createSoundscape() {
     // The chaayakkada: a stove hiss, glass on glass, and unhurried talk.
     {
       id: "chaayakkada",
+      when: (l) => !!l.teaOpen,
       range: 46,
       level: 0.8,
       at: { x: -12, z: 30 },
@@ -436,6 +489,7 @@ export function createSoundscape() {
     // The road: an auto putters past, a bus grinds through its gears, horns.
     {
       id: "road",
+      when: (l) => Math.abs(l.z) > 160,
       range: 70,
       level: 0.8,
       at: (l) => ({ x: 1.5, z: clamp(l.z, -1445, 860) }),
@@ -488,7 +542,7 @@ export function createSoundscape() {
       range: 42,
       level: 0.7,
       at: (l) => l.stand || { x: 1e6, z: 1e6 },
-      when: (l) => !!l.stand,
+      when: () => false,
       drone(out) {
         const osc = ctx.createOscillator();
         osc.type = "sawtooth";
@@ -507,6 +561,7 @@ export function createSoundscape() {
     // A train somewhere inland, the way you hear one across paddy at night.
     {
       id: "train",
+      when: () => false,
       range: Infinity,
       level: 0.55,
       at: (l) => ({ x: 900, z: clamp(l.z, -1400, 800) }),
@@ -535,6 +590,7 @@ export function createSoundscape() {
     // Vanchipattu: the boat song that keeps a snake-boat crew together.
     {
       id: "vanchipattu",
+      when: () => false,
       range: 80,
       level: 0.8,
       at: (l) => ({ x: 38, z: clamp(l.z, -140, 160) }),
@@ -564,9 +620,27 @@ export function createSoundscape() {
         }
       },
     },
+    {
+      id: "village-fish-stall",
+      range: 30,
+      level: 0.4,
+      at: { x: -8, z: 44 },
+      when: (l) => !!l.fishMarket,
+      every: () => between(5, 9),
+      fire(out) {
+        hit(out, {
+          kind: "brown",
+          type: "lowpass",
+          freq: 650,
+          peak: 0.06,
+          decay: 0.16,
+        });
+      },
+    },
     // The fishing shore: rope, hull, and men calling a boat in.
     {
       id: "fishing",
+      when: (l) => !!l.fishing,
       range: 55,
       level: 0.7,
       at: { x: -73, z: 14 },

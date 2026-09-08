@@ -1,4 +1,9 @@
+import { fishingPosition, fishMarketOpen, FISH_MARKET } from "./fishing.js";
+import { AUTO_STOPS, autoPosition } from "./auto.js";
 import * as THREE from "three";
+import { BUS_STOPS, busPosition } from "./bus.js";
+import { RESIDENTS, FERRY_STOPS } from "./life-data.js";
+import { ferryPosition, lifeHour } from "./life.js";
 import {
   buildings,
   solids,
@@ -36,7 +41,7 @@ export function buildEnvironment(scene) {
   const m = {
     sand: material("#d9bd83"),
     earth: material("#a48a58"),
-    grass: material("#88985c"),
+    grass: material("#7c995d"),
     path: material("#e5cd9d"),
     verge: material("#b9b276"),
     wood: material("#694832"),
@@ -183,7 +188,31 @@ export function buildEnvironment(scene) {
       );
     }
     geometry.computeVertexNormals();
-    const object = mesh(root, geometry, surface, 0, 0, 0);
+    let groundSurface = surface;
+    if (surface === m.grass || surface === m.sand) {
+      const colors = [];
+      for (let i = 0; i < positions.count; i++) {
+        const x = positions.getX(i),
+          z = positions.getZ(i);
+        const tint =
+          0.9 +
+          0.065 * Math.sin(x * 0.065 + z * 0.023) +
+          0.045 * Math.sin(z * 0.14);
+        colors.push(tint, Math.min(1, tint + 0.025), tint * 0.95);
+      }
+      geometry.setAttribute(
+        "color",
+        new THREE.Float32BufferAttribute(colors, 3),
+      );
+      const key = surface === m.grass ? "grassTerrain" : "sandTerrain";
+      if (!m[key]) {
+        m[key] = surface.clone();
+        m[key].vertexColors = true;
+        materials.add(m[key]);
+      }
+      groundSurface = m[key];
+    }
+    const object = mesh(root, geometry, groundSurface, 0, 0, 0);
     object.name = name;
     return object;
   }
@@ -620,10 +649,21 @@ export function buildEnvironment(scene) {
       mesh(result.person, cylinder, shirt, 0, 0.48, 0, 0.4, 0.86, 0.33, true);
     return result;
   }
-  resident("Leela", -11.8, 32, m.rose, -Math.PI / 2, true);
-  resident("Binu", 25, 7.5, m.teal, -0.4);
-  resident("Radha", 62, -44.2, m.gold, Math.PI / 2, true);
-  resident("Hari", -19, -23, m.cream, -0.5);
+  const villagers = new Map(
+    RESIDENTS.map((r) => [
+      r.id,
+      resident(
+        r.name,
+        0,
+        0,
+        m[r.color],
+        0,
+        r.id === "leela" || r.id === "radha",
+      ),
+    ]),
+  );
+  const coirCover = block(root, m.teal, 60.7, 0.62, -43, 1.7, 0.12, 2.5);
+  coirCover.visible = false;
 
   ground(
     "Packed-earth rehearsal courtyard",
@@ -636,13 +676,7 @@ export function buildEnvironment(scene) {
   );
   const drummers = [];
   for (let i = 0; i < 3; i++) {
-    const drummer = resident(
-      `Chenda drummer ${i + 1}`,
-      -25 + i * 2.3,
-      -26.5,
-      i === 1 ? m.gold : m.cream,
-      Math.PI,
-    );
+    const drummer = villagers.get(["anil", "usha", "mani"][i]);
     const drum = mesh(
       drummer.person,
       cylinder,
@@ -791,6 +825,24 @@ export function buildEnvironment(scene) {
       block(object, m.rope, 0, 0.15, z, width * 0.73, 0.1, 0.4);
     return object;
   }
+  const ferry = boat("Kadal passenger boat", 2.5, 7);
+  const ferryCrew = human("Passenger boat keeper", m.teal);
+  ferry.add(ferryCrew.person);
+  ferryCrew.person.position.set(0, 0.15, 2);
+  beam(ferry, m.wood, [1, -0.2, 1], [1, 2.1, 2.5], 0.05);
+  for (const stop of FERRY_STOPS) {
+    const landing = group(stop.name, stop.land.x, 0, stop.land.z);
+    block(landing, m.wood, 0, 0.06, 0, 2.2, 0.15, 3.6);
+    sign(
+      landing,
+      stop.name.toUpperCase(),
+      "PASSENGER BOAT / 6 AM - 7 PM",
+      0,
+      2.5,
+      0,
+      4,
+    );
+  }
   const canoe = boat("Player canoe", 1.6, 5.5);
   canoe.position.set(33, -0.03, 7);
   canoe.visible = false;
@@ -854,6 +906,42 @@ export function buildEnvironment(scene) {
     fishing.position.set(-76 + i * 1.8, 0.2, 25 + i * 8);
     fishing.rotation.set(0, 0.4 + i * 0.3, 0.14);
   }
+
+  const catchBoat = boat("Sasi's working vallam", 1.9, 7, hullMaterial);
+  const fisher = human("Sasi", m.teal);
+  const fishBasket = group("Catch baskets");
+  for (let i = 0; i < 5; i++) {
+    const crate = block(
+      fishBasket,
+      m.rope,
+      (i % 2) * 0.65,
+      Math.floor(i / 2) * 0.35,
+      0,
+      0.6,
+      0.3,
+      0.65,
+      true,
+    );
+    crate.userData.catchIndex = i;
+  }
+  const fishStall = group("Kadal fish stall", -11, terrainHeight(-11, 44), 44);
+  roof(fishStall, 0, 2.65, 0, 4, 3, 0.7);
+  for (const x of [-1.6, 1.6])
+    block(fishStall, m.wood, x, 1.3, 0, 0.12, 2.6, 0.12);
+  block(fishStall, m.wood, 0, 0.8, 0, 3.1, 0.14, 1.3);
+  sign(fishStall, "KADAL FISH", "FROM THE SHORE", 0, 2.1, 0.8, 2.7);
+  const vendor = human("Mini", m.rose);
+  vendor.person.position.set(-11, terrainHeight(-11, 42), 42);
+  const marketFish = group(
+    "Fresh catch on the stall",
+    -11,
+    terrainHeight(-11, 44),
+    44,
+  );
+  for (let i = 0; i < 5; i++)
+    mesh(marketFish, sphere, m.grey, (i - 2) * 0.5, 0.98, 0, 0.1, 0.08, 0.32);
+  const fishBuyer = human("Fish buyer", m.gold);
+  // A buyer approaches only while stock and trading conditions allow it.
 
   const pondGeometry = ownGeometry(new THREE.CircleGeometry(4.5, 48));
   pondGeometry.rotateX(-Math.PI / 2);
@@ -1667,6 +1755,7 @@ export function buildEnvironment(scene) {
 
   // ---- A living Kerala: bus stops, rest spots, wildlife, and weather ----
   for (const stop of REGION_GATEWAYS) {
+    if (BUS_STOPS.some((service) => service.name === stop.name)) continue;
     const shelter = group(
       `Bus stand: ${stop.name}`,
       stop.x + 2.6,
@@ -2283,7 +2372,7 @@ export function buildEnvironment(scene) {
     { x: -1.6, from: 320, to: 520, shirt: m.rose },
     { x: 540, from: -302, to: -262, shirt: m.gold },
   ];
-  const walkers = walkerConfigs.map((config, i) => ({
+  const walkers = walkerConfigs.slice(5).map((config, i) => ({
     ...human(`Kerala walker ${i + 1}`, config.shirt, m.cream),
     ...config,
     phase: i * 43,
@@ -2371,6 +2460,18 @@ export function buildEnvironment(scene) {
     driver.limbs[0].rotation.x = driver.limbs[1].rotation.x = -1.1;
     return { group: rickshaw, wheels };
   }
+  const feederAuto = makeRickshaw(m.black);
+  feederAuto.group.name = "Village feeder auto";
+  for (const stop of AUTO_STOPS) {
+    const stand = group(
+      stop.name,
+      stop.x + 2,
+      terrainHeight(stop.x + 2, stop.z),
+      stop.z + 2,
+    );
+    block(stand, m.wood, 0, 1, 0, 0.12, 2, 0.12);
+    sign(stand, "AUTO", "BUS STAND / FAR BANK", 0, 2, 0, 2.3);
+  }
   const rickshaws = [
     {
       ...makeRickshaw(m.teal),
@@ -2424,8 +2525,187 @@ export function buildEnvironment(scene) {
     birds.push({ bird, wings, home });
   }
 
+  const bus = group("Kadal–Periyar local bus");
+  const busPaint = material("#af493c");
+  block(bus, busPaint, 0, 1.5, 0, 2.35, 2.15, 8, true);
+  block(bus, m.cream, 0, 2.85, 0, 2.38, 0.58, 8.05, true);
+  block(bus, m.gold, 0, 1.15, 0, 2.4, 0.16, 8.08);
+  for (const side of [-1, 1]) {
+    for (let z = -2.8; z <= 2.9; z += 1.15)
+      block(bus, m.glass, side * 1.19, 2.2, z, 0.03, 0.72, 0.93);
+    for (const z of [-2.6, 2.6]) {
+      const wheel = mesh(
+        bus,
+        cylinder,
+        m.black,
+        side * 1.18,
+        0.55,
+        z,
+        0.5,
+        0.24,
+        0.5,
+      );
+      wheel.rotation.z = Math.PI / 2;
+      const hub = mesh(
+        bus,
+        cylinder,
+        m.cream,
+        side * 1.32,
+        0.55,
+        z,
+        0.2,
+        0.025,
+        0.2,
+      );
+      hub.rotation.z = Math.PI / 2;
+    }
+    block(bus, m.lamp, side * 0.8, 1.1, -4.03, 0.35, 0.25, 0.06);
+  }
+  block(bus, m.glass, 0, 2.1, -4.02, 1.95, 0.86, 0.04);
+  block(bus, m.darkWood, 0, 0.82, -4.09, 2.35, 0.18, 0.12);
+  sign(bus, "KADAL – PERIYAR", "LOCAL SERVICE", 0, 2.9, -4.08, 1.95, Math.PI);
+  const busDriver = human("Local bus driver", m.cream);
+  bus.add(busDriver.person);
+  busDriver.person.position.set(0.55, 1, -2.8);
+  busDriver.person.scale.setScalar(0.75);
+  const commuters = [human("Madhan", m.olive), human("Sreedevi", m.rose)];
+  for (const stop of BUS_STOPS) {
+    const stand = group(
+      "Local service waiting shelter",
+      stop.x,
+      terrainHeight(stop.x, stop.z),
+      stop.z,
+    );
+    roof(stand, 2.8, 2.65, 0, 4.8, 5, 0.8);
+    for (const z of [-2, 2]) block(stand, m.wood, 4.5, 1.3, z, 0.13, 2.6, 0.13);
+    block(stand, m.wood, 3.2, 0.6, 0, 1.4, 0.16, 3);
+    sign(
+      stand,
+      "KADAL / PERIYAR",
+      "LOCAL BUS · 6 AM – 8 PM",
+      2.8,
+      2.2,
+      2.4,
+      3.8,
+    );
+  }
+
+  // Broad, folded banana leaves use one small geometry shared by every plant.
+  const bananaGeometry = ownGeometry(new THREE.BufferGeometry());
+  const bananaVertices = [];
+  for (let i = 0; i < 8; i++) {
+    const a = i / 8,
+      b = (i + 1) / 8;
+    const center = (t) => [t * 4.4, Math.sin(t * Math.PI) - t * t, 0];
+    for (const side of [-1, 1]) {
+      const edge = (t) => [
+        t * 4.4,
+        center(t)[1] - 0.16,
+        side * Math.sin(t * Math.PI) * 0.85,
+      ];
+      bananaVertices.push(
+        ...center(a),
+        ...edge(a),
+        ...edge(b),
+        ...center(a),
+        ...edge(b),
+        ...center(b),
+      );
+    }
+  }
+  bananaGeometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(bananaVertices, 3),
+  );
+  bananaGeometry.computeVertexNormals();
+  // Small gardens and layered banks share geometry and instance batches.
+  const blossom = material("#db786d"),
+    gardenGreen = material("#477956");
+  for (const [x, z] of [
+    [-32, 50],
+    [-34, 78],
+    [79, 32],
+    [80, -34],
+    [-34, -52],
+  ]) {
+    for (let i = 0; i < 7; i++) {
+      const gx = x + Math.cos(i * 2.4) * 2.3,
+        gz = z + Math.sin(i * 2.4) * 2;
+      if (!clearVegetation(gx, gz, 2)) continue;
+      const y = terrainHeight(gx, gz);
+      instance(sphere, gardenGreen, gx, y + 0.65, gz, 0.8, 0.7, 0.8);
+      for (let j = 0; j < 3; j++)
+        instance(
+          sphere,
+          blossom,
+          gx + Math.cos(j * 2) * 0.6,
+          y + 1,
+          gz + Math.sin(j * 2) * 0.6,
+          0.11,
+          0.1,
+          0.11,
+        );
+    }
+    if (clearVegetation(x, z, 2)) {
+      const y = terrainHeight(x, z);
+      instance(cylinder, m.olive, x, y + 1.5, z, 0.16, 3, 0.16);
+      for (let leaf = 0; leaf < 7; leaf++)
+        instance(
+          bananaGeometry,
+          leaf % 2 ? m.leafLight : m.leaf,
+          x,
+          y + 3,
+          z,
+          0.55,
+          0.45,
+          0.5,
+          0,
+          (leaf * Math.PI * 2) / 7,
+          -0.18,
+        );
+    }
+  }
+  for (let z = -136; z < 138; z += 4.5) {
+    if (
+      Math.abs(z) < 10 ||
+      Math.abs(z + 90) < 10 ||
+      Math.abs(z - 8) < 9 ||
+      Math.abs(z - 65) < 9
+    )
+      continue;
+    for (const x of [28.2, 48]) {
+      const y = terrainHeight(x, z);
+      instance(sphere, gardenGreen, x, y + 0.2, z, 0.6, 0.35, 1.1);
+      instance(
+        cone,
+        m.leafLight,
+        x + 0.25,
+        y + 0.55,
+        z,
+        0.15,
+        1,
+        0.2,
+        0,
+        z,
+        0.15,
+      );
+    }
+  }
+
   const animated = new Set([
+    catchBoat,
+    fisher.person,
+    fishBasket,
+    vendor.person,
+    marketFish,
+    fishBuyer.person,
+    feederAuto.group,
+    bus,
+    ...commuters.map((p) => p.person),
     player,
+    ferry,
+    coirCover,
+    ...[...villagers.values()].map((v) => v.person),
     canoe,
     houseboat,
     lagoonBoat,
@@ -2491,6 +2771,133 @@ export function buildEnvironment(scene) {
     const t = Number.isFinite(time) ? time : 0;
     const darkness = THREE.MathUtils.clamp(Number(night) || 0, 0, 1);
     const wetness = THREE.MathUtils.clamp(Number(world.rain) || 0, 0, 1);
+    if (world.life) {
+      const life = world.life;
+      const fishing = life.fishing,
+        fp = fishingPosition(fishing);
+      catchBoat.position.set(
+        fp.atSea ? fp.x : -89,
+        -0.03 + Math.sin(t) * 0.025,
+        fp.atSea ? fp.z : 12,
+      );
+      catchBoat.rotation.y = fp.atSea ? fp.heading : Math.PI * 0.35;
+      fisher.person.position.set(
+        fp.x,
+        fp.atSea ? 0.18 : terrainHeight(fp.x, fp.z),
+        fp.z,
+      );
+      fisher.person.rotation.y = fp.heading;
+      const carrying = fishing.phase === "delivering";
+      fisher.limbs.forEach((limb, i) => {
+        limb.rotation.x =
+          carrying && i > 1
+            ? -0.9
+            : ["delivering", "walking-home"].includes(fishing.phase)
+              ? Math.sin(t * 6) * (i % 2 ? -0.4 : 0.4)
+              : 0;
+      });
+      fishBasket.visible = fishing.cargo > 0;
+      fishBasket.position.set(
+        fp.x,
+        fp.atSea ? 0.3 : terrainHeight(fp.x, fp.z) + (carrying ? 1 : 0.2),
+        fp.z + 0.8,
+      );
+      fishBasket.children.forEach((crate, i) => {
+        crate.visible = i < fishing.cargo;
+      });
+      const trading = fishMarketOpen(fishing, lifeHour(life), wetness);
+      vendor.person.visible = lifeHour(life) >= 6 && lifeHour(life) < 18;
+      marketFish.children.forEach((fish, i) => {
+        fish.visible = i < fishing.stock;
+      });
+      marketFish.visible = fishing.stock > 0;
+      const buyerX = -4 - fishing.buyer * 4,
+        buyerZ = 52 - fishing.buyer * 6;
+      fishBuyer.person.position.set(
+        buyerX,
+        terrainHeight(buyerX, buyerZ),
+        buyerZ,
+      );
+      fishBuyer.person.visible = trading || fishing.buyer > 0;
+      fishBuyer.person.rotation.y = trading ? 0.59 : Math.PI + 0.59;
+      fishBuyer.limbs.forEach((limb, i) => {
+        limb.rotation.x =
+          fishing.buyer > 0 && fishing.buyer < 1
+            ? Math.sin(t * 6) * (i % 2 ? -0.4 : 0.4)
+            : 0;
+      });
+      const ap = world.transports?.auto || autoPosition(life.auto);
+      feederAuto.group.position.set(ap.x, terrainHeight(ap.x, ap.z), ap.z);
+      feederAuto.group.rotation.y = ap.heading;
+      feederAuto.wheels.forEach((w) => {
+        if (life.auto.phase === "travelling" && !life.auto.yielding)
+          w.rotation.x += dt * 10;
+      });
+      const bp = world.transports?.bus || busPosition(life.bus);
+      bus.position.set(bp.x, terrainHeight(bp.x, bp.z), bp.z);
+      bus.rotation.y = bp.heading;
+      life.bus.commuters.forEach((p, i) => {
+        const actor = commuters[i];
+        const x = p.aboard ? bp.x + (i ? -0.55 : 0.55) : p.x,
+          z = p.aboard ? bp.z + 0.7 : p.z;
+        actor.person.position.set(
+          x,
+          terrainHeight(x, z) + (p.aboard ? 1 : 0),
+          z,
+        );
+        const destination = lifeHour(life) >= 7 && lifeHour(life) < 16 ? 1 : 0;
+        const targetX = p.stop === destination ? 26 : 8;
+        const walking = !p.aboard && Math.abs(p.x - targetX) > 0.05;
+        actor.person.rotation.y = p.aboard
+          ? bp.heading
+          : targetX > p.x
+            ? Math.PI / 2
+            : -Math.PI / 2;
+        actor.limbs.forEach((limb, j) => {
+          limb.rotation.x = walking
+            ? Math.sin(t * 6 + i) * (j % 2 ? -0.4 : 0.4)
+            : 0;
+        });
+      });
+      const f = world.transports?.ferry || ferryPosition(life);
+      ferry.position.set(f.x, -0.03 + Math.sin(t) * 0.025, f.z);
+      ferry.rotation.y = f.heading;
+      coirCover.visible = life.coir.phase !== "outside";
+      coirCover.scale.z =
+        life.coir.phase === "covering"
+          ? Math.max(0.1, 1 - life.coir.remaining / 24) * 2.5
+          : 2.5;
+      life.residents.forEach((r) => {
+        const v = villagers.get(r.id);
+        const passenger = life.ferry.passengers.indexOf(r.id);
+        const target =
+          passenger >= 0
+            ? {
+                x: f.x + (passenger % 2 ? 0.5 : -0.5),
+                z: f.z + Math.floor(passenger / 2),
+              }
+            : r;
+        const blend =
+          dt > 0 && v.person.userData.onBoat === passenger >= 0
+            ? 1 - Math.exp(-18 * dt)
+            : 1;
+        v.person.position.x += (target.x - v.person.position.x) * blend;
+        v.person.position.z += (target.z - v.person.position.z) * blend;
+        v.person.position.y =
+          passenger >= 0
+            ? 0.2
+            : terrainHeight(v.person.position.x, v.person.position.z);
+        v.person.userData.onBoat = passenger >= 0;
+        v.person.rotation.y = passenger >= 0 ? f.heading : r.heading;
+        v.limbs.forEach((limb, i) => {
+          limb.rotation.x = r.moving
+            ? Math.sin(t * (wetness > 0.4 ? 9 : 6)) * (i % 2 ? -0.4 : 0.4)
+            : 0;
+          if (r.mode === "covering" && i > 1)
+            limb.rotation.x = -0.9 + Math.sin(t * 3) * 0.3;
+        });
+      });
+    }
     waterTime.value = t;
     waterNight.value = darkness;
     m.glass.emissiveIntensity = darkness * 0.75;
@@ -2533,6 +2940,11 @@ export function buildEnvironment(scene) {
       });
     });
     drummers.forEach(({ limbs }, i) => {
+      const participant = world.life?.residents.find(
+        (r) => r.id === ["anil", "usha", "mani"][i],
+      );
+      if (!world.life?.rehearsal.active || participant?.mode !== "working")
+        return;
       limbs[2].rotation.x = -0.8 + Math.sin(t * 9 + i * 1.6) * 0.4;
       limbs[3].rotation.x = -0.8 - Math.sin(t * 9 + i * 1.6) * 0.4;
     });
@@ -2552,6 +2964,8 @@ export function buildEnvironment(scene) {
     lagoonBoat.position.y = -0.02 + Math.sin(t * 0.7 + 2) * 0.035;
     lagoonBoat.rotation.z = Math.sin(t * 0.5) * 0.008;
     rickshaws.forEach(({ group: auto, wheels, x, from, to, speed, phase }) => {
+      auto.visible = !(world.life && from === -120);
+      if (!auto.visible) return;
       const length = to - from;
       const travel =
         (((t * speed + phase) % (length * 2)) + length * 2) % (length * 2);
@@ -2584,6 +2998,9 @@ export function buildEnvironment(scene) {
     });
     // Chundan vallams race the canal in long, surging strokes.
     snakeBoats.forEach(({ vallam, paddlers, lane, phase }, i) => {
+      // Keep the canal clear for its service; races will return as scheduled gatherings.
+      vallam.visible = !world.life;
+      if (!vallam.visible) return;
       const stroke = t * 1.9 + i;
       const surge = 0.72 + Math.max(0, Math.sin(stroke)) * 0.55;
       const travel = ((t * 9 * surge + phase) % 300) - 140;

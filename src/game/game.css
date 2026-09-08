@@ -1551,3 +1551,87 @@
     animation: none;
   }
 }
+
+/* Life leaves room for the landscape; assistance remains available in the menu. */
+.game-quiet .game-region > div {
+  display: none;
+}
+.game-quiet .game-region {
+  opacity: 0.85;
+}
+.game-world-cue {
+  position: absolute;
+  left: 50%;
+  top: 105px;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 20px;
+  color: #fff4d4;
+  background: #173d32dd;
+  font-size: 13px;
+  pointer-events: none;
+  max-width: 80%;
+  text-align: center;
+}
+.game-life-actions {
+  position: absolute;
+  right: 24px;
+  bottom: 145px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  max-width: 280px;
+}
+.game-life-actions:empty {
+  display: none;
+}
+.game-life-actions button,
+.game-life-actions span {
+  padding: 12px 16px;
+  color: #fff4d4;
+  background: #173d32ed;
+  border: 1px solid #dab77880;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+}
+.game-life-actions button {
+  cursor: pointer;
+  min-height: 44px;
+}
+.game-life-actions button:focus-visible {
+  outline: 3px solid #e8b755;
+  outline-offset: 3px;
+}
+.game-lived-memories article {
+  border-bottom: 1px solid #b9c9a455;
+  padding: 16px 0;
+}
+.game-lived-memories article p {
+  margin: 8px 0;
+}
+.game-lived-memories button {
+  background: transparent;
+  color: inherit;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.game-life-debug pre {
+  white-space: pre-wrap;
+  max-height: 260px;
+  overflow: auto;
+}
+@media (max-width: 600px) {
+  .game-life-actions {
+    right: 12px;
+    bottom: 210px;
+    max-width: 210px;
+  }
+  .game-world-cue {
+    top: 150px;
+    font-size: 12px;
+  }
+}
