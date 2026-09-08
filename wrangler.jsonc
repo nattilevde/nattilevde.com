@@ -1,0 +1,15 @@
+{
+  // Static-assets-only Worker: there is no server-side code, so there is no
+  // "main" entry point — Cloudflare just serves the built site from ./dist.
+  // "name" must match the Workers project in the Cloudflare dashboard.
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "nattilevde",
+  "compatibility_date": "2026-09-08",
+  "assets": {
+    "directory": "./dist",
+    // The app routes on the URL fragment (/#world), so the server only ever
+    // needs to hand back index.html. Serving it for unknown paths means a
+    // mistyped or stale link lands on the portal instead of a bare 404.
+    "not_found_handling": "single-page-application",
+  },
+}
