@@ -96,9 +96,26 @@ simulation on the strength of automated checks alone.
 - Recognition is limited to people met and Radha's help acknowledgement.
   Dialogue uses the existing Malayalam lines where applicable, with
   plain English for new situational information pending local language review.
-- Regional festivals, seasons, agriculture, wildlife ecology, physical bus/auto/
+- Regional festivals, seasons, agriculture, wildlife ecology, expanded bus/auto/
   train networks and distant-region simulation detail remain later phases.
 
 Before expansion, use observation sessions to decide whether the village creates
 recognisable causes and useful curiosity. More actors or event types should not
 be used to compensate for weak continuity or unreadable routes.
+
+## Follow-up batch: physical local bus and scenery
+
+A saved local bus now connects Kadal and Periyar Bridge stands on the shared
+clock (06:00–20:00). Two commuters travel toward work in the morning and home
+after 16:00; rain slows the bus and pedestrians ahead can delay it. Boarding,
+optional journey shortening, safe disembarking and completed-trip memories are
+supported. Existing convenience travel remains available separately.
+
+This is one route with exterior work anchors, not a traffic network or economy.
+Boarding is a seat transfer; commuters do not have full village resident dialogue.
+Shortening runs the intermediate simulation, capped at four simulated minutes if
+blocked. The service has no collision physics or overtaking.
+
+Village gardens add banana plants and flowering shrubs, canal edges gain reeds,
+and terrain has subtle varied greens. Static meshes use existing batching;
+physical-device performance and scenic quality remain pending manual playtest.

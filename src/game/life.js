@@ -1,3 +1,11 @@
+import {
+  createBus,
+  stepBus,
+  busPosition,
+  BUS_STOPS,
+  boardBus,
+  leaveBus,
+} from "./bus.js";
 import { canWalk } from "./world.js";
 import {
   DAY_SECONDS,
@@ -81,6 +89,7 @@ export function createLife(saved, seed = 7391) {
       boardedTrip: 0,
       passengers: [],
     },
+    bus: createBus(valid ? saved.bus : null),
     memories: [],
     met: [],
   };
@@ -243,6 +252,7 @@ export function createLife(saved, seed = 7391) {
         pinned: !!m.pinned,
       }));
   }
+  if (state.ferry.player) state.bus.player = false;
   updateRehearsal(state);
   return state;
 }
@@ -429,7 +439,7 @@ function stepFerry(state, dt) {
   }
 }
 
-function tickLife(state, dt) {
+function tickLife(state, dt, player) {
   state.clock += dt;
   const w = state.weather;
   w.remaining -= dt;
@@ -468,14 +478,18 @@ function tickLife(state, dt) {
   state.residents.forEach((r, i) => stepResident(state, r, RESIDENTS[i], dt));
   updateRehearsal(state);
   stepFerry(state, dt);
+  stepBus(state.bus, dt, lifeHour(state), w.rain, [
+    ...state.residents.filter((r) => r.mode !== "passenger"),
+    ...(!state.bus.player && player ? [player] : []),
+  ]);
 }
 
-export function advanceLife(state, seconds) {
+export function advanceLife(state, seconds, player = null) {
   if (!Number.isFinite(seconds) || seconds <= 0) return state;
   state.remainder += Math.min(seconds, DAY_SECONDS);
   while (state.remainder + 1e-9 >= LIFE_STEP) {
     state.remainder = Math.max(0, state.remainder - LIFE_STEP);
-    tickLife(state, LIFE_STEP);
+    tickLife(state, LIFE_STEP, player);
   }
   return state;
 }
@@ -513,6 +527,18 @@ export function observeLife(state, player) {
 }
 
 export function actOnLife(state, action, player) {
+  if (action === "board-bus")
+    return !state.ferry.player && boardBus(state.bus, player);
+  if (action === "leave-bus" && leaveBus(state.bus)) {
+    if (state.bus.trips > state.bus.boardedTrip)
+      remember(state, {
+        id: `bus-${lifeDay(state)}-${state.bus.stop}`,
+        place: BUS_STOPS[state.bus.stop].name,
+        text: `Took the local bus to ${BUS_STOPS[state.bus.stop].name}.`,
+      });
+    return true;
+  }
+  if (state.bus.player) return false;
   if (
     action === "coir" &&
     state.coir.phase === "covering" &&
@@ -574,6 +600,9 @@ export function actOnLife(state, action, player) {
 }
 
 export function villageCue(state, player) {
+  const bus = busPosition(state.bus);
+  if (state.bus.phase === "travelling" && distance(bus, player) < 75)
+    return { ...bus, text: "A local bus on the highway" };
   if (state.rehearsal.active && distance(player, LIFE_NODES.court) < 105)
     return { ...LIFE_NODES.court, text: "Chenda practice" };
   const f = ferryPosition(state);

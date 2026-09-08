@@ -1,6 +1,7 @@
 import * as THREE from "three";
+import { BUS_STOPS, busPosition } from "./bus.js";
 import { RESIDENTS, FERRY_STOPS } from "./life-data.js";
-import { ferryPosition } from "./life.js";
+import { ferryPosition, lifeHour } from "./life.js";
 import {
   buildings,
   solids,
@@ -38,7 +39,7 @@ export function buildEnvironment(scene) {
   const m = {
     sand: material("#d9bd83"),
     earth: material("#a48a58"),
-    grass: material("#88985c"),
+    grass: material("#7c995d"),
     path: material("#e5cd9d"),
     verge: material("#b9b276"),
     wood: material("#694832"),
@@ -185,7 +186,31 @@ export function buildEnvironment(scene) {
       );
     }
     geometry.computeVertexNormals();
-    const object = mesh(root, geometry, surface, 0, 0, 0);
+    let groundSurface = surface;
+    if (surface === m.grass || surface === m.sand) {
+      const colors = [];
+      for (let i = 0; i < positions.count; i++) {
+        const x = positions.getX(i),
+          z = positions.getZ(i);
+        const tint =
+          0.9 +
+          0.065 * Math.sin(x * 0.065 + z * 0.023) +
+          0.045 * Math.sin(z * 0.14);
+        colors.push(tint, Math.min(1, tint + 0.025), tint * 0.95);
+      }
+      geometry.setAttribute(
+        "color",
+        new THREE.Float32BufferAttribute(colors, 3),
+      );
+      const key = surface === m.grass ? "grassTerrain" : "sandTerrain";
+      if (!m[key]) {
+        m[key] = surface.clone();
+        m[key].vertexColors = true;
+        materials.add(m[key]);
+      }
+      groundSurface = m[key];
+    }
+    const object = mesh(root, geometry, groundSurface, 0, 0, 0);
     object.name = name;
     return object;
   }
@@ -1692,6 +1717,7 @@ export function buildEnvironment(scene) {
 
   // ---- A living Kerala: bus stops, rest spots, wildlife, and weather ----
   for (const stop of REGION_GATEWAYS) {
+    if (BUS_STOPS.some((service) => service.name === stop.name)) continue;
     const shelter = group(
       `Bus stand: ${stop.name}`,
       stop.x + 2.6,
@@ -2449,7 +2475,176 @@ export function buildEnvironment(scene) {
     birds.push({ bird, wings, home });
   }
 
+  const bus = group("Kadal–Periyar local bus");
+  const busPaint = material("#af493c");
+  block(bus, busPaint, 0, 1.5, 0, 2.35, 2.15, 8, true);
+  block(bus, m.cream, 0, 2.85, 0, 2.38, 0.58, 8.05, true);
+  block(bus, m.gold, 0, 1.15, 0, 2.4, 0.16, 8.08);
+  for (const side of [-1, 1]) {
+    for (let z = -2.8; z <= 2.9; z += 1.15)
+      block(bus, m.glass, side * 1.19, 2.2, z, 0.03, 0.72, 0.93);
+    for (const z of [-2.6, 2.6]) {
+      const wheel = mesh(
+        bus,
+        cylinder,
+        m.black,
+        side * 1.18,
+        0.55,
+        z,
+        0.5,
+        0.24,
+        0.5,
+      );
+      wheel.rotation.z = Math.PI / 2;
+      const hub = mesh(
+        bus,
+        cylinder,
+        m.cream,
+        side * 1.32,
+        0.55,
+        z,
+        0.2,
+        0.025,
+        0.2,
+      );
+      hub.rotation.z = Math.PI / 2;
+    }
+    block(bus, m.lamp, side * 0.8, 1.1, -4.03, 0.35, 0.25, 0.06);
+  }
+  block(bus, m.glass, 0, 2.1, -4.02, 1.95, 0.86, 0.04);
+  block(bus, m.darkWood, 0, 0.82, -4.09, 2.35, 0.18, 0.12);
+  sign(bus, "KADAL – PERIYAR", "LOCAL SERVICE", 0, 2.9, -4.08, 1.95, Math.PI);
+  const busDriver = human("Local bus driver", m.cream);
+  bus.add(busDriver.person);
+  busDriver.person.position.set(0.55, 1, -2.8);
+  busDriver.person.scale.setScalar(0.75);
+  const commuters = [human("Madhan", m.olive), human("Sreedevi", m.rose)];
+  for (const stop of BUS_STOPS) {
+    const stand = group(
+      "Local service waiting shelter",
+      stop.x,
+      terrainHeight(stop.x, stop.z),
+      stop.z,
+    );
+    roof(stand, 2.8, 2.65, 0, 4.8, 5, 0.8);
+    for (const z of [-2, 2]) block(stand, m.wood, 4.5, 1.3, z, 0.13, 2.6, 0.13);
+    block(stand, m.wood, 3.2, 0.6, 0, 1.4, 0.16, 3);
+    sign(
+      stand,
+      "KADAL / PERIYAR",
+      "LOCAL BUS · 6 AM – 8 PM",
+      2.8,
+      2.2,
+      2.4,
+      3.8,
+    );
+  }
+
+  // Broad, folded banana leaves use one small geometry shared by every plant.
+  const bananaGeometry = ownGeometry(new THREE.BufferGeometry());
+  const bananaVertices = [];
+  for (let i = 0; i < 8; i++) {
+    const a = i / 8,
+      b = (i + 1) / 8;
+    const center = (t) => [t * 4.4, Math.sin(t * Math.PI) - t * t, 0];
+    for (const side of [-1, 1]) {
+      const edge = (t) => [
+        t * 4.4,
+        center(t)[1] - 0.16,
+        side * Math.sin(t * Math.PI) * 0.85,
+      ];
+      bananaVertices.push(
+        ...center(a),
+        ...edge(a),
+        ...edge(b),
+        ...center(a),
+        ...edge(b),
+        ...center(b),
+      );
+    }
+  }
+  bananaGeometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(bananaVertices, 3),
+  );
+  bananaGeometry.computeVertexNormals();
+  // Small gardens and layered banks share geometry and instance batches.
+  const blossom = material("#db786d"),
+    gardenGreen = material("#477956");
+  for (const [x, z] of [
+    [-32, 50],
+    [-34, 78],
+    [79, 32],
+    [80, -34],
+    [-34, -52],
+  ]) {
+    for (let i = 0; i < 7; i++) {
+      const gx = x + Math.cos(i * 2.4) * 2.3,
+        gz = z + Math.sin(i * 2.4) * 2;
+      if (!clearVegetation(gx, gz, 2)) continue;
+      const y = terrainHeight(gx, gz);
+      instance(sphere, gardenGreen, gx, y + 0.65, gz, 0.8, 0.7, 0.8);
+      for (let j = 0; j < 3; j++)
+        instance(
+          sphere,
+          blossom,
+          gx + Math.cos(j * 2) * 0.6,
+          y + 1,
+          gz + Math.sin(j * 2) * 0.6,
+          0.11,
+          0.1,
+          0.11,
+        );
+    }
+    if (clearVegetation(x, z, 2)) {
+      const y = terrainHeight(x, z);
+      instance(cylinder, m.olive, x, y + 1.5, z, 0.16, 3, 0.16);
+      for (let leaf = 0; leaf < 7; leaf++)
+        instance(
+          bananaGeometry,
+          leaf % 2 ? m.leafLight : m.leaf,
+          x,
+          y + 3,
+          z,
+          0.55,
+          0.45,
+          0.5,
+          0,
+          (leaf * Math.PI * 2) / 7,
+          -0.18,
+        );
+    }
+  }
+  for (let z = -136; z < 138; z += 4.5) {
+    if (
+      Math.abs(z) < 10 ||
+      Math.abs(z + 90) < 10 ||
+      Math.abs(z - 8) < 9 ||
+      Math.abs(z - 65) < 9
+    )
+      continue;
+    for (const x of [28.2, 48]) {
+      const y = terrainHeight(x, z);
+      instance(sphere, gardenGreen, x, y + 0.2, z, 0.6, 0.35, 1.1);
+      instance(
+        cone,
+        m.leafLight,
+        x + 0.25,
+        y + 0.55,
+        z,
+        0.15,
+        1,
+        0.2,
+        0,
+        z,
+        0.15,
+      );
+    }
+  }
+
   const animated = new Set([
+    bus,
+    ...commuters.map((p) => p.person),
     player,
     ferry,
     coirCover,
@@ -2521,6 +2716,32 @@ export function buildEnvironment(scene) {
     const wetness = THREE.MathUtils.clamp(Number(world.rain) || 0, 0, 1);
     if (world.life) {
       const life = world.life;
+      const bp = busPosition(life.bus);
+      bus.position.set(bp.x, terrainHeight(bp.x, bp.z), bp.z);
+      bus.rotation.y = bp.heading;
+      life.bus.commuters.forEach((p, i) => {
+        const actor = commuters[i];
+        const x = p.aboard ? bp.x + (i ? -0.55 : 0.55) : p.x,
+          z = p.aboard ? bp.z + 0.7 : p.z;
+        actor.person.position.set(
+          x,
+          terrainHeight(x, z) + (p.aboard ? 1 : 0),
+          z,
+        );
+        const destination = lifeHour(life) >= 7 && lifeHour(life) < 16 ? 1 : 0;
+        const targetX = p.stop === destination ? 26 : 8;
+        const walking = !p.aboard && Math.abs(p.x - targetX) > 0.05;
+        actor.person.rotation.y = p.aboard
+          ? bp.heading
+          : targetX > p.x
+            ? Math.PI / 2
+            : -Math.PI / 2;
+        actor.limbs.forEach((limb, j) => {
+          limb.rotation.x = walking
+            ? Math.sin(t * 6 + i) * (j % 2 ? -0.4 : 0.4)
+            : 0;
+        });
+      });
       const f = ferryPosition(life);
       ferry.position.set(f.x, -0.03 + Math.sin(t) * 0.025, f.z);
       ferry.rotation.y = f.heading;

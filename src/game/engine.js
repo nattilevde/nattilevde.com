@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { BUS_STOPS, busPosition } from "./bus.js";
 import {
   createLife,
   advanceLife,
@@ -152,7 +153,7 @@ export function createGame(
     pointer = null;
   };
   function interaction() {
-    if (paused || riding || life.ferry.player) return;
+    if (paused || riding || life.ferry.player || life.bus.player) return;
     if (sitting) return stand();
     if (nearest) {
       if (nearest.residentId && !life.met.includes(nearest.residentId))
@@ -161,7 +162,15 @@ export function createGame(
     } else if (nearestRest) sit();
   }
   function sit() {
-    if (paused || riding || boating || !nearestRest) return false;
+    if (
+      paused ||
+      riding ||
+      boating ||
+      life.ferry.player ||
+      life.bus.player ||
+      !nearestRest
+    )
+      return false;
     sitting = nearestRest;
     satFor = 0;
     // Settle onto the seat and turn to the view it was placed for.
@@ -189,7 +198,8 @@ export function createGame(
       !canWalk(destination.x, destination.z) ||
       riding ||
       boating ||
-      life.ferry.player
+      life.ferry.player ||
+      life.bus.player
     )
       return false;
     sitting = null;
@@ -213,7 +223,8 @@ export function createGame(
       position.z - scooter.position.z,
     ) < 4;
   function ride() {
-    if (paused || boating || sitting || life.ferry.player) return false;
+    if (paused || boating || sitting || life.ferry.player || life.bus.player)
+      return false;
     if (riding) {
       riding = false;
       scooter.position.set(
@@ -235,6 +246,13 @@ export function createGame(
   // One fixed step of player movement: read the controls, move the body, and
   // report how far it turned this step (the scooter leans by it).
   function integrate(dt) {
+    if (life.bus.player) {
+      const b = busPosition(life.bus);
+      position.set(b.x, terrainHeight(b.x, b.z) + 1.1, b.z);
+      player.rotation.y = b.heading;
+      moving = false;
+      return 0;
+    }
     if (life.ferry.player) {
       const f = ferryPosition(life);
       position.set(f.x, 0.25, f.z);
@@ -408,6 +426,10 @@ export function createGame(
       cells: [...cells],
       life: saveLife(life),
       contact: nearest,
+      busPassenger: life.bus.player,
+      physicalBusStop: BUS_STOPS.findIndex(
+        (s) => Math.hypot(position.x - s.x, position.z - s.z) < 6,
+      ),
       ferryPassenger: life.ferry.player,
       ferryStop: FERRY_STOPS.findIndex(
         (s) => Math.hypot(position.x - s.land.x, position.z - s.land.z) < 6,
@@ -429,13 +451,14 @@ export function createGame(
     if (!paused) {
       elapsed += dt;
       const wasRaining = life.weather.target > 0;
-      advanceLife(life, dt);
+      advanceLife(life, dt, position);
       rain = life.weather.rain;
       if (wasRaining !== life.weather.target > 0)
         onEvent?.(life.weather.target > 0 ? "rain-start" : "rain-stop");
       observationTime += dt;
       if (observationTime >= 4) {
-        if (!life.ferry.player && !boating) observeLife(life, position);
+        if (!life.ferry.player && !life.bus.player && !boating)
+          observeLife(life, position);
         observationTime = 0;
       }
       if (sitting) {
@@ -585,6 +608,10 @@ export function createGame(
           speed: Math.abs(boatSpeed),
           moving,
           stand: nearestStop,
+          bus: {
+            ...busPosition(life.bus),
+            running: life.bus.phase !== "waiting",
+          },
           rehearsal: life.rehearsal.active,
           ferry: {
             ...ferryPosition(life),
@@ -717,8 +744,22 @@ export function createGame(
         position.set(at.x, terrainHeight(at.x, at.z), at.z);
         velocity.set(0, 0);
       }
+      if (result && action === "leave-bus") {
+        const at = BUS_STOPS[life.bus.stop];
+        position.set(at.x, terrainHeight(at.x, at.z), at.z);
+        velocity.set(0, 0);
+      }
       publish();
       return result;
+    },
+    skipBus() {
+      if (paused || !life.bus.player || life.bus.phase === "waiting") return;
+      const trip = life.bus.trips;
+      // Every intermediate transition still runs; a pedestrian can delay departure.
+      for (let i = 0; i < 2400 && life.bus.trips === trip; i++)
+        advanceLife(life, 0.1);
+      rain = life.weather.rain;
+      publish();
     },
     skipFerry() {
       if (paused || !life.ferry.player) return;
@@ -747,7 +788,8 @@ export function createGame(
     stand,
     travelTo,
     board() {
-      if (riding || sitting || life.ferry.player) return false;
+      if (riding || sitting || life.ferry.player || life.bus.player)
+        return false;
       if (!boating && Math.hypot(position.x - 24, position.z - 5) > 13)
         return false;
       boating = !boating;
@@ -768,6 +810,8 @@ export function createGame(
       return true;
     },
     getPosition() {
+      if (life.bus.player)
+        return { x: BUS_STOPS[life.bus.stop].x, z: BUS_STOPS[life.bus.stop].z };
       return life.ferry.player
         ? FERRY_STOPS[life.ferry.stop].land
         : boating

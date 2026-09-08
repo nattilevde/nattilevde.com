@@ -27,6 +27,7 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
+import { BUS_STOPS } from "./bus.js";
 import { createGame } from "./engine.js";
 import { RESIDENTS, FERRY_STOPS } from "./life-data.js";
 import { lifeHour, lifeDay } from "./life.js";
@@ -756,6 +757,7 @@ export default function Game({ onExit, onRecord }) {
       data-x={state.x.toFixed(1)}
       data-z={state.z.toFixed(1)}
       data-boating={state.boating}
+      data-bus-passenger={state.busPassenger || false}
       data-ferry={state.ferryPassenger || false}
       data-riding={state.riding}
       data-sitting={state.sitting || ""}
@@ -952,14 +954,50 @@ export default function Game({ onExit, onRecord }) {
           )}
           {life && !panel && (
             <div className="game-life-actions">
-              {life.coir.phase === "covering" &&
+              {!state.busPassenger &&
+                !state.ferryPassenger &&
+                !state.boating &&
+                !state.riding &&
+                !state.sitting &&
+                state.physicalBusStop === life.bus.stop &&
+                life.bus.phase === "boarding" && (
+                  <button
+                    onClick={() => engine.current?.lifeAction("board-bus")}
+                  >
+                    Board local bus to {BUS_STOPS[1 - life.bus.stop].name}
+                  </button>
+                )}
+              {state.busPassenger && (
+                <>
+                  <span>
+                    {life.bus.phase === "travelling"
+                      ? `On the road to ${BUS_STOPS[1 - life.bus.stop].name}`
+                      : BUS_STOPS[life.bus.stop].name}
+                  </span>
+                  {life.bus.phase !== "travelling" && (
+                    <button
+                      onClick={() => engine.current?.lifeAction("leave-bus")}
+                    >
+                      Leave the bus
+                    </button>
+                  )}
+                  {life.bus.phase !== "waiting" && (
+                    <button onClick={() => engine.current?.skipBus()}>
+                      Shorten bus journey
+                    </button>
+                  )}
+                </>
+              )}
+              {!state.busPassenger &&
+                life.coir.phase === "covering" &&
                 life.coir.helped !== life.weather.episode &&
                 Math.hypot(state.x - 62, state.z + 44) < 6 && (
                   <button onClick={() => engine.current?.lifeAction("coir")}>
                     Help cover the fibre
                   </button>
                 )}
-              {life.rehearsal.active &&
+              {!state.busPassenger &&
+                life.rehearsal.active &&
                 life.rehearsal.joined !== lifeDay(life) &&
                 Math.hypot(state.x + 19, state.z + 23) < 7 && (
                   <button
@@ -968,7 +1006,8 @@ export default function Game({ onExit, onRecord }) {
                     Play a few beats together
                   </button>
                 )}
-              {!state.ferryPassenger &&
+              {!state.busPassenger &&
+                !state.ferryPassenger &&
                 state.ferryStop >= 0 &&
                 life.ferry.stop === state.ferryStop &&
                 life.ferry.phase === "boarding" &&
@@ -1098,6 +1137,7 @@ export default function Game({ onExit, onRecord }) {
           {!panel &&
             nearby &&
             !state.boating &&
+            !state.busPassenger &&
             !state.ferryPassenger &&
             !state.riding &&
             !state.sitting && (

@@ -125,6 +125,23 @@ export function createSoundscape() {
   // sets stereo position, and far-away layers are rolled off so they read as far.
   const layers = [
     {
+      id: "local-bus",
+      range: 75,
+      level: 0.5,
+      at: (l) => l.bus || { x: 1e6, z: 1e6 },
+      when: (l) => !!l.bus?.running,
+      drone(out) {
+        const osc = ctx.createOscillator();
+        osc.type = "sawtooth";
+        osc.frequency.value = 43;
+        const low = filter("lowpass", 230, 1),
+          body = gain(0.045);
+        osc.connect(low).connect(body).connect(out);
+        osc.start();
+        return () => osc.stop();
+      },
+    },
+    {
       id: "passenger-boat",
       range: 65,
       level: 0.65,

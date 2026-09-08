@@ -11,6 +11,10 @@ to saved progress or to the world's data shapes.
 
 ### Added
 
+- Physical Kadal–Periyar local bus with commuters, daylight service, rain-sensitive
+  speed, pedestrian yielding, saved rides and completed-trip memories.
+- Village banana plants, flowering gardens, canal reeds and varied terrain greens.
+
 - First Kadal living-village prototype: a saved clock and seeded weather, twelve
   persistent residents, work/break/home routes, reserved shelters, interrupted
   coir work and participant-dependent rehearsal.
