@@ -150,3 +150,13 @@ the 3D world — are playable end to end.
 
 - Tea-shop life: resident-driven tea pouring, saved snack portions, changing tray,
   original in-world TV animations, scheduled viewers and local sound/text cues.
+
+- Added fictional mosque, temple and church exterior lanes with timed local
+  visitors, plus a rain-sensitive Malabar sevens warm-up and witnessed memory.
+
+- Added sourced Thumba, Chemmeen and Silent Valley reading boards with draft
+  Malayalam and passport saving; supports place stories without photographs.
+
+- Added a controllable hill jeep with fixed-step grounded physics, braking,
+  wet grip, body suspension and chase camera; added a scenic laterite loop.
+- Sevens warm-up players now chase passes and move into support.

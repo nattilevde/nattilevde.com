@@ -297,6 +297,23 @@ function WorldMap({
             </g>
           );
         })}
+      {state.life?.jeep && !state.driving && (
+        <g
+          transform={`translate(${state.life.jeep.x - b.minX},${state.life.jeep.z - b.minZ}) scale(${marker})`}
+        >
+          <title>Parked hill jeep</title>
+          <rect
+            x="-5"
+            y="-5"
+            width="10"
+            height="10"
+            rx="2"
+            fill="#506d49"
+            stroke="#fff4d4"
+            strokeWidth="1.5"
+          />
+        </g>
+      )}
       {state.scooter && !state.riding && (
         <g
           transform={`translate(${state.scooter.x - b.minX},${state.scooter.z - b.minZ}) scale(${marker})`}
@@ -778,6 +795,7 @@ export default function Game({ onExit, onRecord }) {
       data-bus-passenger={state.busPassenger || false}
       data-ferry={state.ferryPassenger || false}
       data-riding={state.riding}
+      data-driving={!!state.driving}
       data-sitting={state.sitting || ""}
     >
       <div className="game-canvas-host" ref={container} />
@@ -1201,9 +1219,29 @@ export default function Game({ onExit, onRecord }) {
                 <ArrowRight size={17} />
               </button>
             )}
+          {!panel && (state.driving || state.nearJeep) && (
+            <button
+              className="game-interaction"
+              onClick={() => engine.current?.drive()}
+              disabled={state.driving && state.jeepSpeed > 1}
+            >
+              <kbd>J</kbd>
+              <span>
+                {state.driving
+                  ? `Hill jeep · ${state.jeepSpeed} km/h`
+                  : "Borrow the hill jeep"}
+                <strong>
+                  {state.driving
+                    ? "Stop to step out · W/S drive · A/D steer · Space brake"
+                    : "Take the back roads"}
+                </strong>
+              </span>
+            </button>
+          )}
           {!panel &&
             !state.sitting &&
             !state.boating &&
+            !state.driving &&
             (state.riding ||
               (!nearby &&
                 !state.restSpot &&
@@ -1285,7 +1323,9 @@ export default function Game({ onExit, onRecord }) {
             </div>
             <button
               className={running ? "game-run active" : "game-run"}
-              aria-label="Toggle running"
+              aria-label={
+                state.driving ? "Toggle jeep brake" : "Toggle running"
+              }
               aria-pressed={running}
               onClick={() => {
                 setRunning(!running);
@@ -1293,7 +1333,15 @@ export default function Game({ onExit, onRecord }) {
               }}
             >
               <Footprints size={20} />
-              <small>{running ? "RUNNING" : "WALKING"}</small>
+              <small>
+                {state.driving
+                  ? running
+                    ? "BRAKE ON"
+                    : "BRAKE"
+                  : running
+                    ? "RUNNING"
+                    : "WALKING"}
+              </small>
             </button>
           </div>
         </>
@@ -1694,7 +1742,9 @@ export default function Game({ onExit, onRecord }) {
                       {memory.id.startsWith("story-") &&
                         storyById(memory.id.slice(6)) && (
                           <button onClick={() => openStory(memory.id.slice(6))}>
-                            Reopen photo story
+                            {storyById(memory.id.slice(6))?.image
+                              ? "Reopen photo story"
+                              : "Reopen story"}
                           </button>
                         )}
                       <button

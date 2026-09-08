@@ -7,15 +7,17 @@ test("story anchors, bounded images and saved references are valid", () => {
   const life = createLife();
   for (const story of STORIES) {
     expect(canWalk(story.x, story.z)).toBe(true);
-    expect(statSync("public" + storyImage(story, true)).size).toBeLessThan(
-      40000,
-    );
-    expect(statSync("public" + storyImage(story)).size).toBeLessThan(400000);
+    if (story.image)
+      expect(statSync("public" + storyImage(story, true)).size).toBeLessThan(
+        40000,
+      );
+    if (story.image)
+      expect(statSync("public" + storyImage(story)).size).toBeLessThan(400000);
     expect(keepPhotoStory(life, story.id, { x: 900, z: 900 })).toBe(false);
     expect(keepPhotoStory(life, story.id, story)).toBe(true);
     keepPhotoStory(life, story.id, story);
   }
-  expect(life.memories).toHaveLength(3);
+  expect(life.memories).toHaveLength(STORIES.length);
   expect(createLife(saveLife(life)).memories).toEqual(life.memories);
   expect(keepPhotoStory(life, "missing", STORIES[0])).toBe(false);
 });
@@ -133,4 +135,26 @@ test("failed photograph keeps source and story readable", async ({ page }) => {
   await expect(
     page.getByRole("link", { name: "Original photograph" }),
   ).toHaveAttribute("href", STORIES[1].source);
+});
+
+test("place story opens without a photograph and keeps its source and memory", async ({
+  page,
+}) => {
+  const story = STORIES.find((s) => s.id === "thumba-story");
+  await enter(page, story);
+  await page.getByRole("button", { name: `Inspect ${story.label}` }).click();
+  await expect(page.getByRole("heading", { name: story.title })).toBeVisible();
+  await expect(page.locator(".kerala-story img")).toHaveCount(0);
+  await page
+    .getByText("Sources & the story behind this page", { exact: true })
+    .click();
+  await expect(
+    page.getByRole("link", { name: story.sourceLabel }),
+  ).toHaveAttribute("href", story.source);
+  await page
+    .getByRole("button", { name: "Keep this story", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Kept in your passport" }),
+  ).toBeDisabled();
 });

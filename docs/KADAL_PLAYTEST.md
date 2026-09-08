@@ -133,3 +133,46 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
       play and nearby captions. Reload during a visit: no duplicate snack sale.
 - [ ] On a phone, inspect the tray/TV and revisit photo stories; confirm smooth
       walking and bus/auto/boat rides remain intact.
+
+## Faith lanes and Malabar sevens — deferred combined manual pass
+
+- [ ] Visit the mosque lane northwest of the Malabar market (x -18, z -1050),
+      temple lane north of Pooram Ground (90, -785), and church lane south of the
+      old street (-24, 582). Check exterior appearance, terrain contact and paths.
+- [ ] Morning neighbours arrive at different times: temple 06:00–08:30,
+      mosque 07:00–09:00, church 08:00–10:00. These are fictional exterior visiting
+      hours, not prayer/service schedules. Check arrivals, shade and departures.
+- [ ] Find the Malabar ground east of the market (55, -1040), around 16:00–18:00.
+      Fourteen players arrive, then pass a ball in a sevens warm-up. Check sound,
+      smooth ball movement, team colours and the optional witnessed memory.
+- [ ] Rain interrupts the warm-up and sends players under the ground shelter.
+      Play waits for the ground to dry; evening departures still happen.
+- [ ] Reload during a gathering; check continuity. On phone, check performance,
+      muted captions and existing transport smoothness. Review local architectural
+      details before treating these fictional exteriors as authentic recreations.
+
+## Thumba, Chemmeen and Silent Valley — deferred manual pass
+
+- [ ] Find the coastal science board near the southern lighthouse (-58, 620),
+      film-club board near Kadal shore (-67, 23), and forest reading board (456, -477).
+      Check visibility and approach from both sides; no panel opens automatically.
+- [ ] Read each in English and Malayalam; check source links, save to passport,
+      reload and reopen. Malayalam needs local wording review.
+- [ ] These three are text reading boards. Confirm they never show a broken image
+      or imply an archival photo, film still or exact geographical recreation.
+- [ ] Revisit an existing photo story: photo, credits, language and saved memory
+      still work. Check phone readability and resuming movement after closing.
+
+## Jeep, laterite loop and moving football players
+
+- [ ] Find the jeep beside the village stand/scooter (13, 78). Enter with J or
+      the button; W/S drive/brake/reverse, A/D steer, Space brakes. Stop to exit.
+- [ ] Try the touch stick and BRAKE toggle. Check that other ride/interaction
+      buttons do not conflict while driving and pausing stops movement/sound.
+- [ ] Cross the village bridge, take the far-bank lane toward (58, 65), then head
+      east to the laterite loop. Compare bends, hills, coasting and wet grip.
+- [ ] Check chase-camera comfort, collision stopping near walls/water/people,
+      safe exit and parked position after reload. Report any tree/rock clipping.
+- [ ] Visit sevens around 16:00–18:00: players chase passes and move into support;
+      rain shelter and evening departures still work. This is still a warm-up.
+- [ ] Compare existing scooter, bus, auto and boat rides for regressions.

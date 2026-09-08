@@ -42,3 +42,26 @@ support noticing. There is no recorded speech, licensed broadcast or new menu.
 Serving is automatic for nearby resident visits; player snack purchases and
 physical customer cup handoffs are not implemented. Faith spaces, sevens matches,
 and historical story releases remain subsequent roadmap batches.
+
+## Curated place-story release
+
+Three optional text reading boards now cover Thumba (21 November 1963), Chemmeen
+(1965) and Silent Valley's rainforest/conservation movement. They reuse inspection,
+reading pause, draft Malayalam and passport saving. Their fictional positions are
+on the southern coast, Kadal fishing shore and high-range forest approach.
+
+Sources checked 8 September 2026:
+
+- ISRO, https://www.isro.gov.in/soundingRockets.html — launch date, location and
+  atmospheric research purpose.
+- Kerala Heritage, https://www.keralaheritage.org/cinema/cultural — novel adaptation
+  and attributed Golden Lotus milestone; independent heritage-trust account.
+- NFAI catalogue, https://nfai.nfdcindia.com/pdf/Digitized%20and%20Restored%20Films_16-12-2016.pdf
+  — Chemmeen's 1965 release and director Ramu Kariat.
+- Kerala Forest Department, https://forest.kerala.gov.in/en/national-parks/ —
+  rainforest, conservation campaign and park establishment in 1984.
+
+No archival images, film stills or dialogue were added. These entries deliberately
+use text boards until suitable media and reuse terms are verified. Original photo
+cards retain their existing image credits and licences. Local editorial and
+Malayalam review remain pending; no deployment was performed.

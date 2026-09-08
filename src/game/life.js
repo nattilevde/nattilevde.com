@@ -1,3 +1,6 @@
+import { createJeep } from "./jeep.js";
+import { createCommunity, stepCommunity, communityCue } from "./community.js";
+import { SEVENS } from "./community-data.js";
 import {
   createTea,
   stepTea,
@@ -118,6 +121,8 @@ export function createLife(saved, seed = 7391) {
     bus: createBus(valid ? saved.bus : null),
     auto: createAuto(valid ? saved.auto : null),
     fishing: createFishing(valid ? saved.fishing : null),
+    jeep: createJeep(valid ? saved.jeep : null),
+    community: createCommunity(valid ? saved.community : null),
     tea: createTea(valid ? saved.tea : null),
     memories: [],
     met: [],
@@ -525,6 +530,7 @@ function tickLife(state, dt, player) {
   }
   state.residents.forEach((r, i) => stepResident(state, r, RESIDENTS[i], dt));
   stepTea(state, dt);
+  stepCommunity(state, dt);
   updateRehearsal(state);
   stepFishing(state.fishing, dt, lifeHour(state), w.rain);
   stepFerry(state, dt);
@@ -566,6 +572,12 @@ function remember(state, memory) {
 }
 
 export function observeLife(state, player) {
+  if (state.community.active && distance(player, SEVENS) < 25)
+    remember(state, {
+      id: `sevens-${lifeDay(state)}`,
+      place: SEVENS.name,
+      text: "Followed the sound of a ball and found two local sevens teams warming up together.",
+    });
   const fish = state.fishing;
   if (
     fish.phase === "unloading" &&
@@ -712,6 +724,8 @@ export function actOnLife(state, action, player) {
 }
 
 export function villageCue(state, player) {
+  const nearbyCommunity = communityCue(state, player);
+  if (nearbyCommunity) return nearbyCommunity;
   if (teaOpen(state) && teaProgramme(state) && distance(player, TEA_TV) < 24)
     return {
       ...TEA_TV,

@@ -1,3 +1,5 @@
+import { buildCommunityView } from "./community-view.js";
+import { communityClearance } from "./community-data.js";
 import { teaOpen, teaProgramme, teaMenu } from "./tea-shop.js";
 import { STORIES, storyImage } from "./stories.js";
 import { fishingPosition, fishMarketOpen, FISH_MARKET } from "./fishing.js";
@@ -1122,8 +1124,17 @@ export function buildEnvironment(scene) {
       block(frame, m.darkWood, x, 0.6, 0, 0.12, 1.2, 0.12);
     const surface = material("#f4e4be", { side: THREE.DoubleSide });
     const photo = mesh(frame, plane, surface, 0, 1.75, 0.09, 2.9, 1.94, 1);
-    sign(frame, "PHOTO STORY", story.label.toUpperCase(), 0, 0.65, 0.1, 2.8);
-    return { story, frame, surface, photo, loaded: false };
+    sign(
+      frame,
+      story.image ? "PHOTO STORY" : "PLACE STORY",
+      story.label.toUpperCase(),
+      0,
+      0.65,
+      0.1,
+      2.8,
+    );
+    if (!story.image) sign(frame, story.title, story.date, 0, 1.85, 0.12, 2.8);
+    return { story, frame, surface, photo, loaded: !story.image };
   });
 
   const pondGeometry = ownGeometry(new THREE.CircleGeometry(4.5, 48));
@@ -2403,6 +2414,8 @@ export function buildEnvironment(scene) {
     return false;
   }
   function clearWide(x, z) {
+    if (communityClearance(x, z)) return false;
+    if (x > 120 && x < 228 && z > 47 && z < 149) return false;
     if (x < coastX(z) + 5) return false;
     if (Math.abs(z + 600) < 36 && x < 430) return false;
     if (((x - 250) / 95) ** 2 + ((z - 450) / 140) ** 2 < 1.35) return false;
@@ -2875,7 +2888,148 @@ export function buildEnvironment(scene) {
     }
   }
 
+  // A narrow laterite loop with terrain-following triangles, not a flat road slab.
+  const trail = [
+    [58, 65],
+    [130, 65],
+    [170, 55],
+    [215, 75],
+    [220, 120],
+    [180, 140],
+    [135, 120],
+    [130, 65],
+  ];
+  const trailPoints = [];
+  for (let k = 1; k < trail.length; k++) {
+    const a = trail[k - 1],
+      b = trail[k],
+      length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const ox = (-(b[1] - a[1]) / length) * 1.7,
+      oz = ((b[0] - a[0]) / length) * 1.7;
+    for (let n = 0; n < Math.ceil(length / 2); n++) {
+      const point = (t, side) => {
+        const x = a[0] + (b[0] - a[0]) * t + ox * side,
+          z = a[1] + (b[1] - a[1]) * t + oz * side;
+        return [x, terrainHeight(x, z) + 0.075, z];
+      };
+      const count = Math.ceil(length / 2),
+        p = point(n / count, -1),
+        q = point(n / count, 1),
+        r = point((n + 1) / count, -1),
+        u = point((n + 1) / count, 1);
+      trailPoints.push(...p, ...q, ...r, ...q, ...u, ...r);
+    }
+  }
+  const trailGeometry = ownGeometry(new THREE.BufferGeometry());
+  trailGeometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(trailPoints, 3),
+  );
+  trailGeometry.computeVertexNormals();
+  mesh(
+    root,
+    trailGeometry,
+    material("#b68458", { side: THREE.DoubleSide }),
+    0,
+    0,
+    0,
+  );
+  const trailBoard = group(
+    "Laterite trail turn",
+    122,
+    terrainHeight(122, 65),
+    65,
+  );
+  sign(trailBoard, "LATERITE LOOP", "SLOW BENDS • HILL VIEWS", 0, 2.2, 0, 4);
+  for (const [x, z] of [
+    [143, 86],
+    [164, 111],
+    [196, 98],
+    [207, 144],
+    [225, 89],
+  ]) {
+    roundTree(x, z, 1.1);
+    for (let i = 0; i < 5; i++)
+      mesh(
+        root,
+        sphere,
+        m.olive,
+        x + (i % 3) * 0.8,
+        terrainHeight(x, z) + 0.4,
+        z + Math.floor(i / 3),
+        0.6,
+        0.5,
+        0.6,
+      );
+  }
+  const jeep = group("Kerala hill jeep", 13, terrainHeight(13, 78), 78);
+  const jeepBody = material("#506d49", { roughness: 0.55, metalness: 0.2 });
+  block(jeep, m.black, 0, 0.55, 0, 1.8, 0.22, 3.6);
+  block(jeep, jeepBody, 0, 1, -1.15, 1.9, 0.55, 1.3, true);
+  block(jeep, jeepBody, 0, 0.85, 0.6, 1.9, 0.35, 2, true);
+  for (const side of [-1, 1]) {
+    block(jeep, jeepBody, side * 0.92, 1.2, 0.5, 0.12, 0.7, 2.3);
+    block(jeep, m.black, side * 0.45, 1.05, 0.15, 0.65, 0.25, 0.75);
+    block(jeep, m.black, side * 0.45, 1.4, 0.45, 0.65, 0.7, 0.16);
+    beam(
+      jeep,
+      m.black,
+      [side * 0.86, 1.2, -0.65],
+      [side * 0.86, 2.25, -0.65],
+      0.065,
+    );
+    beam(
+      jeep,
+      m.black,
+      [side * 0.86, 1.2, 1.3],
+      [side * 0.86, 2.25, 1.3],
+      0.065,
+    );
+    mesh(jeep, sphere, m.lamp, side * 0.65, 1.07, -1.82, 0.17, 0.17, 0.07);
+  }
+  block(jeep, m.olive, 0, 2.25, 0.35, 2, 0.12, 2.3, true);
+  block(jeep, m.black, 0, 0.65, -1.92, 2.1, 0.18, 0.2);
+  for (let i = -3; i <= 3; i++)
+    block(jeep, m.black, i * 0.13, 1.04, -1.82, 0.055, 0.35, 0.05);
+  const jeepWheels = [];
+  for (const side of [-1, 1])
+    for (const z of [-1.2, 1.2]) {
+      const pivot = new THREE.Group();
+      pivot.position.set(side * 1.02, 0.46, z);
+      jeep.add(pivot);
+      const wheel = mesh(
+        pivot,
+        cylinder,
+        m.black,
+        0,
+        0,
+        0,
+        0.46,
+        0.32,
+        0.46,
+        true,
+      );
+      wheel.rotation.z = Math.PI / 2;
+      jeepWheels.push({ pivot, wheel, front: z < 0 });
+    }
+  sign(jeep, "KERALA", "HILL TRAILS", 0, 0.62, 1.85, 0.9);
+  const communityView = buildCommunityView({
+    group,
+    block,
+    mesh,
+    beam,
+    roof,
+    sign,
+    ground,
+    human,
+    m,
+    sphere,
+    cylinder,
+    terrainHeight,
+  });
   const animated = new Set([
+    jeep,
+    ...communityView.animated,
     teaProps,
     tv,
     ...storyFrames.map((p) => p.frame),
@@ -3113,6 +3267,7 @@ export function buildEnvironment(scene) {
         });
       });
       updateTea(life);
+      communityView.update(life, dt);
     }
     waterTime.value = t;
     waterNight.value = darkness;
@@ -3324,6 +3479,8 @@ export function buildEnvironment(scene) {
     canoe,
     scooter,
     scooterWheels,
+    jeep,
+    jeepWheels,
     beacons,
     update,
     dispose,

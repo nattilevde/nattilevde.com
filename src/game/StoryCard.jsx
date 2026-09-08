@@ -16,44 +16,47 @@ export default function StoryCard({ story, kept, onKeep }) {
   return (
     <article className="kerala-story">
       <span className="game-overline">
-        KERALA BEHIND THE WORLD · A PHOTO STORY
+        KERALA BEHIND THE WORLD ·{" "}
+        {story.image ? "A PHOTO STORY" : "A PLACE STORY"}
       </span>
       <h2 lang={language}>{language === "ml" ? story.mlTitle : story.title}</h2>
       <p className="story-place">
         {story.location} · {story.date}
       </p>
-      <figure>
-        {!failed ? (
-          <img
-            src={storyImage(story)}
-            alt={story.alt}
-            width="960"
-            height="720"
-            decoding="async"
-            onError={() => setFailed(true)}
-          />
-        ) : (
-          <div className="story-image-fallback">
-            The photograph couldn't load. Its story and source are still
-            available below.
-          </div>
-        )}
-        <figcaption>
-          Photo: {story.author} ·{" "}
-          <a href={story.source} target="_blank" rel="noreferrer">
-            Original photograph
-          </a>{" "}
-          ·{" "}
-          <a
-            href={`https://creativecommons.org/licenses/by-sa/${story.license}/`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            CC BY-SA {story.license}
-          </a>{" "}
-          · Resized, not cropped
-        </figcaption>
-      </figure>
+      {story.image && (
+        <figure>
+          {!failed ? (
+            <img
+              src={storyImage(story)}
+              alt={story.alt}
+              width="960"
+              height="720"
+              decoding="async"
+              onError={() => setFailed(true)}
+            />
+          ) : (
+            <div className="story-image-fallback">
+              The photograph couldn't load. Its story and source are still
+              available below.
+            </div>
+          )}
+          <figcaption>
+            Photo: {story.author} ·{" "}
+            <a href={story.source} target="_blank" rel="noreferrer">
+              Original photograph
+            </a>{" "}
+            ·{" "}
+            <a
+              href={`https://creativecommons.org/licenses/by-sa/${story.license}/`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              CC BY-SA {story.license}
+            </a>{" "}
+            · Resized, not cropped
+          </figcaption>
+        </figure>
+      )}
       <div className="story-languages" role="group" aria-label="Story language">
         <button
           aria-pressed={language === "en"}
@@ -83,27 +86,33 @@ export default function StoryCard({ story, kept, onKeep }) {
         <summary>Sources &amp; the story behind this page</summary>
         <p>
           <a href={story.source} target="_blank" rel="noreferrer">
-            Photographer's description and image history
+            {story.sourceLabel ||
+              "Photographer’s description and image history"}
           </a>
           {story.factSource && (
             <>
               {" "}
               ·{" "}
               <a href={story.factSource} target="_blank" rel="noreferrer">
-                Coir Board: the fibre and its uses
+                {story.factSourceLabel || "Coir Board: the fibre and its uses"}
               </a>
             </>
           )}
         </p>
         <p>
-          Source and licence checked 8 September 2026. Local editorial review
-          pending. The photographed people are not the game's fictional
-          characters.
+          Sources checked 8 September 2026. Local editorial review pending.
+          {story.image
+            ? " Image licence checked; photographed people are not the game’s fictional characters."
+            : " This reading board contains no archival photograph or film still."}
         </p>
       </details>
       <p className="story-notice">{story.notice}</p>
       <button className="story-keep" disabled={kept} onClick={onKeep}>
-        {kept ? "Kept in your passport" : "Keep this photo story"}
+        {kept
+          ? "Kept in your passport"
+          : story.image
+            ? "Keep this photo story"
+            : "Keep this story"}
       </button>
       {story.id === "tea-photo" && (
         <details className="story-film-club">

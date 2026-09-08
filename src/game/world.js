@@ -1,3 +1,4 @@
+import { FAITH_SPACES } from "./community-data.js";
 export const REGION = {
   id: "kerala",
   name: "Kerala Unfolded",
@@ -649,6 +650,7 @@ export const buildings = [
 
 // Non-building obstacles: fort walls, gate legs, lighthouse, elephants.
 export const solids = [
+  ...FAITH_SPACES.map((p) => ({ x: p.x, z: p.z, w: 10, d: 12 })),
   { x: -65, z: -1372, w: 52, d: 2.4 },
   { x: -65, z: -1332, w: 52, d: 2.4 },
   { x: -91, z: -1352, w: 2.4, d: 42 },
@@ -770,6 +772,9 @@ export function terrainHeight(x, z) {
     hi *
     hi *
     (52 + Math.sin(z * 0.01) * 9 + Math.sin(x * 0.03 + z * 0.004) * 6);
+  // Low rolling laterite beside the Kadal off-road loop.
+  h += 2.2 * Math.exp(-(((x - 175) / 22) ** 2 + ((z - 80) / 20) ** 2));
+  h += 1.6 * Math.exp(-(((x - 205) / 18) ** 2 + ((z - 123) / 18) ** 2));
   // Malabar's low laterite shelf.
   h += away * smooth(-950, -1150, z) * (2.2 + Math.sin(x * 0.05) * 0.8);
   // The fort headland rises over the sea.
