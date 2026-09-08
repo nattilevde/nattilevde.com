@@ -1,4 +1,13 @@
 import {
+  createTea,
+  stepTea,
+  teaProgramme,
+  teaOpen,
+  teaMenu,
+  TEA_TV,
+} from "./tea-shop.js";
+import { storyById } from "./stories.js";
+import {
   createFishing,
   stepFishing,
   fishingPosition,
@@ -109,6 +118,7 @@ export function createLife(saved, seed = 7391) {
     bus: createBus(valid ? saved.bus : null),
     auto: createAuto(valid ? saved.auto : null),
     fishing: createFishing(valid ? saved.fishing : null),
+    tea: createTea(valid ? saved.tea : null),
     memories: [],
     met: [],
   };
@@ -178,6 +188,7 @@ export function createLife(saved, seed = 7391) {
             "working",
             "home",
             "break",
+            "watching",
             "sheltering",
             "covering",
             "travelling",
@@ -285,6 +296,14 @@ export const lifeDay = (state) => Math.floor(state.clock / DAY_SECONDS) + 1;
 function destinationFor(state, r, definition) {
   const hour = lifeHour(state);
   if (hour < 6 || hour >= 19) return definition.home;
+  if (definition.id === "leela") return definition.work;
+  if (
+    ["jaya", "rajan"].includes(r.id) &&
+    hour >= 16 + r.offset / 120 &&
+    hour < 17.5 + r.offset / 120 &&
+    teaProgramme(state)
+  )
+    return definition.break;
   if (hour >= 11.5 + r.offset / 60 && hour < 13 + r.offset / 60)
     return definition.break;
   if (
@@ -383,6 +402,15 @@ function stepResident(state, r, definition, dt) {
             : "working";
   r.moving = r.route.length > 0;
   if (r.ferryIntent !== null && !r.moving) r.mode = "waiting";
+  if (
+    r.mode === "break" &&
+    ["jaya", "rajan"].includes(r.id) &&
+    teaProgramme(state) &&
+    teaOpen(state)
+  ) {
+    r.mode = "watching";
+    r.heading = Math.atan2(r.x - TEA_TV.x, r.z - TEA_TV.z);
+  }
 }
 
 function updateRehearsal(state) {
@@ -496,6 +524,7 @@ function tickLife(state, dt, player) {
     }
   }
   state.residents.forEach((r, i) => stepResident(state, r, RESIDENTS[i], dt));
+  stepTea(state, dt);
   updateRehearsal(state);
   stepFishing(state.fishing, dt, lifeHour(state), w.rain);
   stepFerry(state, dt);
@@ -683,6 +712,14 @@ export function actOnLife(state, action, player) {
 }
 
 export function villageCue(state, player) {
+  if (teaOpen(state) && teaProgramme(state) && distance(player, TEA_TV) < 24)
+    return {
+      ...TEA_TV,
+      text:
+        teaProgramme(state) === "football"
+          ? "Football on the tea-shop TV"
+          : "A film-club short on the tea-shop TV",
+    };
   if (
     state.fishing.phase === "unloading" &&
     state.fishing.cargo &&
@@ -729,6 +766,23 @@ export function villageLine(state, player) {
       text: "Thanks for helping with the fibre earlier.",
       zone: "life-radha",
     };
+  if (r.mode === "watching")
+    return {
+      who: definition.name,
+      text:
+        teaProgramme(state) === "football"
+          ? "Look at that pass down the wing!"
+          : "That rainy road looks like the way home.",
+      zone: `life-${r.id}-tv-${teaProgramme(state)}`,
+    };
+  if (r.id === "leela" && teaOpen(state))
+    return {
+      who: "Leela",
+      text: state.tea.stock
+        ? `${teaMenu(state)} on the tray. Stay for a chaya?`
+        : "The snack tray is empty. There is still tea.",
+      zone: `life-leela-tray-${teaMenu(state)}-${state.tea.stock > 0}`,
+    };
   if (r.mode === "sheltering")
     return {
       who: definition.name,
@@ -754,4 +808,22 @@ export function villageLine(state, player) {
       zone: "life-binu-boat",
     };
   return null;
+}
+
+export function keepPhotoStory(state, id, player) {
+  const story = storyById(id);
+  if (
+    !story ||
+    distance(player, story) >= 6 ||
+    state.bus.player ||
+    state.auto.player ||
+    state.ferry.player
+  )
+    return false;
+  remember(state, {
+    id: `story-${id}`,
+    place: story.place,
+    text: `Kept a photo story: ${story.title}.`,
+  });
+  return true;
 }

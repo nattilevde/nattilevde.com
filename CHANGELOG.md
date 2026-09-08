@@ -17,6 +17,9 @@ to saved progress or to the world's data shapes.
 
 ### Added
 
+- Three optional Kerala photo stories with credited local photographs, draft
+  Malayalam, source links, passport saving and an original film-club experiment.
+
 - Kadal fishing-to-market cycle: weather-dependent catches, visible basket
   deliveries, perishable stall stock, buyer activity and connected memories.
 
@@ -144,3 +147,6 @@ the 3D world — are playable end to end.
 - The portal loads photographs and fonts from third-party hosts at runtime, so
   it needs network access; the 3D world needs WebGL and Web Audio.
 - The 3D world has not been profiled on low-end mobile hardware.
+
+- Tea-shop life: resident-driven tea pouring, saved snack portions, changing tray,
+  original in-world TV animations, scheduled viewers and local sound/text cues.

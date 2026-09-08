@@ -102,3 +102,34 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
   camera sweep across the skipped route, and leaving should still land safely.
 - Compare desktop and phone. Report vehicle, location and whether the vehicle,
   camera or both still jerk; smoothness on real hardware remains to be confirmed.
+
+## Batch 5: Kerala photo stories (pending combined manual test)
+
+- Find the framed photographs at the fishing shore, beside Radha's yard and
+  near Leela's veranda. Walking past must not open a panel automatically.
+- Inspect a photograph. The world should pause; closing resumes the same moment.
+  Read the short story, switch English/Malayalam, and check sources and credits.
+- Keep a photo story, open the passport and reopen it there. Return to the portal
+  and re-enter: the story should remain saved without a duplicate memory.
+- At the tea-shop story, try the original film-club scene prompts. They should
+  read as fiction, separate from the real photograph and its facts.
+- Check the photo frame and reader on a phone. Reading should remain possible
+  when an image fails, and large images should load only when inspected.
+- Give feedback on Malayalam wording, local authenticity, and whether a photo
+  makes you look more closely at the surrounding world.
+
+## Tea-shop life — deferred combined manual pass
+
+- [ ] Visit Leela's veranda around midday: customers arrive by existing paths;
+      watch a long tea pour and check cups/arms/stream look connected.
+- [ ] Return after 14:00: the tray changes from pazham pori to parippuvada.
+      Portions decrease with service; an empty tray still permits tea service.
+- [ ] Find the TV during 11:30–13:30 or 16:00–18:30: original animated football
+      or a rainy-road film-club short plays in the world. Outside these hours it
+      switches off. No reading panel opens automatically.
+- [ ] Watch Jaya/Rajan during their breaks: face the TV, then resume their routes.
+      Rain shelter and ferry commitments still take precedence.
+- [ ] Listen from either side of the shop; check quiet TV/pouring sounds, muted
+      play and nearby captions. Reload during a visit: no duplicate snack sale.
+- [ ] On a phone, inspect the tray/TV and revisit photo stories; confirm smooth
+      walking and bus/auto/boat rides remain intact.
