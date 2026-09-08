@@ -9,6 +9,26 @@ to saved progress or to the world's data shapes.
 
 ## [Unreleased]
 
+### Added
+
+- First Kadal living-village prototype: a saved clock and seeded weather, twelve
+  persistent residents, work/break/home routes, reserved shelters, interrupted
+  coir work and participant-dependent rehearsal.
+- A short passenger-boat service with boarding, optional shortened rides and
+  safe landing; two residents use it for their cross-canal commute.
+- Contextual memories, local recognition, memory pinning and portal summaries.
+- Quiet exploration by default, optional assistance and directional captions,
+  a development-only state inspector, and single-writer protection on browsers
+  with Web Locks.
+- Model and browser checks for the village simulation and existing-save migration.
+
+### Changed
+
+- Village sound cues follow actual practice and boat movement. The perpetual
+  canal race, detached boat-song and unreachable train cues are held back.
+- The canoe return check waits for the boat to return, rather than a button
+  temporarily enabled while it is still gliding away from the landing.
+
 ### Fixed
 
 - The world no longer runs in slow motion on slow hardware. Movement now

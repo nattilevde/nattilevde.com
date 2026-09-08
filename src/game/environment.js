@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { RESIDENTS, FERRY_STOPS } from "./life-data.js";
+import { ferryPosition } from "./life.js";
 import {
   buildings,
   solids,
@@ -620,10 +622,21 @@ export function buildEnvironment(scene) {
       mesh(result.person, cylinder, shirt, 0, 0.48, 0, 0.4, 0.86, 0.33, true);
     return result;
   }
-  resident("Leela", -11.8, 32, m.rose, -Math.PI / 2, true);
-  resident("Binu", 25, 7.5, m.teal, -0.4);
-  resident("Radha", 62, -44.2, m.gold, Math.PI / 2, true);
-  resident("Hari", -19, -23, m.cream, -0.5);
+  const villagers = new Map(
+    RESIDENTS.map((r) => [
+      r.id,
+      resident(
+        r.name,
+        0,
+        0,
+        m[r.color],
+        0,
+        r.id === "leela" || r.id === "radha",
+      ),
+    ]),
+  );
+  const coirCover = block(root, m.teal, 60.7, 0.62, -43, 1.7, 0.12, 2.5);
+  coirCover.visible = false;
 
   ground(
     "Packed-earth rehearsal courtyard",
@@ -636,13 +649,7 @@ export function buildEnvironment(scene) {
   );
   const drummers = [];
   for (let i = 0; i < 3; i++) {
-    const drummer = resident(
-      `Chenda drummer ${i + 1}`,
-      -25 + i * 2.3,
-      -26.5,
-      i === 1 ? m.gold : m.cream,
-      Math.PI,
-    );
+    const drummer = villagers.get(["anil", "usha", "mani"][i]);
     const drum = mesh(
       drummer.person,
       cylinder,
@@ -790,6 +797,24 @@ export function buildEnvironment(scene) {
     for (const z of [-length * 0.2, length * 0.18])
       block(object, m.rope, 0, 0.15, z, width * 0.73, 0.1, 0.4);
     return object;
+  }
+  const ferry = boat("Kadal passenger boat", 2.5, 7);
+  const ferryCrew = human("Passenger boat keeper", m.teal);
+  ferry.add(ferryCrew.person);
+  ferryCrew.person.position.set(0, 0.15, 2);
+  beam(ferry, m.wood, [1, -0.2, 1], [1, 2.1, 2.5], 0.05);
+  for (const stop of FERRY_STOPS) {
+    const landing = group(stop.name, stop.land.x, 0, stop.land.z);
+    block(landing, m.wood, 0, 0.06, 0, 2.2, 0.15, 3.6);
+    sign(
+      landing,
+      stop.name.toUpperCase(),
+      "PASSENGER BOAT / 6 AM - 7 PM",
+      0,
+      2.5,
+      0,
+      4,
+    );
   }
   const canoe = boat("Player canoe", 1.6, 5.5);
   canoe.position.set(33, -0.03, 7);
@@ -2283,7 +2308,7 @@ export function buildEnvironment(scene) {
     { x: -1.6, from: 320, to: 520, shirt: m.rose },
     { x: 540, from: -302, to: -262, shirt: m.gold },
   ];
-  const walkers = walkerConfigs.map((config, i) => ({
+  const walkers = walkerConfigs.slice(5).map((config, i) => ({
     ...human(`Kerala walker ${i + 1}`, config.shirt, m.cream),
     ...config,
     phase: i * 43,
@@ -2426,6 +2451,9 @@ export function buildEnvironment(scene) {
 
   const animated = new Set([
     player,
+    ferry,
+    coirCover,
+    ...[...villagers.values()].map((v) => v.person),
     canoe,
     houseboat,
     lagoonBoat,
@@ -2491,6 +2519,47 @@ export function buildEnvironment(scene) {
     const t = Number.isFinite(time) ? time : 0;
     const darkness = THREE.MathUtils.clamp(Number(night) || 0, 0, 1);
     const wetness = THREE.MathUtils.clamp(Number(world.rain) || 0, 0, 1);
+    if (world.life) {
+      const life = world.life;
+      const f = ferryPosition(life);
+      ferry.position.set(f.x, -0.03 + Math.sin(t) * 0.025, f.z);
+      ferry.rotation.y = f.heading;
+      coirCover.visible = life.coir.phase !== "outside";
+      coirCover.scale.z =
+        life.coir.phase === "covering"
+          ? Math.max(0.1, 1 - life.coir.remaining / 24) * 2.5
+          : 2.5;
+      life.residents.forEach((r) => {
+        const v = villagers.get(r.id);
+        const passenger = life.ferry.passengers.indexOf(r.id);
+        const target =
+          passenger >= 0
+            ? {
+                x: f.x + (passenger % 2 ? 0.5 : -0.5),
+                z: f.z + Math.floor(passenger / 2),
+              }
+            : r;
+        const blend =
+          dt > 0 && v.person.userData.onBoat === passenger >= 0
+            ? 1 - Math.exp(-18 * dt)
+            : 1;
+        v.person.position.x += (target.x - v.person.position.x) * blend;
+        v.person.position.z += (target.z - v.person.position.z) * blend;
+        v.person.position.y =
+          passenger >= 0
+            ? 0.2
+            : terrainHeight(v.person.position.x, v.person.position.z);
+        v.person.userData.onBoat = passenger >= 0;
+        v.person.rotation.y = passenger >= 0 ? f.heading : r.heading;
+        v.limbs.forEach((limb, i) => {
+          limb.rotation.x = r.moving
+            ? Math.sin(t * (wetness > 0.4 ? 9 : 6)) * (i % 2 ? -0.4 : 0.4)
+            : 0;
+          if (r.mode === "covering" && i > 1)
+            limb.rotation.x = -0.9 + Math.sin(t * 3) * 0.3;
+        });
+      });
+    }
     waterTime.value = t;
     waterNight.value = darkness;
     m.glass.emissiveIntensity = darkness * 0.75;
@@ -2533,6 +2602,11 @@ export function buildEnvironment(scene) {
       });
     });
     drummers.forEach(({ limbs }, i) => {
+      const participant = world.life?.residents.find(
+        (r) => r.id === ["anil", "usha", "mani"][i],
+      );
+      if (!world.life?.rehearsal.active || participant?.mode !== "working")
+        return;
       limbs[2].rotation.x = -0.8 + Math.sin(t * 9 + i * 1.6) * 0.4;
       limbs[3].rotation.x = -0.8 - Math.sin(t * 9 + i * 1.6) * 0.4;
     });
@@ -2584,6 +2658,9 @@ export function buildEnvironment(scene) {
     });
     // Chundan vallams race the canal in long, surging strokes.
     snakeBoats.forEach(({ vallam, paddlers, lane, phase }, i) => {
+      // Keep the canal clear for its service; races will return as scheduled gatherings.
+      vallam.visible = !world.life;
+      if (!vallam.visible) return;
       const stroke = t * 1.9 + i;
       const surge = 0.72 + Math.max(0, Math.sin(stroke)) * 0.55;
       const travel = ((t * 9 * surge + phase) % 300) - 140;

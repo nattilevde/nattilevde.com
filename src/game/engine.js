@@ -1,4 +1,16 @@
 import * as THREE from "three";
+import {
+  createLife,
+  advanceLife,
+  saveLife,
+  lifeHour,
+  observeLife,
+  actOnLife,
+  ferryPosition,
+  villageCue,
+  villageLine,
+} from "./life.js";
+import { RESIDENTS, FERRY_STOPS, LIFE_NODES } from "./life-data.js";
 import { buildEnvironment } from "./environment.js";
 import { createSoundscape } from "./audio.js";
 import {
@@ -55,6 +67,16 @@ export function createGame(
   sun.shadow.normalBias = 0.06;
   scene.add(sun, sun.target);
   const environment = buildEnvironment(scene);
+  const life = createLife(initial.life);
+  let assistance = initial.assistance === true;
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+  let observationTime = 0;
+  environment.update(life.clock, 0, lifeHour(life) >= 19, {
+    life,
+    rain: life.weather.rain,
+  });
   const { player, playerLimbs, canoe, scooter, scooterWheels, beacons } =
     environment;
   const position = new THREE.Vector3(initial.position.x, 0, initial.position.z);
@@ -63,9 +85,8 @@ export function createGame(
   const discovered = new Set(initial.discoveries);
   const rested = new Set(initial.moments || []);
   const cells = new Set(initial.cells);
-  discovered.forEach((id) => {
-    const beacon = beacons.get(id);
-    if (beacon) beacon.visible = false;
+  beacons.forEach((beacon, id) => {
+    beacon.visible = assistance && !discovered.has(id);
   });
   if (initial.scooter) {
     scooter.position.set(
@@ -94,14 +115,12 @@ export function createGame(
   let touchMove = { x: 0, y: 0 },
     pointer = null,
     viewReady = false,
-    timeMode = "day";
+    timeMode = "cycle";
   let sitting = null,
     satFor = 0,
     nearestRest = null,
     nearestStop = null;
-  let rain = 0,
-    rainTarget = 0,
-    weatherIn = 55 + Math.random() * 70;
+  let rain = life.weather.rain;
   let boatHeading = 0,
     boatSpeed = 0;
   // The largest slice of time one movement step may cover.
@@ -133,10 +152,13 @@ export function createGame(
     pointer = null;
   };
   function interaction() {
-    if (paused || riding) return;
+    if (paused || riding || life.ferry.player) return;
     if (sitting) return stand();
-    if (nearest) onInteract(nearest.id);
-    else if (nearestRest) sit();
+    if (nearest) {
+      if (nearest.residentId && !life.met.includes(nearest.residentId))
+        life.met.push(nearest.residentId);
+      onInteract(nearest.id, nearest);
+    } else if (nearestRest) sit();
   }
   function sit() {
     if (paused || riding || boating || !nearestRest) return false;
@@ -166,7 +188,8 @@ export function createGame(
       !Number.isFinite(destination.z) ||
       !canWalk(destination.x, destination.z) ||
       riding ||
-      boating
+      boating ||
+      life.ferry.player
     )
       return false;
     sitting = null;
@@ -190,7 +213,7 @@ export function createGame(
       position.z - scooter.position.z,
     ) < 4;
   function ride() {
-    if (paused || boating || sitting) return false;
+    if (paused || boating || sitting || life.ferry.player) return false;
     if (riding) {
       riding = false;
       scooter.position.set(
@@ -212,6 +235,13 @@ export function createGame(
   // One fixed step of player movement: read the controls, move the body, and
   // report how far it turned this step (the scooter leans by it).
   function integrate(dt) {
+    if (life.ferry.player) {
+      const f = ferryPosition(life);
+      position.set(f.x, 0.25, f.z);
+      player.rotation.y = f.heading;
+      moving = false;
+      return 0;
+    }
     const inputX = sitting
       ? 0
       : Number(keys.has("KeyD") || keys.has("ArrowRight")) -
@@ -376,6 +406,14 @@ export function createGame(
       night,
       moving,
       cells: [...cells],
+      life: saveLife(life),
+      contact: nearest,
+      ferryPassenger: life.ferry.player,
+      ferryStop: FERRY_STOPS.findIndex(
+        (s) => Math.hypot(position.x - s.land.x, position.z - s.land.z) < 6,
+      ),
+      cue: villageCue(life, position),
+      localLine: villageLine(life, position),
     });
   }
 
@@ -390,16 +428,16 @@ export function createGame(
     if (paused && now - invalidatedAt > 1800) return;
     if (!paused) {
       elapsed += dt;
-      // Weather drifts between clear spells and short monsoon showers.
-      weatherIn -= dt;
-      if (weatherIn <= 0) {
-        rainTarget = rainTarget > 0.05 ? 0 : 0.55 + Math.random() * 0.45;
-        weatherIn =
-          rainTarget > 0.05 ? 26 + Math.random() * 24 : 70 + Math.random() * 90;
-        if (rainTarget > 0.05) onEvent?.("rain-start");
-        else if (rain > 0.05) onEvent?.("rain-stop");
+      const wasRaining = life.weather.target > 0;
+      advanceLife(life, dt);
+      rain = life.weather.rain;
+      if (wasRaining !== life.weather.target > 0)
+        onEvent?.(life.weather.target > 0 ? "rain-start" : "rain-stop");
+      observationTime += dt;
+      if (observationTime >= 4) {
+        if (!life.ferry.player && !boating) observeLife(life, position);
+        observationTime = 0;
       }
-      rain = THREE.MathUtils.lerp(rain, rainTarget, Math.min(1, dt * 1.3));
       if (sitting) {
         satFor += dt;
         if (satFor > 3.2 && !rested.has(sitting.id)) {
@@ -407,7 +445,7 @@ export function createGame(
           chime();
           onMoment?.(sitting.id);
         }
-        yaw += dt * 0.075;
+        if (!reducedMotion) yaw += dt * 0.075;
       }
       // Movement advances in fixed steps of at most MAX_STEP, as many as the
       // frame needs. A step that small cannot tunnel through a wall, and running
@@ -471,17 +509,45 @@ export function createGame(
         REGION_GATEWAYS.find(
           (s) => Math.hypot(position.x - s.x, position.z - s.z) < 7,
         ) || null;
+      const contacts = sites.map((site) => {
+        const definition = RESIDENTS.find((r) => r.site === site.id);
+        if (!definition) return site;
+        return { ...site, npc: null, action: `A story from ${site.name}` };
+      });
+      for (const definition of RESIDENTS.filter((r) => r.site)) {
+        const r = life.residents.find((p) => p.id === definition.id);
+        if (r.mode === "home") continue;
+        contacts.unshift({
+          ...sites.find((s) => s.id === definition.site),
+          x: r.x,
+          z: r.z,
+          residentId: r.id,
+          hint:
+            r.mode === "sheltering"
+              ? `${definition.name} is waiting under cover until the shower eases.`
+              : r.mode === "travelling"
+                ? `${definition.name} is on the way through the village.`
+                : r.id === "hari"
+                  ? life.rehearsal.active
+                    ? "The ensemble is practising together. You can stay and listen."
+                    : "The players are away from practice just now."
+                  : r.id === "radha" && life.coir.helped >= 0
+                    ? "Radha remembers your help with the fibre."
+                    : `${definition.name} is spending some time here.`,
+        });
+      }
       nearest =
-        sites
+        contacts
           .filter(
             (s) =>
               Math.hypot(position.x - s.x, position.z - s.z) <
-              (s.npc ? 5.5 : 6),
+              (s.residentId ? 5.5 : 6),
           )
           .sort(
             (a, b) =>
+              Number(!!b.residentId) - Number(!!a.residentId) ||
               Math.hypot(position.x - a.x, position.z - a.z) -
-              Math.hypot(position.x - b.x, position.z - b.z),
+                Math.hypot(position.x - b.x, position.z - b.z),
           )[0] || null;
       sites.forEach((site) => {
         if (
@@ -499,8 +565,10 @@ export function createGame(
         for (let dz = -16; dz <= 16; dz += 16)
           cells.add(cellAt(position.x + dx, position.z + dz));
       night =
-        timeMode === "night" || (timeMode === "cycle" && elapsed % 240 > 150);
+        timeMode === "night" ||
+        (timeMode === "cycle" && (lifeHour(life) >= 19 || lifeHour(life) < 6));
       environment.update(elapsed, dt, night, {
+        life,
         rain,
         x: position.x,
         z: position.z,
@@ -517,6 +585,14 @@ export function createGame(
           speed: Math.abs(boatSpeed),
           moving,
           stand: nearestStop,
+          rehearsal: life.rehearsal.active,
+          ferry: {
+            ...ferryPosition(life),
+            moving: life.ferry.phase === "crossing",
+          },
+          teaOpen: life.residents.some(
+            (r) => r.id === "leela" && r.mode === "working",
+          ),
         });
       if (now - lastPublish > 160) {
         publish();
@@ -617,13 +693,49 @@ export function createGame(
     setTime(value) {
       timeMode = value;
       night = value === "night";
-      environment.update(elapsed, 0, night);
+      environment.update(elapsed, 0, night, { life, rain });
       invalidatedAt = performance.now();
     },
     setQuality(low) {
       renderer.setPixelRatio(low ? 1 : Math.min(window.devicePixelRatio, 1.6));
       renderer.shadowMap.enabled = !low;
       resize();
+    },
+    getLife: () => saveLife(life),
+    setAssistance(value) {
+      assistance = value;
+      beacons.forEach((beacon, id) => {
+        beacon.visible = value && !discovered.has(id);
+      });
+    },
+    lifeAction(action) {
+      if (paused || boating || riding || sitting) return false;
+      const result = actOnLife(life, action, position);
+      if (result && action === "rehearsal") playBeat();
+      if (result && action === "leave-ferry") {
+        const at = FERRY_STOPS[life.ferry.stop].land;
+        position.set(at.x, terrainHeight(at.x, at.z), at.z);
+        velocity.set(0, 0);
+      }
+      publish();
+      return result;
+    },
+    skipFerry() {
+      if (paused || !life.ferry.player) return;
+      if (life.ferry.phase !== "crossing") {
+        if (life.ferry.phase !== "boarding") return;
+        advanceLife(life, life.ferry.remaining + 0.1);
+      }
+      if (life.ferry.phase === "crossing")
+        advanceLife(life, (1 - life.ferry.progress) * 22 + 0.1);
+      rain = life.weather.rain;
+      publish();
+    },
+    pinMemory(id) {
+      const m = life.memories.find((m) => m.id === id);
+      if (m && (m.pinned || life.memories.filter((m) => m.pinned).length < 8))
+        m.pinned = !m.pinned;
+      publish();
     },
     setSound,
     chime,
@@ -635,7 +747,7 @@ export function createGame(
     stand,
     travelTo,
     board() {
-      if (riding || sitting) return false;
+      if (riding || sitting || life.ferry.player) return false;
       if (!boating && Math.hypot(position.x - 24, position.z - 5) > 13)
         return false;
       boating = !boating;
@@ -656,7 +768,11 @@ export function createGame(
       return true;
     },
     getPosition() {
-      return boating ? { x: 24, z: 5 } : { x: position.x, z: position.z };
+      return life.ferry.player
+        ? FERRY_STOPS[life.ferry.stop].land
+        : boating
+          ? { x: 24, z: 5 }
+          : { x: position.x, z: position.z };
     },
     dispose() {
       disposed = true;

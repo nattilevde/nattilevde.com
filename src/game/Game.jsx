@@ -28,6 +28,8 @@ import {
   X,
 } from "lucide-react";
 import { createGame } from "./engine.js";
+import { RESIDENTS, FERRY_STOPS } from "./life-data.js";
+import { lifeHour, lifeDay } from "./life.js";
 import {
   overheardFor,
   weatherLine,
@@ -358,6 +360,48 @@ export default function Game({ onExit, onRecord }) {
   callbacks.current = { onRecord };
   const [journey, setJourney] = useState(readJourney);
   const journeyRef = useRef(journey);
+  const [assistance, setAssistance] = useState(journey.assistance === true);
+  const [captions, setCaptions] = useState(journey.captions === true);
+  const [encounterDetail, setEncounterDetail] = useState(null);
+  const [ownsWorld, setOwnsWorld] = useState(!navigator.locks);
+  useEffect(() => {
+    if (!navigator.locks) return;
+    let cancelled = false,
+      release;
+    async function reserveWorld() {
+      // StrictMode may release an initial mount's lock one browser task later.
+      for (let attempt = 0; attempt < 3 && !cancelled; attempt++) {
+        const acquired = await navigator.locks.request(
+          "nattilevde-world-writer",
+          { ifAvailable: true },
+          async (lock) => {
+            if (cancelled || !lock) return false;
+            setOwnsWorld(true);
+            await new Promise((resolve) => {
+              release = resolve;
+            });
+            return true;
+          },
+        );
+        if (acquired || cancelled) return;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      if (!cancelled)
+        setError(
+          "Your world is open in another tab. Close that world's tab, then return here from the portal to continue safely.",
+        );
+    }
+    reserveWorld().catch(() => {
+      if (!cancelled)
+        setError(
+          "The world could not reserve its save. Return to the portal and try again.",
+        );
+    });
+    return () => {
+      cancelled = true;
+      release?.();
+    };
+  }, []);
   const [state, setState] = useState({
     ...journey.position,
     heading: 0,
@@ -380,7 +424,7 @@ export default function Game({ onExit, onRecord }) {
     [encounter, setEncounter] = useState(null),
     [notice, setNotice] = useState(null);
   const [sound, setSound] = useState(true),
-    [time, setTime] = useState("day"),
+    [time, setTime] = useState("cycle"),
     [low, setLow] = useState(false),
     [running, setRunning] = useState(false);
   const [beats, setBeats] = useState(0),
@@ -392,6 +436,7 @@ export default function Game({ onExit, onRecord }) {
     lastLine = useRef({ text: "", at: 0 });
   const stateRef = useRef(state);
   stateRef.current = state;
+  const lastMemories = useRef("");
   const lastSave = useRef(0),
     noticeTimer = useRef(null);
   const region = regionAt(state.x, state.z);
@@ -400,8 +445,29 @@ export default function Game({ onExit, onRecord }) {
     a.requires.every((id) => journey[a.source].includes(id)),
   );
   const objective = activities.find((a) => !completed.includes(a));
-  const nearby = sites.find((s) => s.id === state.nearby);
-  const encounterSite = sites.find((s) => s.id === encounter);
+  const nearby = state.contact || sites.find((s) => s.id === state.nearby);
+  const encounterSite =
+    encounterDetail || sites.find((s) => s.id === encounter);
+  const life = state.life;
+  const memories = life?.memories || [];
+  const cue = state.cue;
+  const cueDirection = cue
+    ? (() => {
+        const dx = cue.x - state.x,
+          dz = cue.z - state.z;
+        const right =
+          dx * Math.cos(state.heading) - dz * Math.sin(state.heading);
+        const ahead =
+          -dx * Math.sin(state.heading) - dz * Math.cos(state.heading);
+        return Math.abs(right) > Math.abs(ahead)
+          ? right > 0
+            ? "to your right"
+            : "to your left"
+          : ahead > 0
+            ? "ahead"
+            : "behind you";
+      })()
+    : "";
   const restSpot = REST_SPOTS.find(
     (s) => s.id === (state.sitting || state.restSpot),
   );
@@ -487,6 +553,7 @@ export default function Game({ onExit, onRecord }) {
   }
 
   useEffect(() => {
+    if (!ownsWorld) return;
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     callbacks.current.onRecord("restore", journeyRef.current);
@@ -496,10 +563,19 @@ export default function Game({ onExit, onRecord }) {
         initial: journeyRef.current,
         onUpdate(next) {
           setState(next);
+          const memoryKey = next.life.memories.map((m) => m.id).join("|");
+          if (memoryKey !== lastMemories.current) {
+            lastMemories.current = memoryKey;
+            callbacks.current.onRecord(
+              "memories",
+              next.life.memories.map((m) => m.text),
+            );
+          }
           if (Date.now() - lastSave.current > 1800) {
             save({
               ...journeyRef.current,
               cells: next.cells,
+              life: next.life,
               scooter: next.riding ? journeyRef.current.scooter : next.scooter,
               position: game?.getPosition() || journeyRef.current.position,
             });
@@ -507,13 +583,15 @@ export default function Game({ onExit, onRecord }) {
           }
         },
         onDiscover: (id) => record("discoveries", id),
-        onInteract: (id) => {
+        onInteract: (id, detail) => {
+          setEncounterDetail(detail);
           setBeats(0);
           setEncounter(id);
           setPanel("encounter");
         },
         onMoment: (id) => record("moments", id),
         onEvent: (kind) => {
+          if (!journeyRef.current.assistance) return;
           say(weatherLine(kind), { force: true });
           announce(
             kind === "rain-start"
@@ -543,7 +621,11 @@ export default function Game({ onExit, onRecord }) {
     }
     return () => {
       if (game) {
-        const next = { ...journeyRef.current, position: game.getPosition() };
+        const next = {
+          ...journeyRef.current,
+          position: game.getPosition(),
+          life: game.getLife(),
+        };
         try {
           localStorage.setItem("kerala-world-journey", JSON.stringify(next));
         } catch {}
@@ -553,7 +635,7 @@ export default function Game({ onExit, onRecord }) {
       document.body.style.overflow = originalOverflow;
       clearTimeout(noticeTimer.current);
     };
-  }, []);
+  }, [ownsWorld]);
 
   useEffect(() => {
     engine.current?.setPaused(!started || !!panel || !!error);
@@ -563,9 +645,17 @@ export default function Game({ onExit, onRecord }) {
     if (!started || panel) return;
     const listen = setInterval(() => {
       const now = stateRef.current;
-      if (now.sitting || now.boating) return;
+      if (now.boating || now.ferryPassenger) return;
+      const inVillage = now.x > -100 && now.x < 115 && Math.abs(now.z) < 160;
       say(
-        overheardFor({ x: now.x, z: now.z, rain: now.rain, night: now.night }),
+        inVillage
+          ? now.localLine
+          : overheardFor({
+              x: now.x,
+              z: now.z,
+              rain: now.rain,
+              night: now.night,
+            }),
       );
     }, 6500);
     return () => clearInterval(listen);
@@ -612,6 +702,7 @@ export default function Game({ onExit, onRecord }) {
   const closePanel = () => {
     setPanel(null);
     setEncounter(null);
+    setEncounterDetail(null);
     setPicked(null);
   };
   // Fast travel is a bus ride, not a teleport: bell, conductor, then the road.
@@ -633,6 +724,7 @@ export default function Game({ onExit, onRecord }) {
     }, 1150);
   }
   function completeEncounter() {
+    if (encounterSite.residentId === "hari" && !life?.rehearsal.active) return;
     if (encounterSite.kind === "culture" && beats < 2) {
       setBeats((b) => b + 1);
       engine.current.playBeat();
@@ -658,12 +750,13 @@ export default function Game({ onExit, onRecord }) {
 
   return (
     <div
-      className="kerala-game"
+      className={`kerala-game ${assistance ? "" : "game-quiet"}`}
       data-testid="kerala-game"
       data-ready={ready}
       data-x={state.x.toFixed(1)}
       data-z={state.z.toFixed(1)}
       data-boating={state.boating}
+      data-ferry={state.ferryPassenger || false}
       data-riding={state.riding}
       data-sitting={state.sitting || ""}
     >
@@ -803,39 +896,41 @@ export default function Game({ onExit, onRecord }) {
                   : "A little golden-hour wandering"}
             </div>
           </div>
-          <div className="game-objective">
-            <span>
-              <Flag size={13} />
-              {objective ? "A LITTLE DIRECTION" : "A CHAPTER WELL TRAVELLED"}
-            </span>
-            <strong>
-              {objective?.name || "Let curiosity take you further"}
-            </strong>
-            <p>
-              {objective?.description ||
-                "All three activities complete. The village is still yours to wander."}
-            </p>
-            {objective && (
-              <div className="game-objective-dots">
-                {objective.requires.map((id) => (
-                  <i
-                    key={id}
-                    className={
-                      journey[objective.source].includes(id) ? "filled" : ""
+          {assistance && (
+            <div className="game-objective">
+              <span>
+                <Flag size={13} />
+                {objective ? "A LITTLE DIRECTION" : "A CHAPTER WELL TRAVELLED"}
+              </span>
+              <strong>
+                {objective?.name || "Let curiosity take you further"}
+              </strong>
+              <p>
+                {objective?.description ||
+                  "All three activities complete. The village is still yours to wander."}
+              </p>
+              {objective && (
+                <div className="game-objective-dots">
+                  {objective.requires.map((id) => (
+                    <i
+                      key={id}
+                      className={
+                        journey[objective.source].includes(id) ? "filled" : ""
+                      }
+                    />
+                  ))}
+                  <small>
+                    {
+                      objective.requires.filter((id) =>
+                        journey[objective.source].includes(id),
+                      ).length
                     }
-                  />
-                ))}
-                <small>
-                  {
-                    objective.requires.filter((id) =>
-                      journey[objective.source].includes(id),
-                    ).length
-                  }
-                  /{objective.requires.length}
-                </small>
-              </div>
-            )}
-          </div>
+                    /{objective.requires.length}
+                  </small>
+                </div>
+              )}
+            </div>
+          )}
           <button
             className="game-minimap"
             aria-label="Expand exploration map"
@@ -844,10 +939,77 @@ export default function Game({ onExit, onRecord }) {
             <WorldMap state={state} journey={journey} />
             <span>
               <Compass size={12} />
-              {journey.discoveries.length} / {sites.length} discovered
+              {assistance
+                ? `${journey.discoveries.length} / ${sites.length} discovered`
+                : "Your surroundings"}
               <Maximize size={11} />
             </span>
           </button>
+          {captions && cue && (
+            <div className="game-world-cue" role="status">
+              {cue.text} · {cueDirection}
+            </div>
+          )}
+          {life && !panel && (
+            <div className="game-life-actions">
+              {life.coir.phase === "covering" &&
+                life.coir.helped !== life.weather.episode &&
+                Math.hypot(state.x - 62, state.z + 44) < 6 && (
+                  <button onClick={() => engine.current?.lifeAction("coir")}>
+                    Help cover the fibre
+                  </button>
+                )}
+              {life.rehearsal.active &&
+                life.rehearsal.joined !== lifeDay(life) &&
+                Math.hypot(state.x + 19, state.z + 23) < 7 && (
+                  <button
+                    onClick={() => engine.current?.lifeAction("rehearsal")}
+                  >
+                    Play a few beats together
+                  </button>
+                )}
+              {!state.ferryPassenger &&
+                state.ferryStop >= 0 &&
+                life.ferry.stop === state.ferryStop &&
+                life.ferry.phase === "boarding" &&
+                !state.boating &&
+                !state.riding && (
+                  <button
+                    onClick={() => engine.current?.lifeAction("board-ferry")}
+                  >
+                    Board for {FERRY_STOPS[1 - life.ferry.stop].name}
+                  </button>
+                )}
+              {state.ferryPassenger && (
+                <>
+                  <span>
+                    {life.ferry.phase === "crossing"
+                      ? `Crossing to ${FERRY_STOPS[1 - life.ferry.stop].name}`
+                      : FERRY_STOPS[life.ferry.stop].name}
+                  </span>
+                  {life.ferry.phase === "waiting" && (
+                    <span>
+                      {lifeHour(life) < 6 || lifeHour(life) >= 19
+                        ? "Service resumes in the morning."
+                        : "Waiting for the heavy shower to ease."}
+                    </span>
+                  )}
+                  {life.ferry.phase !== "crossing" && (
+                    <button
+                      onClick={() => engine.current?.lifeAction("leave-ferry")}
+                    >
+                      Step ashore
+                    </button>
+                  )}
+                  {life.ferry.phase !== "waiting" && (
+                    <button onClick={() => engine.current?.skipFerry()}>
+                      Shorten the ride
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
           <div className="game-bottom-controls">
             <span>
               <kbd>W A S D</kbd> Move
@@ -936,6 +1098,7 @@ export default function Game({ onExit, onRecord }) {
           {!panel &&
             nearby &&
             !state.boating &&
+            !state.ferryPassenger &&
             !state.riding &&
             !state.sitting && (
               <button
@@ -1094,7 +1257,11 @@ export default function Game({ onExit, onRecord }) {
               {encounterSite.npc && (
                 <button
                   className="game-primary"
-                  disabled={journey.interactions.includes(encounter)}
+                  disabled={
+                    journey.interactions.includes(encounter) ||
+                    (encounterSite.residentId === "hari" &&
+                      !life?.rehearsal.active)
+                  }
                   onClick={completeEncounter}
                 >
                   {journey.interactions.includes(encounter)
@@ -1369,6 +1536,33 @@ export default function Game({ onExit, onRecord }) {
                   </div>
                 ))}
               </div>
+              <h3 className="game-passport-heading">People met</h3>
+              <p>
+                {(life?.met || [])
+                  .map((id) => RESIDENTS.find((r) => r.id === id)?.name)
+                  .join(" · ") || "Familiar faces begin with a hello."}
+              </p>
+              <h3 className="game-passport-heading">Moments kept</h3>
+              <div className="game-lived-memories">
+                {memories.length ? (
+                  [...memories].reverse().map((memory) => (
+                    <article key={memory.id}>
+                      <small>
+                        DAY {memory.day} · {memory.place}
+                      </small>
+                      <p>{memory.text}</p>
+                      <button
+                        aria-pressed={memory.pinned}
+                        onClick={() => engine.current?.pinMemory(memory.id)}
+                      >
+                        {memory.pinned ? "Unpin memory" : "Pin memory"}
+                      </button>
+                    </article>
+                  ))
+                ) : (
+                  <p>Shared moments will find a place here as you wander.</p>
+                )}
+              </div>
               <h3 className="game-passport-heading">Quiet moments</h3>
               <div className="game-moment-list">
                 {REST_SPOTS.map((spot) => {
@@ -1453,10 +1647,41 @@ export default function Game({ onExit, onRecord }) {
                 On touch screens, use the left joystick to move and drag the
                 world to look around. Tap a nearby interaction to meet a local.
               </p>
+              {life && (
+                <p>
+                  Day {lifeDay(life)} ·{" "}
+                  {Math.floor(lifeHour(life)).toString().padStart(2, "0")}:
+                  {Math.floor((lifeHour(life) % 1) * 60)
+                    .toString()
+                    .padStart(2, "0")}{" "}
+                  in Kadal. Light overrides do not change people's routines.
+                </p>
+              )}
               <div className="game-settings">
+                <button
+                  aria-pressed={assistance}
+                  onClick={() => {
+                    const value = !assistance;
+                    setAssistance(value);
+                    engine.current?.setAssistance(value);
+                    save({ ...journeyRef.current, assistance: value });
+                  }}
+                >
+                  Exploration assistance<span>{assistance ? "On" : "Off"}</span>
+                </button>
+                <button
+                  aria-pressed={captions}
+                  onClick={() => {
+                    setCaptions(!captions);
+                    save({ ...journeyRef.current, captions: !captions });
+                  }}
+                >
+                  Directional sound captions
+                  <span>{captions ? "On" : "Off"}</span>
+                </button>
                 <label>
                   <Sun size={16} />
-                  Atmosphere
+                  Light appearance
                   <select
                     aria-label="World atmosphere"
                     value={time}
@@ -1465,9 +1690,9 @@ export default function Game({ onExit, onRecord }) {
                       engine.current.setTime(e.target.value);
                     }}
                   >
-                    <option value="day">Golden hour</option>
-                    <option value="night">Moonlight</option>
-                    <option value="cycle">Day & night cycle</option>
+                    <option value="cycle">Follow the village clock</option>
+                    <option value="day">Golden hour appearance</option>
+                    <option value="night">Moonlight appearance</option>
                   </select>
                 </label>
                 <button
@@ -1490,6 +1715,32 @@ export default function Game({ onExit, onRecord }) {
                   Graphics<span>{low ? "Lightweight" : "Balanced"}</span>
                 </button>
               </div>
+              {import.meta.env.DEV &&
+                life &&
+                new URLSearchParams(location.search).has("life-debug") && (
+                  <details className="game-life-debug">
+                    <summary>Village simulation</summary>
+                    <pre>
+                      {JSON.stringify(
+                        {
+                          clock: life.clock,
+                          weather: life.weather,
+                          coir: life.coir,
+                          ferry: life.ferry,
+                          residents: life.residents.map(
+                            ({ id, mode, destination }) => ({
+                              id,
+                              mode,
+                              destination,
+                            }),
+                          ),
+                        },
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </details>
+                )}
               <button className="game-primary" onClick={closePanel}>
                 Back to the wandering <Play size={17} />
               </button>

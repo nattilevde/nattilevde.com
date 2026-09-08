@@ -59,6 +59,7 @@ const initialProgress = {
   worldDiscoveries: [],
   worldInteractions: [],
   worldActivities: [],
+  worldMemories: [],
 };
 function getProgress() {
   try {
@@ -80,7 +81,9 @@ function mergePassport(current, incoming) {
   return Object.fromEntries(
     Object.keys(initialProgress).map((key) => [
       key,
-      [...new Set([...(current[key] || []), ...(incoming[key] || [])])],
+      [...new Set([...(current[key] || []), ...(incoming[key] || [])])].slice(
+        key === "worldMemories" ? -40 : 0,
+      ),
     ]),
   );
 }
@@ -158,6 +161,13 @@ export default function App() {
     setPlaying(false);
   }
   function recordWorld(kind, item) {
+    if (kind === "memories") {
+      setProgress((p) => ({
+        ...p,
+        worldMemories: [...new Set([...p.worldMemories, ...item])].slice(-40),
+      }));
+      return;
+    }
     if (kind === "restore") {
       setProgress((p) =>
         mergePassport(p, {
@@ -1122,6 +1132,14 @@ export default function App() {
                           {site.kind === "hidden" ? " / Hidden discovery" : ""}
                         </span>
                       ))}
+                  </div>
+                )}
+                {progress.worldMemories.length > 0 && (
+                  <div className="world-passport-list">
+                    <h4>Moments from Kadal</h4>
+                    {progress.worldMemories.slice(-8).map((text) => (
+                      <p key={text}>{text}</p>
+                    ))}
                   </div>
                 )}
                 {progress.worldActivities.map((id) => (
