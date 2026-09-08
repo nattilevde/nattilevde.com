@@ -515,12 +515,13 @@ function tickLife(state, dt, player) {
   ]);
 }
 
-export function advanceLife(state, seconds, player = null) {
+export function advanceLife(state, seconds, player = null, onStep = null) {
   if (!Number.isFinite(seconds) || seconds <= 0) return state;
   state.remainder += Math.min(seconds, DAY_SECONDS);
   while (state.remainder + 1e-9 >= LIFE_STEP) {
     state.remainder = Math.max(0, state.remainder - LIFE_STEP);
     tickLife(state, LIFE_STEP, player);
+    onStep?.(state);
   }
   return state;
 }

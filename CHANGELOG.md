@@ -9,6 +9,12 @@ to saved progress or to the world's data shapes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Smoothed bus, auto and ferry rendering between simulation steps, keeping riders
+  attached to their vehicles; eased camera aim for all movement, including canoe
+  rides, and reset visual interpolation after shortened journeys.
+
 ### Added
 
 - Kadal fishing-to-market cycle: weather-dependent catches, visible basket

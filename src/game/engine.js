@@ -1,3 +1,4 @@
+import { createTransportMotion } from "./transport-motion.js";
 import { fishMarketOpen } from "./fishing.js";
 import { AUTO_STOPS, autoPosition } from "./auto.js";
 import * as THREE from "three";
@@ -71,6 +72,8 @@ export function createGame(
   scene.add(sun, sun.target);
   const environment = buildEnvironment(scene);
   const life = createLife(initial.life);
+  const transportMotion = createTransportMotion(life);
+  let transportPoses = transportMotion.sample(life.remainder);
   let assistance = initial.assistance === true;
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
@@ -83,6 +86,8 @@ export function createGame(
   const { player, playerLimbs, canoe, scooter, scooterWheels, beacons } =
     environment;
   const position = new THREE.Vector3(initial.position.x, 0, initial.position.z);
+  const renderPosition = position.clone();
+  const desiredTarget = new THREE.Vector3();
   const velocity = new THREE.Vector2();
   const keys = new Set();
   const discovered = new Set(initial.discoveries);
@@ -480,7 +485,8 @@ export function createGame(
     if (!paused) {
       elapsed += dt;
       const wasRaining = life.weather.target > 0;
-      advanceLife(life, dt, position);
+      advanceLife(life, dt, position, transportMotion.capture);
+      transportPoses = transportMotion.sample(life.remainder);
       rain = life.weather.rain;
       if (wasRaining !== life.weather.target > 0)
         onEvent?.(life.weather.target > 0 ? "rain-start" : "rain-stop");
@@ -515,7 +521,26 @@ export function createGame(
         budget -= step;
         turn = integrate(step);
       }
-      player.position.copy(position);
+      renderPosition.copy(position);
+      const passenger = life.auto.player
+        ? "auto"
+        : life.bus.player
+          ? "bus"
+          : life.ferry.player
+            ? "ferry"
+            : null;
+      if (passenger) {
+        const pose = transportPoses[passenger];
+        renderPosition.set(
+          pose.x,
+          passenger === "ferry"
+            ? 0.25
+            : terrainHeight(pose.x, pose.z) + (passenger === "bus" ? 1.1 : 0.5),
+          pose.z,
+        );
+        player.rotation.y = pose.heading;
+      }
+      player.position.copy(renderPosition);
       if (life.auto.player) player.position.y -= 0.6;
       if (riding) player.position.y += 0.55;
       if (sitting) {
@@ -630,6 +655,7 @@ export function createGame(
         rain,
         x: position.x,
         z: position.z,
+        transports: transportPoses,
         rowing: boating ? Math.min(1, Math.abs(boatSpeed) / 3.4) : 0,
       });
       if (sound)
@@ -684,8 +710,12 @@ export function createGame(
     sun.intensity *= 1 - rain * 0.5;
     hemisphere.intensity *= 1 - rain * 0.25;
     sun.color.set(night ? "#acc8ed" : "#ffe5b6");
-    sun.position.set(position.x - 45, position.y + 65, position.z + 30);
-    sun.target.position.copy(position);
+    sun.position.set(
+      renderPosition.x - 45,
+      renderPosition.y + 65,
+      renderPosition.z + 30,
+    );
+    sun.target.position.copy(renderPosition);
     // Sitting eases the camera into a low, close, slowly drifting view.
     viewDistance = THREE.MathUtils.lerp(
       viewDistance,
@@ -697,15 +727,17 @@ export function createGame(
       sitting ? 0.22 : pitch,
       Math.min(1, dt * 1.6),
     );
-    cameraTarget.set(
-      position.x,
-      position.y + (sitting ? 1.15 : 1.65),
-      position.z,
+    desiredTarget.set(
+      renderPosition.x,
+      renderPosition.y + (sitting ? 1.15 : 1.65),
+      renderPosition.z,
     );
+    if (!viewReady) cameraTarget.copy(desiredTarget);
+    else cameraTarget.lerp(desiredTarget, 1 - Math.exp(-7 * dt));
     desiredCamera.set(
-      position.x + Math.sin(yaw) * viewDistance * Math.cos(viewPitch),
-      position.y + 2 + Math.sin(viewPitch) * viewDistance,
-      position.z + Math.cos(yaw) * viewDistance * Math.cos(viewPitch),
+      renderPosition.x + Math.sin(yaw) * viewDistance * Math.cos(viewPitch),
+      renderPosition.y + 2 + Math.sin(viewPitch) * viewDistance,
+      renderPosition.z + Math.cos(yaw) * viewDistance * Math.cos(viewPitch),
     );
     desiredCamera.y = Math.max(
       desiredCamera.y,
@@ -721,7 +753,7 @@ export function createGame(
           desiredCamera,
           Math.max(0.22, t - 0.1),
         );
-        desiredCamera.y = Math.max(desiredCamera.y, position.y + 3);
+        desiredCamera.y = Math.max(desiredCamera.y, renderPosition.y + 3);
         break;
       }
     }
@@ -737,6 +769,13 @@ export function createGame(
     terrainHeight(position.x, position.z),
     position.z,
   );
+  // Start a restored passenger at the vehicle, not the fallback landing position.
+  if (life.auto.player || life.bus.player || life.ferry.player) {
+    integrate(0);
+    renderPosition.copy(position);
+    player.position.copy(renderPosition);
+    if (life.auto.player) player.position.y -= 0.6;
+  }
   frame = requestAnimationFrame(tick);
   publish();
 
@@ -761,7 +800,11 @@ export function createGame(
     setTime(value) {
       timeMode = value;
       night = value === "night";
-      environment.update(elapsed, 0, night, { life, rain });
+      environment.update(elapsed, 0, night, {
+        life,
+        rain,
+        transports: transportPoses,
+      });
       invalidatedAt = performance.now();
     },
     setQuality(low) {
@@ -803,6 +846,9 @@ export function createGame(
         return;
       for (let i = 0; i < 2400 && life.auto.phase === "travelling"; i++)
         advanceLife(life, 0.1);
+      transportMotion.reset(life);
+      transportPoses = transportMotion.sample(0);
+      viewReady = false;
       rain = life.weather.rain;
       publish();
     },
@@ -812,6 +858,9 @@ export function createGame(
       // Every intermediate transition still runs; a pedestrian can delay departure.
       for (let i = 0; i < 2400 && life.bus.trips === trip; i++)
         advanceLife(life, 0.1);
+      transportMotion.reset(life);
+      transportPoses = transportMotion.sample(0);
+      viewReady = false;
       rain = life.weather.rain;
       publish();
     },
@@ -823,6 +872,9 @@ export function createGame(
       }
       if (life.ferry.phase === "crossing")
         advanceLife(life, (1 - life.ferry.progress) * 22 + 0.1);
+      transportMotion.reset(life);
+      transportPoses = transportMotion.sample(0);
+      viewReady = false;
       rain = life.weather.rain;
       publish();
     },

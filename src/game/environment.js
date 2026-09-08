@@ -2826,14 +2826,14 @@ export function buildEnvironment(scene) {
             ? Math.sin(t * 6) * (i % 2 ? -0.4 : 0.4)
             : 0;
       });
-      const ap = autoPosition(life.auto);
+      const ap = world.transports?.auto || autoPosition(life.auto);
       feederAuto.group.position.set(ap.x, terrainHeight(ap.x, ap.z), ap.z);
       feederAuto.group.rotation.y = ap.heading;
       feederAuto.wheels.forEach((w) => {
         if (life.auto.phase === "travelling" && !life.auto.yielding)
           w.rotation.x += dt * 10;
       });
-      const bp = busPosition(life.bus);
+      const bp = world.transports?.bus || busPosition(life.bus);
       bus.position.set(bp.x, terrainHeight(bp.x, bp.z), bp.z);
       bus.rotation.y = bp.heading;
       life.bus.commuters.forEach((p, i) => {
@@ -2859,7 +2859,7 @@ export function buildEnvironment(scene) {
             : 0;
         });
       });
-      const f = ferryPosition(life);
+      const f = world.transports?.ferry || ferryPosition(life);
       ferry.position.set(f.x, -0.03 + Math.sin(t) * 0.025, f.z);
       ferry.rotation.y = f.heading;
       coirCover.visible = life.coir.phase !== "outside";

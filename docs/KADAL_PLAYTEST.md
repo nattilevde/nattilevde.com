@@ -91,3 +91,14 @@ This batch is one driver and one route; NPC transfers and fares are not simulate
 - Check the stall, carried baskets, rain and nearby actions on a phone.
 
 Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or issue.
+
+## Ride smoothness fix (pending manual confirmation)
+
+- Ride the bus, auto and passenger boat normally, without shortening: scenery
+  should glide between simulation steps and passengers should stay with the vehicle.
+- Try auto corners, a bus bridge crossing and the manual canoe; watch for sudden
+  camera shaking. Drag to look around while moving, then stop and start again.
+- Pause/resume, reload mid-ride and shorten a journey: there should be no long
+  camera sweep across the skipped route, and leaving should still land safely.
+- Compare desktop and phone. Report vehicle, location and whether the vehicle,
+  camera or both still jerk; smoothness on real hardware remains to be confirmed.
