@@ -1,3 +1,5 @@
+import { createPaddy, stepPaddy, paddyCue } from "./paddy.js";
+import { PADDY_VILLAGE } from "./paddy-data.js";
 import { createJeep } from "./jeep.js";
 import { createCommunity, stepCommunity, communityCue } from "./community.js";
 import { SEVENS } from "./community-data.js";
@@ -100,7 +102,7 @@ export function createLife(saved, seed = 7391) {
     weather: {
       rain: 0,
       target: 0,
-      remaining: 95,
+      remaining: 480,
       wetness: 0,
       episode: 0,
       sheltering: false,
@@ -121,6 +123,7 @@ export function createLife(saved, seed = 7391) {
     bus: createBus(valid ? saved.bus : null),
     auto: createAuto(valid ? saved.auto : null),
     fishing: createFishing(valid ? saved.fishing : null),
+    paddy: createPaddy(valid ? saved.paddy : null),
     jeep: createJeep(valid ? saved.jeep : null),
     community: createCommunity(valid ? saved.community : null),
     tea: createTea(valid ? saved.tea : null),
@@ -130,10 +133,10 @@ export function createLife(saved, seed = 7391) {
   if (valid && saved.weather) {
     for (const key of ["rain", "target", "wetness"])
       state.weather[key] = bounded(saved.weather[key], 0, 1, 0);
-    state.weather.remaining = bounded(saved.weather.remaining, 0, 180, 95);
+    state.weather.remaining = bounded(saved.weather.remaining, 0, 840, 480);
     state.weather.episode = bounded(saved.weather.episode, 0, 1e8, 0);
     state.weather.sheltering = !!saved.weather.sheltering;
-  } else state.weather.remaining = 55 + random(state) * 70;
+  } else state.weather.remaining = 480 + random(state) * 360;
   const reserved = new Set();
   state.residents = RESIDENTS.map((definition, i) => {
     const old =
@@ -498,7 +501,9 @@ function tickLife(state, dt, player) {
   w.remaining -= dt;
   if (w.remaining <= 0) {
     w.target = w.target > 0 ? 0 : 0.55 + random(state) * 0.45;
-    w.remaining = w.target ? 36 + random(state) * 24 : 95 + random(state) * 70;
+    w.remaining = w.target
+      ? 25 + random(state) * 20
+      : 480 + random(state) * 360;
     if (w.target) w.episode++;
   }
   w.rain += (w.target - w.rain) * Math.min(1, dt * 1.3);
@@ -531,6 +536,7 @@ function tickLife(state, dt, player) {
   state.residents.forEach((r, i) => stepResident(state, r, RESIDENTS[i], dt));
   stepTea(state, dt);
   stepCommunity(state, dt);
+  stepPaddy(state, dt);
   updateRehearsal(state);
   stepFishing(state.fishing, dt, lifeHour(state), w.rain);
   stepFerry(state, dt);
@@ -572,11 +578,20 @@ function remember(state, memory) {
 }
 
 export function observeLife(state, player) {
+  if (
+    distance(player, PADDY_VILLAGE) < 22 &&
+    state.paddy.people.some((p) => p.mode === "farm")
+  )
+    remember(state, {
+      id: `paddy-lane-${lifeDay(state)}`,
+      place: PADDY_VILLAGE.name,
+      text: "Took the laterite turning and found homes, field workers and the paddy lane.",
+    });
   if (state.community.active && distance(player, SEVENS) < 25)
     remember(state, {
       id: `sevens-${lifeDay(state)}`,
       place: SEVENS.name,
-      text: "Followed the sound of a ball and found two local sevens teams warming up together.",
+      text: "Followed the sound of a ball and found a local sevens game.",
     });
   const fish = state.fishing;
   if (
@@ -724,6 +739,8 @@ export function actOnLife(state, action, player) {
 }
 
 export function villageCue(state, player) {
+  const village = paddyCue(state, player);
+  if (village) return village;
   const nearbyCommunity = communityCue(state, player);
   if (nearbyCommunity) return nearbyCommunity;
   if (teaOpen(state) && teaProgramme(state) && distance(player, TEA_TV) < 24)

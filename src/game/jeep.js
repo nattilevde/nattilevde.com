@@ -1,9 +1,15 @@
+import { inPlayCourt } from "./paddy-data.js";
 import { canWalk, terrainHeight } from "./world.js";
 export const JEEP_HOME = { x: 13, z: 78 };
 export function jeepFootprint(x, z, heading) {
+  if (inPlayCourt(x, z)) return false;
   for (const side of [-1.15, 0, 1.15])
     for (const end of [-2, 0, 2]) {
       if (
+        inPlayCourt(
+          x + side * Math.cos(heading) - end * Math.sin(heading),
+          z - side * Math.sin(heading) - end * Math.cos(heading),
+        ) ||
         !canWalk(
           x + side * Math.cos(heading) - end * Math.sin(heading),
           z - side * Math.sin(heading) - end * Math.cos(heading),
@@ -25,6 +31,7 @@ export function createJeep(saved) {
     z: at.z,
     heading,
     speed: 0,
+    braking: false,
     lateral: 0,
     steer: 0,
     y: terrainHeight(at.x, at.z),
@@ -52,7 +59,7 @@ export function advanceJeep(j, seconds, input = {}, rain = 0, obstacles = []) {
     const throttle = Math.max(-1, Math.min(1, input.throttle || 0));
     const steerTarget =
       (Math.max(-1, Math.min(1, input.steer || 0)) * 0.52) /
-      (1 + Math.abs(j.speed) / 20);
+      (1 + (Math.abs(j.speed) / 12) ** 2);
     j.steer += (steerTarget - j.steer) * (1 - Math.exp(-5 * dt));
     const front = terrainHeight(
       j.x - Math.sin(j.heading) * 1.5,
@@ -68,15 +75,18 @@ export function advanceJeep(j, seconds, input = {}, rain = 0, obstacles = []) {
       (throttle &&
         Math.sign(throttle) !== Math.sign(j.speed) &&
         Math.abs(j.speed) > 0.4);
-    const drag = 0.45 * j.speed + 0.017 * j.speed * Math.abs(j.speed);
+    j.braking = !!braking;
+    const drag = 0.24 * j.speed + 0.008 * j.speed * Math.abs(j.speed);
     j.speed +=
-      ((braking ? -Math.sign(j.speed) * 14 : throttle * (rain > 0.4 ? 6 : 8)) -
+      ((braking
+        ? -Math.sign(j.speed) * 20
+        : throttle * (rain > 0.4 ? 10 : 14)) -
         drag -
         slope * 7) *
       dt;
     if (braking && Math.abs(j.speed) < 0.2) j.speed = 0;
     if (!throttle && Math.abs(j.speed) < 0.08) j.speed = 0;
-    j.speed = Math.max(-5, Math.min(22, j.speed));
+    j.speed = Math.max(-5, Math.min(30, j.speed));
     const turn = (-j.speed / 3) * Math.tan(j.steer);
     const nextHeading = j.heading + turn * dt;
     j.lateral +=

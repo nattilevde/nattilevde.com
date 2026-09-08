@@ -350,6 +350,8 @@ export function createGame(
         [
           ...life.residents.filter((r) => r.mode !== "passenger"),
           ...life.community.people,
+          ...life.paddy.people,
+          life.paddy.delivery,
           busPosition(life.bus),
           autoPosition(life.auto),
         ],
@@ -796,13 +798,18 @@ export function createGame(
     scene.fog.density = 0.004 + rain * 0.006;
     sun.intensity *= 1 - rain * 0.5;
     hemisphere.intensity *= 1 - rain * 0.25;
-    sun.color.set(night ? "#acc8ed" : "#ffe5b6");
+    const goldenHour = lifeHour(life) < 8 || lifeHour(life) > 16;
+    sun.color.set(night ? "#acc8ed" : goldenHour ? "#ffd29a" : "#ffe5b6");
     sun.position.set(
       renderPosition.x - 45,
       renderPosition.y + 65,
       renderPosition.z + 30,
     );
     sun.target.position.copy(renderPosition);
+    environment.setJeepLighting(
+      driving && (night || rain > 0.2),
+      driving && life.jeep.braking,
+    );
     // Sitting eases the camera into a low, close, slowly drifting view.
     viewDistance = THREE.MathUtils.lerp(
       viewDistance,
@@ -990,6 +997,10 @@ export function createGame(
     sit,
     stand,
     travelTo,
+    returnToJeep() {
+      const at = jeepExit(life.jeep);
+      return at ? travelTo(at) : false;
+    },
     board() {
       if (
         driving ||

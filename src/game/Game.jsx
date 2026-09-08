@@ -8,6 +8,7 @@ import {
   ArrowRight,
   BookOpen,
   Bus,
+  Car,
   Check,
   CloudRain,
   Compass,
@@ -424,6 +425,8 @@ export default function Game({ onExit, onRecord }) {
       release?.();
     };
   }, []);
+  const [jeepGuide, setJeepGuide] = useState(false);
+  const [jeepReturnError, setJeepReturnError] = useState("");
   const [state, setState] = useState({
     ...journey.position,
     heading: 0,
@@ -485,6 +488,38 @@ export default function Game({ onExit, onRecord }) {
     if (engine.current?.keepPhotoStory(storyId))
       save({ ...journeyRef.current, life: engine.current.getLife() });
   };
+  const parkedJeep = state.life?.jeep;
+  const jeepDistance = parkedJeep
+    ? Math.hypot(parkedJeep.x - state.x, parkedJeep.z - state.z)
+    : 0;
+  const jeepBearing = parkedJeep
+    ? ((Math.atan2(parkedJeep.x - state.x, state.z - parkedJeep.z) +
+        state.heading) *
+        180) /
+      Math.PI
+    : 0;
+  const canReturnToJeep =
+    !state.riding &&
+    !state.boating &&
+    !state.sitting &&
+    !state.autoPassenger &&
+    !state.busPassenger &&
+    !state.ferryPassenger;
+  function returnToJeep() {
+    if (engine.current?.returnToJeep()) {
+      setJeepGuide(false);
+      setPanel(null);
+      setJeepReturnError("");
+      save({
+        ...journeyRef.current,
+        position: engine.current.getPosition(),
+        life: engine.current.getLife(),
+      });
+    } else
+      setJeepReturnError(
+        "Step out of your current ride or seat first. The jeep also needs a clear place beside it.",
+      );
+  }
   const cue = state.cue;
   const cueDirection = cue
     ? (() => {
@@ -836,6 +871,18 @@ export default function Game({ onExit, onRecord }) {
               >
                 {sound ? <Volume2 size={19} /> : <VolumeX size={19} />}
               </button>
+              {!state.driving && (
+                <button
+                  aria-label="Find my jeep"
+                  title="Find my jeep"
+                  onClick={() => {
+                    setJeepReturnError("");
+                    setPanel("jeep");
+                  }}
+                >
+                  <Car size={19} />
+                </button>
+              )}
               <button
                 aria-label="Open bus network"
                 title="Fast travel (B)"
@@ -1347,6 +1394,31 @@ export default function Game({ onExit, onRecord }) {
         </>
       )}
 
+      {jeepGuide && started && !panel && !state.driving && parkedJeep && (
+        <div className="game-jeep-guide" role="status">
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-block",
+              transform: `rotate(${jeepBearing}deg)`,
+            }}
+          >
+            ↑
+          </span>
+          <span>
+            {jeepDistance < 4
+              ? "Your jeep is here"
+              : `Jeep · ${Math.round(jeepDistance)} m`}
+            <small>Direction to parked jeep</small>
+          </span>
+          <button
+            aria-label="Stop jeep guidance"
+            onClick={() => setJeepGuide(false)}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
       {overheard && started && !panel && (
         <div className="game-overheard" role="status" key={lastLine.current.at}>
           <span>{overheard.who}</span>
@@ -1392,21 +1464,60 @@ export default function Game({ onExit, onRecord }) {
       {panel && (
         <GameDialog
           title={
-            panel === "story"
-              ? activeStory?.title || "Photo story"
-              : panel === "encounter"
-                ? encounterSite.name
-                : panel === "passport"
-                  ? "Kerala game passport"
-                  : panel === "map"
-                    ? "Exploration map"
-                    : panel === "travel"
-                      ? "Naadan bus network"
-                      : "Game menu"
+            panel === "jeep"
+              ? "Find my jeep"
+              : panel === "story"
+                ? activeStory?.title || "Photo story"
+                : panel === "encounter"
+                  ? encounterSite.name
+                  : panel === "passport"
+                    ? "Kerala game passport"
+                    : panel === "map"
+                      ? "Exploration map"
+                      : panel === "travel"
+                        ? "Naadan bus network"
+                        : "Game menu"
           }
           onClose={closePanel}
           className={`game-panel-${panel}`}
         >
+          {panel === "jeep" && (
+            <>
+              <span className="game-overline">YOUR HILL JEEP</span>
+              <h2>Back to the driver's seat.</h2>
+              <p>
+                {parkedJeep
+                  ? `Parked ${Math.round(jeepDistance)} metres away.`
+                  : "Locating your jeep…"}
+              </p>
+              <button
+                className="game-primary"
+                disabled={!parkedJeep || !canReturnToJeep}
+                onClick={returnToJeep}
+              >
+                Return to jeep <Car size={18} />
+              </button>
+              {!canReturnToJeep && (
+                <p>Step out of your current ride or seat to return.</p>
+              )}
+              <button
+                className="game-secondary"
+                disabled={!parkedJeep}
+                onClick={() => {
+                  setJeepGuide(true);
+                  setPanel(null);
+                }}
+              >
+                Show direction
+              </button>
+              <p>
+                Return takes you directly to a clear spot beside your parked
+                jeep. Direction guidance points toward it; follow the paths and
+                bridges around obstacles.
+              </p>
+              {jeepReturnError && <p role="alert">{jeepReturnError}</p>}
+            </>
+          )}
           {panel === "story" && activeStory && (
             <StoryCard
               key={storyId}

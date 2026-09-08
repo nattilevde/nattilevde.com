@@ -23,3 +23,16 @@ Tree clearance keeps the new lanes and playing area open. Building bodies block
 walking; exterior routes are tested against existing collision geometry.
 
 Manual checks are appended to KADAL_PLAYTEST.md. No deployment was performed.
+
+## Sevens game follow-up
+
+Replaces the passing warm-up with a small autonomous football simulation:
+possessors dribble, teammates move forward into space, nearby opponents press,
+players pass or shoot, and two goalkeepers track and intercept the ball. Swept
+ball checks prevent fast shots skipping defenders. Goals update a physical score
+board; reset time lets players spread out again. Ball/possession/score are saved.
+Rain and the existing arrival/departure schedule continue to gate play.
+
+This is an ambient neighbourhood game, not a playable football mode: no fouls,
+offside, halves, complex keeper dives or user-controlled players. Model checks
+include an unattended sequence that must produce passes, shots and saves.

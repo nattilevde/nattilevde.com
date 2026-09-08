@@ -96,12 +96,22 @@ export function buildCommunityView({
   sign(
     shelter,
     "MALABAR SEVENS",
-    "EVENING WARM-UP • WEATHER PERMITTING",
+    "EVENING SEVENS • WEATHER PERMITTING",
     0,
     2.1,
     3,
     7,
   );
+  const scoreboard = sign(
+    shelter,
+    "TEAL 0 — 0 GOLD",
+    "NEIGHBOURHOOD SEVENS",
+    0,
+    1.1,
+    3.1,
+    5,
+  );
+  let lastScore = "";
   const actors = COMMUNITY_PEOPLE.map((d) =>
     human(d.id, m[d.color], m.trousers),
   );
@@ -110,6 +120,20 @@ export function buildCommunityView({
   return {
     animated: [ball, ...actors.map((a) => a.person)],
     update(life, dt) {
+      const score = life.community.football.score.join(" — ");
+      if (score !== lastScore) {
+        lastScore = score;
+        const canvas = scoreboard.material.map.image,
+          ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#244d46";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff0c7";
+        ctx.textAlign = "center";
+        ctx.font = "bold 68px sans-serif";
+        ctx.fillText(`TEAL ${score} GOLD`, 384, 145, 720);
+        scoreboard.material.map.needsUpdate = true;
+      }
+
       life.community.people.forEach((p, i) => {
         const a = actors[i],
           blend = a.person.userData.placed ? 1 - Math.exp(-18 * dt) : 1;

@@ -176,3 +176,58 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
 - [ ] Visit sevens around 16:00–18:00: players chase passes and move into support;
       rain shelter and evening departures still work. This is still a warm-up.
 - [ ] Compare existing scooter, bus, auto and boat rides for regressions.
+
+## Paddy Lane destination — deferred combined manual pass
+
+- [ ] Follow the laterite loop east; take the branch near (220, 111) to Paddy
+      Lane (285, 110). Check the jeep approach and pedestrian paths to homes.
+- [ ] Walk the bunds beside six paddy plots; check crop rows, channels, terrain
+      contact, shaded verandas and the produce stall.
+- [ ] Visit between 07:00–17:00 for farm work, 08:00–18:00 for the stall and
+      around 16:00–18:00 for children in the courtyard. Look for actual movement.
+- [ ] Check the jeep cannot enter the railed play courtyard. Rain should send
+      people home; market produce decreases after resident visits and survives reload.
+- [ ] Check phone performance, ball movement, garden/home appearance and existing
+      jeep handling. The fields are stylised; farming seasons and player shopping
+      transactions remain future work.
+
+## Rain pacing adjustment
+
+- [ ] Dry periods now last 8–14 active-play minutes; showers last 25–45 seconds,
+      plus the existing fade. Existing saves finish their current weather timer.
+- [ ] Reload midway through a long dry period; the interval should not shorten.
+      Pause menus should not advance it. Verify wet driving and shelter routines.
+
+## Jeep lights and stronger acceleration
+
+- [ ] Drive at night and in rain: twin headlights should light the road ahead
+      through bends and slopes, with dim red tail lights visible from behind.
+- [ ] Brake using Space, the touch brake toggle or opposite throttle while
+      moving: rear lamps should brighten, then dim again when released.
+- [ ] Compare acceleration, high-speed steering and stopping distance on the
+      laterite loop and highway. Speed is capped at 108 km/h; wet grip still matters.
+- [ ] Check headlights switch off after exiting and performance remains acceptable
+      on a phone. Check road visibility rather than only the glowing lamp lenses.
+
+## Visual polish, market junction and sevens game
+
+- [ ] Revisit Paddy Lane in morning/evening: warmer sunlight, field-edge plants,
+      garden walls and clotheslines should add detail without hiding the paths.
+- [ ] Continue east to the bakery and cycle-repair shop (343/363, 94). Staff arrive
+      during opening hours; shutters close when staff leave or shelter from rain.
+- [ ] Use the marked parking area south of the shops. Around 09:00 a delivery van
+      approaches, unloads beside the produce stall and returns. Check it waits if
+      the jeep blocks its lane; stock is replenished once for that day's run.
+- [ ] Watch sevens: possession/dribbling, passes under pressure, shots, goalkeeper
+      interceptions, goals and reset periods. Compare the physical score board.
+- [ ] Reload mid-game or delivery; progress should persist. Recheck rain pauses,
+      evening departures, village pedestrians, jeep headlights and phone performance.
+
+## Quick jeep access
+
+- [ ] Use the car icon / “Find my jeep” in the top toolbar after parking elsewhere.
+      “Return to jeep” should place you beside it and immediately allow entry.
+- [ ] “Show direction” displays a camera-relative arrow and distance. Rotate the
+      view, walk closer and cancel guidance. This is a bearing, not a routed path.
+- [ ] Reload after parking: the shortcut should use the saved location. Returning
+      should be unavailable while seated or using another vehicle. Check on phone.

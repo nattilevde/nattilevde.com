@@ -160,3 +160,21 @@ the 3D world — are playable end to end.
 - Added a controllable hill jeep with fixed-step grounded physics, braking,
   wet grip, body suspension and chase camera; added a scenic laterite loop.
 - Sevens warm-up players now chase passes and move into support.
+
+- Added Paddy Lane off the jeep trail: six paddy plots, home verandas, a produce
+  stall, farm/market routines and a rain-responsive children's play courtyard.
+
+- Reduced rain frequency: 8–14 minutes of dry play between 25–45-second showers;
+  increased saved weather timer bounds so reloads preserve the longer intervals.
+
+- Jeep headlights now illuminate the road at night/in rain; rear lamps brighten
+  under braking. Increased acceleration and top speed with stronger braking and
+  reduced high-speed steering sensitivity.
+
+- Polished field edges, home gardens and morning/evening light; expanded Paddy
+  Lane with staffed shops, shutters, deliveries, pedestrians and jeep parking.
+- Replaced static sevens passing with possession, dribbling, pressure, shots,
+  goalkeeper interceptions, goals, resets and a saved physical scoreboard.
+
+- Added “Find my jeep” with optional direction/distance guidance and direct return
+  to a walkable spot beside the saved parked vehicle.

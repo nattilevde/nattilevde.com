@@ -1,3 +1,4 @@
+import { PADDY_HOMES } from "./paddy-data.js";
 import { FAITH_SPACES } from "./community-data.js";
 export const REGION = {
   id: "kerala",
@@ -615,6 +616,7 @@ export const REST_SPOTS = [
 ];
 
 export const buildings = [
+  ...PADDY_HOMES,
   // Kadal Village (the original backwater chapter)
   { x: -18, z: 30, w: 8, d: 9, color: "#f0d7a0", type: "shop" },
   { x: -22, z: -34, w: 14, d: 10, color: "#eadbb7", type: "pavilion" },
@@ -650,6 +652,8 @@ export const buildings = [
 
 // Non-building obstacles: fort walls, gate legs, lighthouse, elephants.
 export const solids = [
+  { x: 343, z: 94, w: 10, d: 6 },
+  { x: 363, z: 94, w: 10, d: 6 },
   ...FAITH_SPACES.map((p) => ({ x: p.x, z: p.z, w: 10, d: 12 })),
   { x: -65, z: -1372, w: 52, d: 2.4 },
   { x: -65, z: -1332, w: 52, d: 2.4 },

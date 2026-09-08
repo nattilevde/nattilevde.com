@@ -1728,3 +1728,46 @@
   place-items: center;
   padding: 20px;
 }
+
+.game-jeep-guide {
+  position: absolute;
+  top: 108px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #f3e7c9;
+  color: #244d46;
+  z-index: 12;
+  font-size: 14px;
+}
+.game-jeep-guide > span:first-child {
+  font-size: 27px;
+}
+.game-jeep-guide small {
+  display: block;
+  font-size: 10px;
+}
+.game-jeep-guide button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 8px;
+}
+.game-panel-jeep .game-secondary {
+  margin-top: 12px;
+}
+@media (max-width: 600px) {
+  .game-jeep-guide {
+    top: 145px;
+    right: 12px;
+  }
+}
+@media (max-width: 600px) {
+  .game-top .game-wordmark {
+    display: none;
+  }
+}

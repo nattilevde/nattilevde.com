@@ -1,3 +1,4 @@
+import { buildPaddyView } from "./paddy-view.js";
 import { buildCommunityView } from "./community-view.js";
 import { communityClearance } from "./community-data.js";
 import { teaOpen, teaProgramme, teaMenu } from "./tea-shop.js";
@@ -2415,6 +2416,7 @@ export function buildEnvironment(scene) {
   }
   function clearWide(x, z) {
     if (communityClearance(x, z)) return false;
+    if (x > 230 && x < 385 && z > 60 && z < 181) return false;
     if (x > 120 && x < 228 && z > 47 && z < 149) return false;
     if (x < coastX(z) + 5) return false;
     if (Math.abs(z + 600) < 36 && x < 430) return false;
@@ -2963,6 +2965,30 @@ export function buildEnvironment(scene) {
       );
   }
   const jeep = group("Kerala hill jeep", 13, terrainHeight(13, 78), 78);
+  const jeepHeadlamp = material("#fff2ce", {
+    emissive: "#ffe9b0",
+    emissiveIntensity: 0.1,
+  });
+  const jeepTailLamp = material("#851d16", {
+    emissive: "#ff2010",
+    emissiveIntensity: 0.05,
+  });
+  const jeepBeams = [];
+  for (const side of [-1, 1]) {
+    const beam = new THREE.SpotLight("#fff0ce", 0, 75, 0.48, 0.65, 1);
+    beam.position.set(side * 0.65, 1.1, -1.9);
+    beam.target.position.set(side * 1.8, -0.5, -32);
+    jeep.add(beam, beam.target);
+    jeepBeams.push(beam);
+    block(jeep, jeepTailLamp, side * 0.78, 1.03, 1.79, 0.24, 0.2, 0.08);
+  }
+  function setJeepLighting(headlights, braking) {
+    jeepBeams.forEach((beam) => {
+      beam.intensity = headlights ? 180 : 0;
+    });
+    jeepHeadlamp.emissiveIntensity = headlights ? 3 : 0.1;
+    jeepTailLamp.emissiveIntensity = braking ? 5 : headlights ? 0.5 : 0.05;
+  }
   const jeepBody = material("#506d49", { roughness: 0.55, metalness: 0.2 });
   block(jeep, m.black, 0, 0.55, 0, 1.8, 0.22, 3.6);
   block(jeep, jeepBody, 0, 1, -1.15, 1.9, 0.55, 1.3, true);
@@ -2985,7 +3011,17 @@ export function buildEnvironment(scene) {
       [side * 0.86, 2.25, 1.3],
       0.065,
     );
-    mesh(jeep, sphere, m.lamp, side * 0.65, 1.07, -1.82, 0.17, 0.17, 0.07);
+    mesh(
+      jeep,
+      sphere,
+      jeepHeadlamp,
+      side * 0.65,
+      1.07,
+      -1.82,
+      0.17,
+      0.17,
+      0.07,
+    );
   }
   block(jeep, m.olive, 0, 2.25, 0.35, 2, 0.12, 2.3, true);
   block(jeep, m.black, 0, 0.65, -1.92, 2.1, 0.18, 0.2);
@@ -3013,6 +3049,33 @@ export function buildEnvironment(scene) {
       jeepWheels.push({ pivot, wheel, front: z < 0 });
     }
   sign(jeep, "KERALA", "HILL TRAILS", 0, 0.62, 1.85, 0.9);
+  for (const [x, z, scale] of [
+    [247, 72, 0.85],
+    [274, 68, 1],
+    [299, 70, 0.9],
+    [325, 77, 1],
+    [239, 157, 0.8],
+    [320, 162, 0.85],
+  ])
+    palm(x, z, scale);
+  roundTree(302, 89, 1.1);
+  const paddyView = buildPaddyView({
+    group,
+    block,
+    mesh,
+    beam,
+    roof,
+    sign,
+    ground,
+    human,
+    instance,
+    box,
+    sphere,
+    cylinder,
+    m,
+    terrainHeight,
+    material,
+  });
   const communityView = buildCommunityView({
     group,
     block,
@@ -3028,6 +3091,7 @@ export function buildEnvironment(scene) {
     terrainHeight,
   });
   const animated = new Set([
+    ...paddyView.animated,
     jeep,
     ...communityView.animated,
     teaProps,
@@ -3268,6 +3332,7 @@ export function buildEnvironment(scene) {
       });
       updateTea(life);
       communityView.update(life, dt);
+      paddyView.update(life, dt);
     }
     waterTime.value = t;
     waterNight.value = darkness;
@@ -3481,6 +3546,7 @@ export function buildEnvironment(scene) {
     scooterWheels,
     jeep,
     jeepWheels,
+    setJeepLighting,
     beacons,
     update,
     dispose,

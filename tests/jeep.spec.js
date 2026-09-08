@@ -32,6 +32,16 @@ test("vehicle footprint blocks buildings and water, and exit chooses walkable gr
 test("jeep can be entered, driven and parked through the game controls", async ({
   page,
 }) => {
+  const nightLife = createLife();
+  nightLife.clock = 20 * 120;
+  nightLife.weather = {
+    rain: 0.8,
+    target: 0.8,
+    remaining: 120,
+    wetness: 0.8,
+    episode: 1,
+    sheltering: true,
+  };
   await page.addInitScript(
     (life) =>
       localStorage.setItem(
@@ -39,14 +49,14 @@ test("jeep can be entered, driven and parked through the game controls", async (
         JSON.stringify({
           v: 2,
           life,
-          position: { x: 13, z: 81 },
+          position: { x: 0, z: 76 },
           discoveries: [],
           interactions: [],
           moments: [],
           cells: [],
         }),
       ),
-    createLife(),
+    nightLife,
   );
   await page.goto("/#world");
   await expect(page.getByTestId("kerala-game")).toHaveAttribute(
@@ -57,6 +67,18 @@ test("jeep can be entered, driven and parked through the game controls", async (
   await page
     .getByRole("button", { name: /Continue your journey|Step into Kerala/ })
     .click();
+  await page.getByRole("button", { name: "Find my jeep", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Show direction", exact: true })
+    .click();
+  await expect(
+    page.getByText("Direction to parked jeep", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Find my jeep", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Return to jeep", exact: true })
+    .click();
+  await expect(page.locator("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: /Borrow the hill jeep/ }).click();
   await expect(page.getByTestId("kerala-game")).toHaveAttribute(
     "data-driving",
@@ -79,4 +101,19 @@ test("jeep can be entered, driven and parked through the game controls", async (
     "data-driving",
     "false",
   );
+});
+
+test("stronger acceleration reaches cruising speed and brake state follows pedals", () => {
+  const j = createJeep({ x: 100, z: -200 });
+  for (let i = 0; i < 180; i++) advanceJeep(j, 1 / 60, { throttle: 1 });
+  expect(j.speed).toBeGreaterThan(20);
+  expect(j.speed).toBeLessThanOrEqual(30);
+  expect(j.braking).toBe(false);
+  advanceJeep(j, 1 / 60, { throttle: -1 });
+  expect(j.braking).toBe(true);
+  for (let i = 0; i < 180; i++) advanceJeep(j, 1 / 60, { brake: true });
+  expect(Math.abs(j.speed)).toBeLessThan(0.3);
+  expect(j.braking).toBe(true);
+  advanceJeep(j, 1 / 60, {});
+  expect(j.braking).toBe(false);
 });
