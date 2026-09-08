@@ -119,3 +119,44 @@ blocked. The service has no collision physics or overtaking.
 Village gardens add banana plants and flowering shrubs, canal edges gain reeds,
 and terrain has subtle varied greens. Static meshes use existing batching;
 physical-device performance and scenic quality remain pending manual playtest.
+
+## Follow-up batch: village auto connection
+
+One black-and-yellow auto connects Kadal's bus stand with the far-bank landing
+via the existing bridge. Its driver waits at either end and repositions after
+actual bus/ferry arrival counters change. New arrivals replace outstanding
+requests; there is no background circular patrol for this village auto.
+
+Player rides depart on boarding during 06:00–21:00, finish after closing if
+already underway, and remain stopped until the player leaves. Rain reduces speed;
+people and the bus ahead cause yielding. Saved position follows route distance,
+including across reloads. Shortened rides advance the full simulation, capped at
+four simulated minutes if blocked. Completed rides become memories on exit.
+
+This is a feeder-service prototype: arrival signals represent where the driver
+expects demand, not simulated NPC transfers. No fares, queue, overtaking or traffic
+collision physics exist yet. Wider-region decorative autos remain unchanged.
+Route-width checks and a phone-viewport ride/reload check accompany this batch;
+real-device visual and feel checks stay on the combined manual checklist.
+
+## Follow-up batch: fishing-to-market cycle
+
+Sasi takes one working vallam out from Kadal's shore between 06:00 and 11:00,
+returns with a catch based on time spent fishing, unloads, carries baskets to a
+stall south of Leela's shop, then walks back. Heavy rain can cut fishing short,
+hold unloading and slow delivery. Mini's stall trades from 06:00 to 18:00 while
+stock remains and heavy rain is absent. A buyer's approach is saved model state;
+sales require their presence. Fish spoil after four simulated minutes from catch.
+No new trip starts while the previous stall stock remains.
+
+Helping unload once per trip removes sixteen seconds of work. The earlier
+arrival gives the catch more selling time before spoilage. A connected memory
+requires witnessing or helping that trip's unloading and later seeing its stock.
+Shore sounds and market cues now follow actual work, rather than playing always.
+The courier is considered by bus and auto yielding. Changes remain local and
+manual playtesting is deferred to the combined checklist.
+
+Prototype limits: one fisher, seller, buyer and supply route; no prices, purchase
+inventory, species, tides or regional fishing restrictions are simulated. The
+boat-to-shore transfer is abstracted. Vendor/home transitions use exterior anchors;
+catch sizes and spoilage time are game pacing values, not real fishing guidance.

@@ -125,6 +125,23 @@ export function createSoundscape() {
   // sets stereo position, and far-away layers are rolled off so they read as far.
   const layers = [
     {
+      id: "village-auto",
+      range: 35,
+      level: 0.5,
+      at: (l) => l.auto || { x: 1e6, z: 1e6 },
+      when: (l) => !!l.auto?.running,
+      drone(out) {
+        const osc = ctx.createOscillator();
+        osc.type = "sawtooth";
+        osc.frequency.value = 85;
+        const low = filter("lowpass", 230, 1),
+          body = gain(0.025);
+        osc.connect(low).connect(body).connect(out);
+        osc.start();
+        return () => osc.stop();
+      },
+    },
+    {
       id: "local-bus",
       range: 75,
       level: 0.5,
@@ -603,9 +620,27 @@ export function createSoundscape() {
         }
       },
     },
+    {
+      id: "village-fish-stall",
+      range: 30,
+      level: 0.4,
+      at: { x: -8, z: 44 },
+      when: (l) => !!l.fishMarket,
+      every: () => between(5, 9),
+      fire(out) {
+        hit(out, {
+          kind: "brown",
+          type: "lowpass",
+          freq: 650,
+          peak: 0.06,
+          decay: 0.16,
+        });
+      },
+    },
     // The fishing shore: rope, hull, and men calling a boat in.
     {
       id: "fishing",
+      when: (l) => !!l.fishing,
       range: 55,
       level: 0.7,
       at: { x: -73, z: 14 },

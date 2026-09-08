@@ -11,6 +11,12 @@ to saved progress or to the world's data shapes.
 
 ### Added
 
+- Kadal fishing-to-market cycle: weather-dependent catches, visible basket
+  deliveries, perishable stall stock, buyer activity and connected memories.
+
+- Village auto connecting the Kadal bus stand and far-bank landing, responding
+  to transport arrivals with rain-sensitive travel, yielding and saved rides.
+
 - Physical Kadal–Periyar local bus with commuters, daylight service, rain-sensitive
   speed, pedestrian yielding, saved rides and completed-trip memories.
 - Village banana plants, flowering gardens, canal reeds and varied terrain greens.

@@ -1,3 +1,5 @@
+import { FISH_LANDING } from "./fishing.js";
+import { AUTO_STOPS, autoOpen } from "./auto.js";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -757,6 +759,7 @@ export default function Game({ onExit, onRecord }) {
       data-x={state.x.toFixed(1)}
       data-z={state.z.toFixed(1)}
       data-boating={state.boating}
+      data-auto-passenger={state.autoPassenger || false}
       data-bus-passenger={state.busPassenger || false}
       data-ferry={state.ferryPassenger || false}
       data-riding={state.riding}
@@ -765,7 +768,11 @@ export default function Game({ onExit, onRecord }) {
       <div className="game-canvas-host" ref={container} />
       <div className="game-vignette" />
       <header className="game-top">
-        <button className="game-back" onClick={onExit}>
+        <button
+          className="game-back"
+          aria-label="Back to Kerala"
+          onClick={onExit}
+        >
           <ArrowLeft size={17} />
           <span>Back to Kerala</span>
         </button>
@@ -954,7 +961,61 @@ export default function Game({ onExit, onRecord }) {
           )}
           {life && !panel && (
             <div className="game-life-actions">
-              {!state.busPassenger &&
+              {!state.autoPassenger &&
+                !state.busPassenger &&
+                !state.ferryPassenger &&
+                !state.boating &&
+                !state.riding &&
+                !state.sitting &&
+                life.fishing.phase === "unloading" &&
+                life.fishing.cargo > 0 &&
+                life.fishing.helped !== life.fishing.trip &&
+                Math.hypot(state.x - FISH_LANDING.x, state.z - FISH_LANDING.z) <
+                  6 && (
+                  <button
+                    onClick={() => engine.current?.lifeAction("help-fish")}
+                  >
+                    Help unload the catch
+                  </button>
+                )}
+              {!state.autoPassenger &&
+                !state.busPassenger &&
+                !state.ferryPassenger &&
+                !state.boating &&
+                !state.riding &&
+                !state.sitting &&
+                state.autoStop === life.auto.stop &&
+                life.auto.phase === "waiting" &&
+                autoOpen(lifeHour(life)) && (
+                  <button
+                    onClick={() => engine.current?.lifeAction("board-auto")}
+                  >
+                    Take auto to {AUTO_STOPS[1 - life.auto.stop].name}
+                  </button>
+                )}
+              {state.autoPassenger && (
+                <>
+                  <span>
+                    {life.auto.phase === "travelling"
+                      ? `Auto to ${AUTO_STOPS[1 - life.auto.stop].name}`
+                      : AUTO_STOPS[life.auto.stop].name}
+                  </span>
+                  {life.auto.phase === "travelling" ? (
+                    <button onClick={() => engine.current?.skipAuto()}>
+                      Shorten auto journey
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => engine.current?.lifeAction("leave-auto")}
+                    >
+                      Leave the auto
+                    </button>
+                  )}
+                </>
+              )}
+
+              {!state.autoPassenger &&
+                !state.busPassenger &&
                 !state.ferryPassenger &&
                 !state.boating &&
                 !state.riding &&
@@ -988,7 +1049,8 @@ export default function Game({ onExit, onRecord }) {
                   )}
                 </>
               )}
-              {!state.busPassenger &&
+              {!state.autoPassenger &&
+                !state.busPassenger &&
                 life.coir.phase === "covering" &&
                 life.coir.helped !== life.weather.episode &&
                 Math.hypot(state.x - 62, state.z + 44) < 6 && (
@@ -996,7 +1058,8 @@ export default function Game({ onExit, onRecord }) {
                     Help cover the fibre
                   </button>
                 )}
-              {!state.busPassenger &&
+              {!state.autoPassenger &&
+                !state.busPassenger &&
                 life.rehearsal.active &&
                 life.rehearsal.joined !== lifeDay(life) &&
                 Math.hypot(state.x + 19, state.z + 23) < 7 && (
@@ -1006,7 +1069,8 @@ export default function Game({ onExit, onRecord }) {
                     Play a few beats together
                   </button>
                 )}
-              {!state.busPassenger &&
+              {!state.autoPassenger &&
+                !state.busPassenger &&
                 !state.ferryPassenger &&
                 state.ferryStop >= 0 &&
                 life.ferry.stop === state.ferryStop &&
@@ -1137,6 +1201,7 @@ export default function Game({ onExit, onRecord }) {
           {!panel &&
             nearby &&
             !state.boating &&
+            !state.autoPassenger &&
             !state.busPassenger &&
             !state.ferryPassenger &&
             !state.riding &&

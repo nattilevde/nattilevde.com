@@ -56,3 +56,38 @@ prioritise how the world feels and any visible failures.
 
 Feedback: Bus / commuters / save / scenery / phone: PASS or issue.
 This batch adds one physical route; autos and the fishing-to-market chain remain next.
+
+## Batch 3: village auto (pending combined manual test)
+
+- Find the black-and-yellow auto just south of Kadal bus shelter. Take it to
+  Far-bank Auto Stand, shorten the journey if preferred, and leave beside it.
+  Walk to the ferry landing nearby; try the auto back to the bus stand later.
+- Watch without boarding: the driver waits, then repositions in response to
+  bus arrivals at Kadal or ferry arrivals on the far bank. No arrivals means no
+  automatic circuit. Service runs 06:00–21:00 on the world clock.
+- Watch it slow in rain and wait for pedestrians or the bus ahead; check turns
+  and the bridge for clipping. It cannot overtake a persistent obstruction.
+- Return to the portal mid-ride, resume, and finish. Check the arrival memory and
+  that walking, scooter and other transport controls work after leaving.
+- On a phone, try boarding, shortening, leaving and returning to the portal;
+  listen for the auto engine or follow its directional caption with sound muted.
+
+Feedback: Auto / connections / save / road behaviour / phone: PASS or issue.
+This batch is one driver and one route; NPC transfers and fares are not simulated.
+
+## Batch 4: fishing to market (pending combined manual test)
+
+- Visit the beach approach west of the village in the morning. Watch Sasi's
+  vallam leave, fish, return and unload. Heavy showers may shorten a trip or
+  produce no catch; departures stop after 11:00 on the world clock.
+- Help unload once, then follow the baskets along the beach road to the small
+  fish stall just south of Leela's shop. The same catch should appear there.
+- Watch a buyer approach. Trading pauses in heavy rain and closes at 18:00;
+  displayed fish disappear as they sell or spoil. An empty stall stays quiet.
+- Witness unloading and then visit the stocked stall: check your passport for
+  the connected memory. Arriving only at the stall should not invent a shore visit.
+- Leave and return during fishing or delivery. Check that the boat, catch and
+  buyer resume; watch the courier at crossings with the bus and auto.
+- Check the stall, carried baskets, rain and nearby actions on a phone.
+
+Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or issue.

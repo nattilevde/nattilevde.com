@@ -1,4 +1,21 @@
 import {
+  createFishing,
+  stepFishing,
+  fishingPosition,
+  fishMarketOpen,
+  helpFish,
+  FISH_LANDING,
+  FISH_MARKET,
+} from "./fishing.js";
+import {
+  createAuto,
+  stepAuto,
+  autoPosition,
+  boardAuto,
+  leaveAuto,
+  AUTO_STOPS,
+} from "./auto.js";
+import {
   createBus,
   stepBus,
   busPosition,
@@ -90,6 +107,8 @@ export function createLife(saved, seed = 7391) {
       passengers: [],
     },
     bus: createBus(valid ? saved.bus : null),
+    auto: createAuto(valid ? saved.auto : null),
+    fishing: createFishing(valid ? saved.fishing : null),
     memories: [],
     met: [],
   };
@@ -253,6 +272,7 @@ export function createLife(saved, seed = 7391) {
       }));
   }
   if (state.ferry.player) state.bus.player = false;
+  if (state.ferry.player || state.bus.player) state.auto.player = false;
   updateRehearsal(state);
   return state;
 }
@@ -477,10 +497,21 @@ function tickLife(state, dt, player) {
   }
   state.residents.forEach((r, i) => stepResident(state, r, RESIDENTS[i], dt));
   updateRehearsal(state);
+  stepFishing(state.fishing, dt, lifeHour(state), w.rain);
   stepFerry(state, dt);
+  const fisher = fishingPosition(state.fishing);
   stepBus(state.bus, dt, lifeHour(state), w.rain, [
+    ...(!fisher.atSea ? [fisher] : []),
     ...state.residents.filter((r) => r.mode !== "passenger"),
-    ...(!state.bus.player && player ? [player] : []),
+    ...(!state.bus.player && !state.auto.player && player ? [player] : []),
+  ]);
+  stepAuto(state.auto, dt, lifeHour(state), w.rain, state.bus, state.ferry, [
+    ...(!fisher.atSea ? [fisher] : []),
+    ...state.residents.filter((r) => r.mode !== "passenger"),
+    ...(!state.auto.player && !state.bus.player && !state.ferry.player && player
+      ? [player]
+      : []),
+    busPosition(state.bus),
   ]);
 }
 
@@ -505,6 +536,29 @@ function remember(state, memory) {
 }
 
 export function observeLife(state, player) {
+  const fish = state.fishing;
+  if (
+    fish.phase === "unloading" &&
+    fish.cargo &&
+    distance(player, FISH_LANDING) < 12
+  )
+    remember(state, {
+      id: `catch-${fish.trip}`,
+      place: "Kadal fishing shore",
+      text: "Saw the catch being unloaded at the shore.",
+    });
+  if (
+    fishMarketOpen(fish, lifeHour(state), state.weather.rain) &&
+    distance(player, FISH_MARKET) < 10 &&
+    state.memories.some(
+      (m) => m.id === `catch-${fish.trip}` || m.id === `fish-help-${fish.trip}`,
+    )
+  )
+    remember(state, {
+      id: `fish-market-${fish.trip}`,
+      place: "Kadal fish stall",
+      text: "Found the shore's catch on the village stall after its journey inland.",
+    });
   const group = state.residents.filter(
     (r) => r.mode === "sheltering" && distance(r, player) < 7,
   );
@@ -527,6 +581,22 @@ export function observeLife(state, player) {
 }
 
 export function actOnLife(state, action, player) {
+  if (action === "board-auto")
+    return (
+      !state.bus.player &&
+      !state.ferry.player &&
+      boardAuto(state.auto, player, lifeHour(state))
+    );
+  if (action === "leave-auto" && leaveAuto(state.auto)) {
+    if (state.auto.arrived)
+      remember(state, {
+        id: `auto-${lifeDay(state)}-${state.auto.stop}`,
+        place: AUTO_STOPS[state.auto.stop].name,
+        text: `Rode the village auto to ${AUTO_STOPS[state.auto.stop].name}.`,
+      });
+    return true;
+  }
+  if (state.auto.player) return false;
   if (action === "board-bus")
     return !state.ferry.player && boardBus(state.bus, player);
   if (action === "leave-bus" && leaveBus(state.bus)) {
@@ -539,6 +609,18 @@ export function actOnLife(state, action, player) {
     return true;
   }
   if (state.bus.player) return false;
+  if (
+    action === "help-fish" &&
+    !state.ferry.player &&
+    helpFish(state.fishing, player)
+  ) {
+    remember(state, {
+      id: `fish-help-${state.fishing.trip}`,
+      place: "Kadal fishing shore",
+      text: "Helped unload the catch for the village stall.",
+    });
+    return true;
+  }
   if (
     action === "coir" &&
     state.coir.phase === "covering" &&
@@ -600,6 +682,20 @@ export function actOnLife(state, action, player) {
 }
 
 export function villageCue(state, player) {
+  if (
+    state.fishing.phase === "unloading" &&
+    state.fishing.cargo &&
+    distance(player, FISH_LANDING) < 55
+  )
+    return { ...FISH_LANDING, text: "Baskets coming ashore" };
+  if (
+    fishMarketOpen(state.fishing, lifeHour(state), state.weather.rain) &&
+    distance(player, FISH_MARKET) < 30
+  )
+    return { ...FISH_MARKET, text: "Trade at the fish stall" };
+  const auto = autoPosition(state.auto);
+  if (state.auto.phase === "travelling" && distance(auto, player) < 35)
+    return { ...auto, text: "An auto along the village lane" };
   const bus = busPosition(state.bus);
   if (state.bus.phase === "travelling" && distance(bus, player) < 75)
     return { ...bus, text: "A local bus on the highway" };
@@ -612,6 +708,13 @@ export function villageCue(state, player) {
 }
 
 export function villageLine(state, player) {
+  const fisher = fishingPosition(state.fishing);
+  if (!fisher.atSea && distance(player, fisher) < 6 && state.fishing.helped > 0)
+    return {
+      who: "Sasi",
+      text: "Thanks for lending a hand with the baskets.",
+      zone: "life-fisher-thanks",
+    };
   const r = state.residents
     .filter(
       (r) => !state.ferry.passengers.includes(r.id) && distance(r, player) < 6,

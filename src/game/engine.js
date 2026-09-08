@@ -1,3 +1,5 @@
+import { fishMarketOpen } from "./fishing.js";
+import { AUTO_STOPS, autoPosition } from "./auto.js";
 import * as THREE from "three";
 import { BUS_STOPS, busPosition } from "./bus.js";
 import {
@@ -153,7 +155,14 @@ export function createGame(
     pointer = null;
   };
   function interaction() {
-    if (paused || riding || life.ferry.player || life.bus.player) return;
+    if (
+      paused ||
+      riding ||
+      life.ferry.player ||
+      life.bus.player ||
+      life.auto.player
+    )
+      return;
     if (sitting) return stand();
     if (nearest) {
       if (nearest.residentId && !life.met.includes(nearest.residentId))
@@ -168,6 +177,7 @@ export function createGame(
       boating ||
       life.ferry.player ||
       life.bus.player ||
+      life.auto.player ||
       !nearestRest
     )
       return false;
@@ -199,7 +209,8 @@ export function createGame(
       riding ||
       boating ||
       life.ferry.player ||
-      life.bus.player
+      life.bus.player ||
+      life.auto.player
     )
       return false;
     sitting = null;
@@ -223,7 +234,14 @@ export function createGame(
       position.z - scooter.position.z,
     ) < 4;
   function ride() {
-    if (paused || boating || sitting || life.ferry.player || life.bus.player)
+    if (
+      paused ||
+      boating ||
+      sitting ||
+      life.ferry.player ||
+      life.bus.player ||
+      life.auto.player
+    )
       return false;
     if (riding) {
       riding = false;
@@ -246,6 +264,13 @@ export function createGame(
   // One fixed step of player movement: read the controls, move the body, and
   // report how far it turned this step (the scooter leans by it).
   function integrate(dt) {
+    if (life.auto.player) {
+      const a = autoPosition(life.auto);
+      position.set(a.x, terrainHeight(a.x, a.z) + 0.5, a.z);
+      player.rotation.y = a.heading;
+      moving = false;
+      return 0;
+    }
     if (life.bus.player) {
       const b = busPosition(life.bus);
       position.set(b.x, terrainHeight(b.x, b.z) + 1.1, b.z);
@@ -426,6 +451,10 @@ export function createGame(
       cells: [...cells],
       life: saveLife(life),
       contact: nearest,
+      autoPassenger: life.auto.player,
+      autoStop: AUTO_STOPS.findIndex(
+        (s) => Math.hypot(position.x - s.x, position.z - s.z) < 5,
+      ),
       busPassenger: life.bus.player,
       physicalBusStop: BUS_STOPS.findIndex(
         (s) => Math.hypot(position.x - s.x, position.z - s.z) < 6,
@@ -457,7 +486,12 @@ export function createGame(
         onEvent?.(life.weather.target > 0 ? "rain-start" : "rain-stop");
       observationTime += dt;
       if (observationTime >= 4) {
-        if (!life.ferry.player && !life.bus.player && !boating)
+        if (
+          !life.ferry.player &&
+          !life.bus.player &&
+          !life.auto.player &&
+          !boating
+        )
           observeLife(life, position);
         observationTime = 0;
       }
@@ -482,6 +516,7 @@ export function createGame(
         turn = integrate(step);
       }
       player.position.copy(position);
+      if (life.auto.player) player.position.y -= 0.6;
       if (riding) player.position.y += 0.55;
       if (sitting) {
         player.position.y -= 0.5;
@@ -492,7 +527,7 @@ export function createGame(
           ? i < 2
             ? -1.05
             : -0.55
-          : sitting
+          : sitting || life.auto.player
             ? i < 2
               ? -1.5
               : -0.18 + Math.sin(elapsed * 0.7) * 0.05
@@ -608,10 +643,16 @@ export function createGame(
           speed: Math.abs(boatSpeed),
           moving,
           stand: nearestStop,
+          auto: {
+            ...autoPosition(life.auto),
+            running: life.auto.phase === "travelling",
+          },
           bus: {
             ...busPosition(life.bus),
             running: life.bus.phase !== "waiting",
           },
+          fishing: life.fishing.phase === "unloading" && life.fishing.cargo > 0,
+          fishMarket: fishMarketOpen(life.fishing, lifeHour(life), rain),
           rehearsal: life.rehearsal.active,
           ferry: {
             ...ferryPosition(life),
@@ -744,6 +785,11 @@ export function createGame(
         position.set(at.x, terrainHeight(at.x, at.z), at.z);
         velocity.set(0, 0);
       }
+      if (result && action === "leave-auto") {
+        const at = AUTO_STOPS[life.auto.stop].land;
+        position.set(at.x, terrainHeight(at.x, at.z), at.z);
+        velocity.set(0, 0);
+      }
       if (result && action === "leave-bus") {
         const at = BUS_STOPS[life.bus.stop];
         position.set(at.x, terrainHeight(at.x, at.z), at.z);
@@ -751,6 +797,14 @@ export function createGame(
       }
       publish();
       return result;
+    },
+    skipAuto() {
+      if (paused || !life.auto.player || life.auto.phase !== "travelling")
+        return;
+      for (let i = 0; i < 2400 && life.auto.phase === "travelling"; i++)
+        advanceLife(life, 0.1);
+      rain = life.weather.rain;
+      publish();
     },
     skipBus() {
       if (paused || !life.bus.player || life.bus.phase === "waiting") return;
@@ -788,7 +842,13 @@ export function createGame(
     stand,
     travelTo,
     board() {
-      if (riding || sitting || life.ferry.player || life.bus.player)
+      if (
+        riding ||
+        sitting ||
+        life.ferry.player ||
+        life.bus.player ||
+        life.auto.player
+      )
         return false;
       if (!boating && Math.hypot(position.x - 24, position.z - 5) > 13)
         return false;
@@ -810,6 +870,7 @@ export function createGame(
       return true;
     },
     getPosition() {
+      if (life.auto.player) return { ...AUTO_STOPS[life.auto.stop].land };
       if (life.bus.player)
         return { x: BUS_STOPS[life.bus.stop].x, z: BUS_STOPS[life.bus.stop].z };
       return life.ferry.player

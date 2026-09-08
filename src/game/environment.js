@@ -1,3 +1,5 @@
+import { fishingPosition, fishMarketOpen, FISH_MARKET } from "./fishing.js";
+import { AUTO_STOPS, autoPosition } from "./auto.js";
 import * as THREE from "three";
 import { BUS_STOPS, busPosition } from "./bus.js";
 import { RESIDENTS, FERRY_STOPS } from "./life-data.js";
@@ -904,6 +906,42 @@ export function buildEnvironment(scene) {
     fishing.position.set(-76 + i * 1.8, 0.2, 25 + i * 8);
     fishing.rotation.set(0, 0.4 + i * 0.3, 0.14);
   }
+
+  const catchBoat = boat("Sasi's working vallam", 1.9, 7, hullMaterial);
+  const fisher = human("Sasi", m.teal);
+  const fishBasket = group("Catch baskets");
+  for (let i = 0; i < 5; i++) {
+    const crate = block(
+      fishBasket,
+      m.rope,
+      (i % 2) * 0.65,
+      Math.floor(i / 2) * 0.35,
+      0,
+      0.6,
+      0.3,
+      0.65,
+      true,
+    );
+    crate.userData.catchIndex = i;
+  }
+  const fishStall = group("Kadal fish stall", -11, terrainHeight(-11, 44), 44);
+  roof(fishStall, 0, 2.65, 0, 4, 3, 0.7);
+  for (const x of [-1.6, 1.6])
+    block(fishStall, m.wood, x, 1.3, 0, 0.12, 2.6, 0.12);
+  block(fishStall, m.wood, 0, 0.8, 0, 3.1, 0.14, 1.3);
+  sign(fishStall, "KADAL FISH", "FROM THE SHORE", 0, 2.1, 0.8, 2.7);
+  const vendor = human("Mini", m.rose);
+  vendor.person.position.set(-11, terrainHeight(-11, 42), 42);
+  const marketFish = group(
+    "Fresh catch on the stall",
+    -11,
+    terrainHeight(-11, 44),
+    44,
+  );
+  for (let i = 0; i < 5; i++)
+    mesh(marketFish, sphere, m.grey, (i - 2) * 0.5, 0.98, 0, 0.1, 0.08, 0.32);
+  const fishBuyer = human("Fish buyer", m.gold);
+  // A buyer approaches only while stock and trading conditions allow it.
 
   const pondGeometry = ownGeometry(new THREE.CircleGeometry(4.5, 48));
   pondGeometry.rotateX(-Math.PI / 2);
@@ -2422,6 +2460,18 @@ export function buildEnvironment(scene) {
     driver.limbs[0].rotation.x = driver.limbs[1].rotation.x = -1.1;
     return { group: rickshaw, wheels };
   }
+  const feederAuto = makeRickshaw(m.black);
+  feederAuto.group.name = "Village feeder auto";
+  for (const stop of AUTO_STOPS) {
+    const stand = group(
+      stop.name,
+      stop.x + 2,
+      terrainHeight(stop.x + 2, stop.z),
+      stop.z + 2,
+    );
+    block(stand, m.wood, 0, 1, 0, 0.12, 2, 0.12);
+    sign(stand, "AUTO", "BUS STAND / FAR BANK", 0, 2, 0, 2.3);
+  }
   const rickshaws = [
     {
       ...makeRickshaw(m.teal),
@@ -2643,6 +2693,13 @@ export function buildEnvironment(scene) {
   }
 
   const animated = new Set([
+    catchBoat,
+    fisher.person,
+    fishBasket,
+    vendor.person,
+    marketFish,
+    fishBuyer.person,
+    feederAuto.group,
     bus,
     ...commuters.map((p) => p.person),
     player,
@@ -2716,6 +2773,66 @@ export function buildEnvironment(scene) {
     const wetness = THREE.MathUtils.clamp(Number(world.rain) || 0, 0, 1);
     if (world.life) {
       const life = world.life;
+      const fishing = life.fishing,
+        fp = fishingPosition(fishing);
+      catchBoat.position.set(
+        fp.atSea ? fp.x : -89,
+        -0.03 + Math.sin(t) * 0.025,
+        fp.atSea ? fp.z : 12,
+      );
+      catchBoat.rotation.y = fp.atSea ? fp.heading : Math.PI * 0.35;
+      fisher.person.position.set(
+        fp.x,
+        fp.atSea ? 0.18 : terrainHeight(fp.x, fp.z),
+        fp.z,
+      );
+      fisher.person.rotation.y = fp.heading;
+      const carrying = fishing.phase === "delivering";
+      fisher.limbs.forEach((limb, i) => {
+        limb.rotation.x =
+          carrying && i > 1
+            ? -0.9
+            : ["delivering", "walking-home"].includes(fishing.phase)
+              ? Math.sin(t * 6) * (i % 2 ? -0.4 : 0.4)
+              : 0;
+      });
+      fishBasket.visible = fishing.cargo > 0;
+      fishBasket.position.set(
+        fp.x,
+        fp.atSea ? 0.3 : terrainHeight(fp.x, fp.z) + (carrying ? 1 : 0.2),
+        fp.z + 0.8,
+      );
+      fishBasket.children.forEach((crate, i) => {
+        crate.visible = i < fishing.cargo;
+      });
+      const trading = fishMarketOpen(fishing, lifeHour(life), wetness);
+      vendor.person.visible = lifeHour(life) >= 6 && lifeHour(life) < 18;
+      marketFish.children.forEach((fish, i) => {
+        fish.visible = i < fishing.stock;
+      });
+      marketFish.visible = fishing.stock > 0;
+      const buyerX = -4 - fishing.buyer * 4,
+        buyerZ = 52 - fishing.buyer * 6;
+      fishBuyer.person.position.set(
+        buyerX,
+        terrainHeight(buyerX, buyerZ),
+        buyerZ,
+      );
+      fishBuyer.person.visible = trading || fishing.buyer > 0;
+      fishBuyer.person.rotation.y = trading ? 0.59 : Math.PI + 0.59;
+      fishBuyer.limbs.forEach((limb, i) => {
+        limb.rotation.x =
+          fishing.buyer > 0 && fishing.buyer < 1
+            ? Math.sin(t * 6) * (i % 2 ? -0.4 : 0.4)
+            : 0;
+      });
+      const ap = autoPosition(life.auto);
+      feederAuto.group.position.set(ap.x, terrainHeight(ap.x, ap.z), ap.z);
+      feederAuto.group.rotation.y = ap.heading;
+      feederAuto.wheels.forEach((w) => {
+        if (life.auto.phase === "travelling" && !life.auto.yielding)
+          w.rotation.x += dt * 10;
+      });
       const bp = busPosition(life.bus);
       bus.position.set(bp.x, terrainHeight(bp.x, bp.z), bp.z);
       bus.rotation.y = bp.heading;
@@ -2847,6 +2964,8 @@ export function buildEnvironment(scene) {
     lagoonBoat.position.y = -0.02 + Math.sin(t * 0.7 + 2) * 0.035;
     lagoonBoat.rotation.z = Math.sin(t * 0.5) * 0.008;
     rickshaws.forEach(({ group: auto, wheels, x, from, to, speed, phase }) => {
+      auto.visible = !(world.life && from === -120);
+      if (!auto.visible) return;
       const length = to - from;
       const travel =
         (((t * speed + phase) % (length * 2)) + length * 2) % (length * 2);
