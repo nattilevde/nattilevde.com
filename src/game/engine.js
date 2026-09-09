@@ -108,6 +108,7 @@ export function createGame(
     );
   }
   let paused = true,
+    preparing = true,
     disposed = false,
     yaw = 0,
     pitch = 0.43,
@@ -547,6 +548,7 @@ export function createGame(
     const frameTime = Math.min((now - previous) / 1000, 0.25);
     const dt = frameTime;
     previous = now;
+    if (preparing) return;
     if (paused && now - invalidatedAt > 1800) return;
     if (!paused) {
       elapsed += dt;
@@ -879,6 +881,44 @@ export function createGame(
   publish();
 
   return {
+    async prepare() {
+      // Compile even off-camera materials before controls become available.
+      await renderer.compileAsync(scene, camera);
+      if (disposed) return false;
+      // Upload nearby geometry/textures and shadow resources from both spawn
+      // and jeep views. Yield between views so loading can remain responsive.
+      for (const at of [position, life.jeep]) {
+        for (const angle of [0, Math.PI]) {
+          if (disposed) return false;
+          const y = terrainHeight(at.x, at.z);
+          camera.position.set(
+            at.x + Math.sin(angle) * 13,
+            y + 8,
+            at.z + Math.cos(angle) * 13,
+          );
+          camera.lookAt(at.x, y + 1.5, at.z);
+          renderer.render(scene, camera);
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
+      }
+      if (disposed) return false;
+      preparing = false;
+      camera.position.set(
+        position.x,
+        terrainHeight(position.x, position.z) + 8,
+        position.z + 13,
+      );
+      camera.lookAt(
+        position.x,
+        terrainHeight(position.x, position.z) + 1.5,
+        position.z,
+      );
+      renderer.render(scene, camera);
+      viewReady = false;
+      previous = performance.now();
+      invalidatedAt = previous;
+      return true;
+    },
     captureFrame() {
       // Copy immediately after rendering; no persistent WebGL buffer needed.
       renderer.render(scene, camera);
@@ -890,6 +930,7 @@ export function createGame(
     },
     setPaused(value) {
       paused = value;
+      previous = performance.now();
       invalidatedAt = performance.now();
       clearInput();
       if (sound) soundscape.setMaster(value ? 0 : 0.9);

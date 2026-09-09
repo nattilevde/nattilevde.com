@@ -1878,3 +1878,7 @@
     padding: 16px;
   }
 }
+/* Hide the temporary preparation views until the playable camera is ready. */
+.kerala-game[data-ready="false"] .game-canvas-host {
+  visibility: hidden;
+}

@@ -723,7 +723,17 @@ export default function Game({ onExit, onRecord }) {
         onError: setError,
       });
       engine.current = game;
-      setReady(true);
+      game
+        .prepare()
+        .then((prepared) => {
+          if (prepared && engine.current === game) setReady(true);
+        })
+        .catch(() => {
+          if (engine.current === game)
+            setError(
+              "The graphics could not finish loading. Return to the portal and try again.",
+            );
+        });
     } catch (e) {
       console.error("Kerala world could not initialize", e);
       setError(
