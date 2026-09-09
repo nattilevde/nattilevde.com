@@ -206,3 +206,9 @@ the 3D world — are playable end to end.
 - Added camera-button/C capture, a paused postcard preview, PNG download and optional device sharing.
 - Export omits game HUD and includes a location/region title plus the game/domain footer.
 - Added a capture/download/resume check and deferred phone/share-sheet checklist.
+
+### First-run ride preparation
+
+- Wait for shader compilation and nearby spawn/jeep render preparation before enabling Start.
+- Keep simulation paused during preparation and reset frame timing on resume, avoiding loading-time catch-up.
+- Added a fresh-session comparison to the manual checklist; cold-device performance still requires confirmation.

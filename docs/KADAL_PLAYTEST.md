@@ -269,3 +269,9 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
 - [ ] Return to world or press Escape; movement, sound and rides resume. Photo time should not increase local active-play time.
 - [ ] On supported phones, Share postcard opens the device share sheet only when tapped. Cancel it, try again, and check download fallback where file sharing is unavailable.
 - [ ] Keyboard Tab stays in photo controls. Repeated captures do not retain old images. Frame the view in normal play before opening the camera.
+
+## First-run graphics preparation
+
+- [ ] Clear site data in a test profile, reopen and immediately start with the jeep when ready. Compare the first 30 seconds with a later ride, using the same device and route.
+- [ ] Check loading finishes without showing temporary camera views; returning saves and photo mode still work.
+- [ ] If the first ride still stutters, note device/browser, sound on/off and approximate duration. Graphics warm-up addresses a likely source, not a confirmed device-level diagnosis.
