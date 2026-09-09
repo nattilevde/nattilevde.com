@@ -879,6 +879,15 @@ export function createGame(
   publish();
 
   return {
+    captureFrame() {
+      // Copy immediately after rendering; no persistent WebGL buffer needed.
+      renderer.render(scene, camera);
+      const snapshot = document.createElement("canvas");
+      snapshot.width = renderer.domElement.width;
+      snapshot.height = renderer.domElement.height;
+      snapshot.getContext("2d").drawImage(renderer.domElement, 0, 0);
+      return snapshot;
+    },
     setPaused(value) {
       paused = value;
       invalidatedAt = performance.now();

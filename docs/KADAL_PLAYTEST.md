@@ -253,3 +253,19 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
 - [ ] At (705, 90), take the ridge spur. Park, exit, find the viewpoint and sit at the bench. Reload and check parked-jeep access and discoveries.
 - [ ] Check roads do not disappear into terrain, foliage avoids the bends, and headlights illuminate the road at night. Edge posts are visual markers only.
 - [ ] Check camera comfort and phone performance through the woodland and ridge. Report sharp turns, visual clipping or repetitive scenery.
+
+## First journey pilot
+
+- [ ] Fresh profile: Start with the jeep, controls hint, walking alternative and phone layout.
+- [ ] Returning save keeps location/time; drive harbour → Paddy Lane → ridge using roadside signs.
+- [ ] Discover Paddy Lane Market and sit at the shaded fieldside bench.
+- [ ] Pause → Local playtest summary: active/driving time, first jeep use and discoveries; check pause/tab hiding and clear without losing game progress.
+- Full details: [First journey pilot](FIRST_JOURNEY_PILOT.md).
+
+## Photo postcards
+
+- [ ] Open the camera button or press C while walking, parked or riding. The world should pause; the postcard must contain the scene without HUD, notices or controls.
+- [ ] Download the PNG; confirm the location/region name and nattilevde.com footer are readable. Try landscape and portrait screens, daylight, night and rain.
+- [ ] Return to world or press Escape; movement, sound and rides resume. Photo time should not increase local active-play time.
+- [ ] On supported phones, Share postcard opens the device share sheet only when tapped. Cancel it, try again, and check download fallback where file sharing is unavailable.
+- [ ] Keyboard Tab stays in photo controls. Repeated captures do not retain old images. Frame the view in normal play before opening the camera.

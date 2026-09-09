@@ -194,3 +194,15 @@ the 3D world — are playable end to end.
 - Separated the map introduction/filters from map labels and reduced floating-guide overlap on smaller screens.
 - Added crawlable district and place guides with existing food/culture context, related links, unique metadata, canonical URLs and structured data.
 - Build now emits a sitemap, robots rules, branded sharing metadata and a 404 document; added automated output validation and a deployment/manual checklist.
+
+### First journey pilot
+
+- Added optional first-visit jeep start and dismissible driving controls, preserving returning saves.
+- Added roadside route cues, Paddy Lane Market discovery and a shaded fieldside rest stop.
+- Added bounded browser-local playtest summaries in Pause/Help, with no uploads and independent clearing.
+
+### Photo postcards
+
+- Added camera-button/C capture, a paused postcard preview, PNG download and optional device sharing.
+- Export omits game HUD and includes a location/region title plus the game/domain footer.
+- Added a capture/download/resume check and deferred phone/share-sheet checklist.

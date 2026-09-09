@@ -1916,6 +1916,28 @@ export function buildEnvironment(scene) {
     return board;
   }
   signboard(
+    9,
+    53,
+    0,
+    "HARBOUR ROAD",
+    "NORTH TO THE MARKET / EAST TO THE HILLS",
+  );
+  signboard(141, -176, -Math.PI / 2, "PADDY LANE", "SOUTH THROUGH THE HOMES");
+  signboard(
+    137,
+    37,
+    Math.PI,
+    "FIELDS AND HILLS",
+    "FOLLOW THE LATERITE LANE EAST",
+  );
+  signboard(
+    321,
+    132,
+    -Math.PI / 2,
+    "PADDY LANE MARKET",
+    "PARK HERE / HILL ROAD CONTINUES EAST",
+  );
+  signboard(
     10,
     -287,
     Math.PI,
@@ -3084,6 +3106,7 @@ export function buildEnvironment(scene) {
   ])
     palm(x, z, scale);
   roundTree(302, 89, 1.1);
+  roundTree(327, 145, 1.1);
   buildHighlandView({
     group,
     block,

@@ -46,6 +46,17 @@ export const regions = [
 export const regionAt = (x, z) => regions.find((r) => r.test(x, z));
 
 export const sites = [
+  {
+    id: "paddy-market-stop",
+    name: "Paddy Lane Market",
+    x: 325,
+    z: 125,
+    radius: 9,
+    kind: "place",
+    line: "Pull over. There is more to this lane than the road.",
+    story:
+      "An imagined neighbourhood of homes, paddy fields and small shops. Leave the jeep in the parking area, watch the lane for a while, or walk toward the produce stall. The road east climbs toward the ridge.",
+  },
   ...HIGHLAND_SITES,
   ...TOWN_SITES,
   {
@@ -554,6 +565,15 @@ export function travelDestinations(journey) {
 // Quiet rest spots: sit, breathe, and let the camera drink in the view.
 // `face` is the yaw the seated player looks along; the seat prop goes behind them.
 export const REST_SPOTS = [
+  {
+    id: "paddy-lane-bench",
+    name: "The Fieldside Bench",
+    x: 322,
+    z: 139,
+    face: -Math.PI / 2,
+    seat: "bench",
+    line: "A little shade beside the fields. The hill road can wait.",
+  },
   {
     id: "ridge-bench",
     name: "The Ridge Bench",
