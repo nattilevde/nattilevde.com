@@ -28,7 +28,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "vite --port 5175",
+    "dev": "vite",
     "build": "vite build && node scripts/build-seo.mjs",
     "preview": "vite preview",
     "test": "playwright test",
