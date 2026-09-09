@@ -1,3 +1,7 @@
+import { TOWN_BUILDINGS, TOWN_ROADS, TOWN_SITES } from "./town-data.js";
+import { HIGHLAND_ROADS, HIGHLAND_SITES } from "./highland-data.js";
+import { PADDY_HOMES } from "./paddy-data.js";
+import { FAITH_SPACES } from "./community-data.js";
 export const REGION = {
   id: "kerala",
   name: "Kerala Unfolded",
@@ -42,6 +46,19 @@ export const regions = [
 export const regionAt = (x, z) => regions.find((r) => r.test(x, z));
 
 export const sites = [
+  {
+    id: "paddy-market-stop",
+    name: "Paddy Lane Market",
+    x: 325,
+    z: 125,
+    radius: 9,
+    kind: "place",
+    line: "Pull over. There is more to this lane than the road.",
+    story:
+      "An imagined neighbourhood of homes, paddy fields and small shops. Leave the jeep in the parking area, watch the lane for a while, or walk toward the produce stall. The road east climbs toward the ridge.",
+  },
+  ...HIGHLAND_SITES,
+  ...TOWN_SITES,
   {
     id: "village",
     name: "Kadal Village",
@@ -549,6 +566,24 @@ export function travelDestinations(journey) {
 // `face` is the yaw the seated player looks along; the seat prop goes behind them.
 export const REST_SPOTS = [
   {
+    id: "paddy-lane-bench",
+    name: "The Fieldside Bench",
+    x: 322,
+    z: 139,
+    face: -Math.PI / 2,
+    seat: "bench",
+    line: "A little shade beside the fields. The hill road can wait.",
+  },
+  {
+    id: "ridge-bench",
+    name: "The Ridge Bench",
+    x: 724,
+    z: 143,
+    face: -Math.PI / 2,
+    seat: "bench",
+    line: "The foothills fall away. For a moment, the drive can wait.",
+  },
+  {
     id: "beach-log",
     name: "The Driftwood Log",
     x: -70,
@@ -614,6 +649,8 @@ export const REST_SPOTS = [
 ];
 
 export const buildings = [
+  ...TOWN_BUILDINGS,
+  ...PADDY_HOMES,
   // Kadal Village (the original backwater chapter)
   { x: -18, z: 30, w: 8, d: 9, color: "#f0d7a0", type: "shop" },
   { x: -22, z: -34, w: 14, d: 10, color: "#eadbb7", type: "pavilion" },
@@ -649,6 +686,9 @@ export const buildings = [
 
 // Non-building obstacles: fort walls, gate legs, lighthouse, elephants.
 export const solids = [
+  { x: 343, z: 94, w: 10, d: 6 },
+  { x: 363, z: 94, w: 10, d: 6 },
+  ...FAITH_SPACES.map((p) => ({ x: p.x, z: p.z, w: 10, d: 12 })),
   { x: -65, z: -1372, w: 52, d: 2.4 },
   { x: -65, z: -1332, w: 52, d: 2.4 },
   { x: -91, z: -1352, w: 2.4, d: 42 },
@@ -666,6 +706,8 @@ export const solids = [
 
 // Roads beyond the straight coastal highway, as polylines for the map and the builder.
 export const roads = [
+  ...HIGHLAND_ROADS,
+  ...TOWN_ROADS,
   {
     id: "hill-road",
     width: 4,
@@ -770,6 +812,9 @@ export function terrainHeight(x, z) {
     hi *
     hi *
     (52 + Math.sin(z * 0.01) * 9 + Math.sin(x * 0.03 + z * 0.004) * 6);
+  // Low rolling laterite beside the Kadal off-road loop.
+  h += 2.2 * Math.exp(-(((x - 175) / 22) ** 2 + ((z - 80) / 20) ** 2));
+  h += 1.6 * Math.exp(-(((x - 205) / 18) ** 2 + ((z - 123) / 18) ** 2));
   // Malabar's low laterite shelf.
   h += away * smooth(-950, -1150, z) * (2.2 + Math.sin(x * 0.05) * 0.8);
   // The fort headland rises over the sea.

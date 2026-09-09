@@ -1,5 +1,15 @@
 import { STORIES, storyById } from "./stories.js";
+import {
+  createPlaytest,
+  tickPlaytest,
+  discoverPlaytest,
+  loadPlaytests,
+  persistPlaytest,
+  playtestSummary,
+  PLAYTEST_KEY,
+} from "./playtest.js";
 import StoryCard from "./StoryCard.jsx";
+import { makePostcard, postcardFile } from "./postcard.js";
 import { FISH_LANDING } from "./fishing.js";
 import { AUTO_STOPS, autoOpen } from "./auto.js";
 import React, { useEffect, useRef, useState } from "react";
@@ -8,6 +18,8 @@ import {
   ArrowRight,
   BookOpen,
   Bus,
+  Car,
+  Camera,
   Check,
   CloudRain,
   Compass,
@@ -297,6 +309,23 @@ function WorldMap({
             </g>
           );
         })}
+      {state.life?.jeep && !state.driving && (
+        <g
+          transform={`translate(${state.life.jeep.x - b.minX},${state.life.jeep.z - b.minZ}) scale(${marker})`}
+        >
+          <title>Parked hill jeep</title>
+          <rect
+            x="-5"
+            y="-5"
+            width="10"
+            height="10"
+            rx="2"
+            fill="#506d49"
+            stroke="#fff4d4"
+            strokeWidth="1.5"
+          />
+        </g>
+      )}
       {state.scooter && !state.riding && (
         <g
           transform={`translate(${state.scooter.x - b.minX},${state.scooter.z - b.minZ}) scale(${marker})`}
@@ -365,6 +394,10 @@ export default function Game({ onExit, onRecord }) {
   callbacks.current = { onRecord };
   const [journey, setJourney] = useState(readJourney);
   const journeyRef = useRef(journey);
+  const firstVisit = useRef(!journey.life && journey.discoveries.length === 0);
+  const pilot = useRef(null);
+  const priorPilot = useRef([]);
+  const [driveHint, setDriveHint] = useState(false);
   const [assistance, setAssistance] = useState(journey.assistance === true);
   const [captions, setCaptions] = useState(journey.captions === true);
   const [encounterDetail, setEncounterDetail] = useState(null);
@@ -407,6 +440,8 @@ export default function Game({ onExit, onRecord }) {
       release?.();
     };
   }, []);
+  const [jeepGuide, setJeepGuide] = useState(false);
+  const [jeepReturnError, setJeepReturnError] = useState("");
   const [state, setState] = useState({
     ...journey.position,
     heading: 0,
@@ -428,6 +463,30 @@ export default function Game({ onExit, onRecord }) {
   const [panel, setPanel] = useState(null),
     [encounter, setEncounter] = useState(null),
     [notice, setNotice] = useState(null);
+  const [postcard, setPostcard] = useState(null);
+  const [photoError, setPhotoError] = useState("");
+  function openPhoto() {
+    engine.current?.setPaused(true);
+    setPhotoError("");
+    try {
+      const at = stateRef.current;
+      const place = sites.find(
+        (s) => Math.hypot(s.x - at.x, s.z - at.z) < s.radius,
+      );
+      setPostcard(
+        makePostcard(
+          engine.current.captureFrame(),
+          place?.name || regionAt(at.x, at.z).name,
+        ),
+      );
+    } catch {
+      setPostcard(null);
+      setPhotoError(
+        "The postcard could not be created. Return to the world and try again.",
+      );
+    }
+    setPanel("photo");
+  }
   const [sound, setSound] = useState(true),
     [time, setTime] = useState("cycle"),
     [low, setLow] = useState(false),
@@ -468,6 +527,38 @@ export default function Game({ onExit, onRecord }) {
     if (engine.current?.keepPhotoStory(storyId))
       save({ ...journeyRef.current, life: engine.current.getLife() });
   };
+  const parkedJeep = state.life?.jeep;
+  const jeepDistance = parkedJeep
+    ? Math.hypot(parkedJeep.x - state.x, parkedJeep.z - state.z)
+    : 0;
+  const jeepBearing = parkedJeep
+    ? ((Math.atan2(parkedJeep.x - state.x, state.z - parkedJeep.z) +
+        state.heading) *
+        180) /
+      Math.PI
+    : 0;
+  const canReturnToJeep =
+    !state.riding &&
+    !state.boating &&
+    !state.sitting &&
+    !state.autoPassenger &&
+    !state.busPassenger &&
+    !state.ferryPassenger;
+  function returnToJeep() {
+    if (engine.current?.returnToJeep()) {
+      setJeepGuide(false);
+      setPanel(null);
+      setJeepReturnError("");
+      save({
+        ...journeyRef.current,
+        position: engine.current.getPosition(),
+        life: engine.current.getLife(),
+      });
+    } else
+      setJeepReturnError(
+        "Step out of your current ride or seat first. The jeep also needs a clear place beside it.",
+      );
+  }
   const cue = state.cue;
   const cueDirection = cue
     ? (() => {
@@ -524,6 +615,8 @@ export default function Game({ onExit, onRecord }) {
   function record(kind, id) {
     const old = journeyRef.current;
     if (old[kind].includes(id)) return;
+    if (kind === "discoveries" && pilot.current)
+      discoverPlaytest(pilot.current, id);
     const next = { ...old, [kind]: [...old[kind], id] };
     const oldRank = rankFor(old);
     save(next);
@@ -658,6 +751,46 @@ export default function Game({ onExit, onRecord }) {
   useEffect(() => {
     engine.current?.setPaused(!started || !!panel || !!error);
   }, [started, panel, error, ready]);
+  useEffect(() => {
+    if (!started) return;
+    let last = performance.now();
+    const flush = () => {
+      if (pilot.current)
+        persistPlaytest(localStorage, priorPilot.current, pilot.current);
+    };
+    const timer = setInterval(() => {
+      const now = performance.now();
+      if (!panel && !error && !document.hidden)
+        tickPlaytest(
+          pilot.current,
+          (now - last) / 1000,
+          stateRef.current.driving,
+        );
+      last = now;
+      flush();
+    }, 1000);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, [started, panel, error]);
+  async function beginJourney(withJeep = false) {
+    if (!pilot.current) {
+      priorPilot.current = loadPlaytests(localStorage);
+      pilot.current = createPlaytest(!firstVisit.current);
+    }
+    engine.current?.setPaused(false);
+    const driving =
+      withJeep && engine.current?.returnToJeep() && engine.current.drive();
+    setDriveHint(!!driving);
+    setStarted(true);
+    if (sound) {
+      const ok = await engine.current?.setSound(true);
+      if (ok === false) setSound(false);
+    }
+  }
   // Listen for something worth overhearing wherever the player has wandered.
   useEffect(() => {
     if (!started || panel) return;
@@ -691,6 +824,17 @@ export default function Game({ onExit, onRecord }) {
   useEffect(() => {
     const shortcut = (e) => {
       if (!started || e.repeat || e.target?.closest?.("input")) return;
+      if (e.code === "Escape" && panel === "photo") {
+        e.preventDefault();
+        setPanel(null);
+        setPostcard(null);
+        return;
+      }
+      if (e.code === "KeyC" && !panel) {
+        e.preventDefault();
+        openPhoto();
+        return;
+      }
       if (e.code === "Escape" && !panel) {
         e.preventDefault();
         setPanel("pause");
@@ -768,7 +912,7 @@ export default function Game({ onExit, onRecord }) {
 
   return (
     <div
-      className={`kerala-game ${assistance ? "" : "game-quiet"}`}
+      className={`kerala-game ${assistance ? "" : "game-quiet"} ${panel === "photo" ? "game-photo-mode" : ""}`}
       data-testid="kerala-game"
       data-ready={ready}
       data-x={state.x.toFixed(1)}
@@ -778,6 +922,7 @@ export default function Game({ onExit, onRecord }) {
       data-bus-passenger={state.busPassenger || false}
       data-ferry={state.ferryPassenger || false}
       data-riding={state.riding}
+      data-driving={!!state.driving}
       data-sitting={state.sitting || ""}
     >
       <div className="game-canvas-host" ref={container} />
@@ -808,6 +953,13 @@ export default function Game({ onExit, onRecord }) {
                 <Map size={19} />
               </button>
               <button
+                aria-label="Photo mode"
+                title="Photo mode (C)"
+                onClick={openPhoto}
+              >
+                <Camera size={19} />
+              </button>
+              <button
                 aria-label={sound ? "Mute the world" : "Unmute the world"}
                 title="Sound"
                 onClick={async () => {
@@ -818,6 +970,18 @@ export default function Game({ onExit, onRecord }) {
               >
                 {sound ? <Volume2 size={19} /> : <VolumeX size={19} />}
               </button>
+              {!state.driving && (
+                <button
+                  aria-label="Find my jeep"
+                  title="Find my jeep"
+                  onClick={() => {
+                    setJeepReturnError("");
+                    setPanel("jeep");
+                  }}
+                >
+                  <Car size={19} />
+                </button>
+              )}
               <button
                 aria-label="Open bus network"
                 title="Fast travel (B)"
@@ -851,10 +1015,8 @@ export default function Game({ onExit, onRecord }) {
             More <em>wandering.</em>
           </h1>
           <p>
-            The sea to your left. A village ahead. And beyond it, a whole Kerala
-            —
-            <br />
-            the long road north to the fort, the hill road east into the tea.
+            A jeep beside the village. Harbour streets to the north. Paddy lanes
+            and a winding climb beyond. Take whichever road catches your eye.
           </p>
           <label className="game-intro-sound">
             <input
@@ -865,16 +1027,19 @@ export default function Game({ onExit, onRecord }) {
             {sound ? <Volume2 size={15} /> : <VolumeX size={15} />}
             Sound on — the world is worth listening to
           </label>
+          {firstVisit.current && (
+            <button
+              className="game-primary"
+              disabled={!ready}
+              onClick={() => beginJourney(true)}
+            >
+              Start with the jeep <Car size={18} />
+            </button>
+          )}
           <button
-            className="game-primary"
+            className={firstVisit.current ? "game-secondary" : "game-primary"}
             disabled={!ready}
-            onClick={async () => {
-              setStarted(true);
-              if (sound) {
-                const ok = await engine.current?.setSound(true);
-                if (ok === false) setSound(false);
-              }
-            }}
+            onClick={() => beginJourney()}
           >
             {ready
               ? journey.discoveries.length
@@ -897,7 +1062,9 @@ export default function Game({ onExit, onRecord }) {
             </span>
           </div>
           <small className="game-fiction-note">
-            A handcrafted fictional village inspired by coastal Kerala.
+            A handcrafted fictional village inspired by coastal Kerala. A short
+            playtest summary stays in this browser; nothing is sent. View or
+            clear it in Pause.
           </small>
         </div>
       )}
@@ -1201,9 +1368,29 @@ export default function Game({ onExit, onRecord }) {
                 <ArrowRight size={17} />
               </button>
             )}
+          {!panel && (state.driving || state.nearJeep) && (
+            <button
+              className="game-interaction"
+              onClick={() => engine.current?.drive()}
+              disabled={state.driving && state.jeepSpeed > 1}
+            >
+              <kbd>J</kbd>
+              <span>
+                {state.driving
+                  ? `Hill jeep · ${state.jeepSpeed} km/h`
+                  : "Borrow the hill jeep"}
+                <strong>
+                  {state.driving
+                    ? "Stop to step out · W/S drive · A/D steer · Space brake"
+                    : "Take the back roads"}
+                </strong>
+              </span>
+            </button>
+          )}
           {!panel &&
             !state.sitting &&
             !state.boating &&
+            !state.driving &&
             (state.riding ||
               (!nearby &&
                 !state.restSpot &&
@@ -1285,7 +1472,9 @@ export default function Game({ onExit, onRecord }) {
             </div>
             <button
               className={running ? "game-run active" : "game-run"}
-              aria-label="Toggle running"
+              aria-label={
+                state.driving ? "Toggle jeep brake" : "Toggle running"
+              }
               aria-pressed={running}
               onClick={() => {
                 setRunning(!running);
@@ -1293,12 +1482,58 @@ export default function Game({ onExit, onRecord }) {
               }}
             >
               <Footprints size={20} />
-              <small>{running ? "RUNNING" : "WALKING"}</small>
+              <small>
+                {state.driving
+                  ? running
+                    ? "BRAKE ON"
+                    : "BRAKE"
+                  : running
+                    ? "RUNNING"
+                    : "WALKING"}
+              </small>
             </button>
           </div>
         </>
       )}
 
+      {driveHint && started && !panel && state.driving && (
+        <div className="game-drive-hint" role="status">
+          <strong>The road is yours.</strong>
+          <p>
+            W / S: accelerate or reverse · A / D: steer · Space: brake · J: park
+          </p>
+          <p>
+            On touch: use the joystick to drive and the brake button to slow
+            down.
+          </p>
+          <button onClick={() => setDriveHint(false)}>Got it</button>
+        </div>
+      )}
+      {jeepGuide && started && !panel && !state.driving && parkedJeep && (
+        <div className="game-jeep-guide" role="status">
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-block",
+              transform: `rotate(${jeepBearing}deg)`,
+            }}
+          >
+            ↑
+          </span>
+          <span>
+            {jeepDistance < 4
+              ? "Your jeep is here"
+              : `Jeep · ${Math.round(jeepDistance)} m`}
+            <small>Direction to parked jeep</small>
+          </span>
+          <button
+            aria-label="Stop jeep guidance"
+            onClick={() => setJeepGuide(false)}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
       {overheard && started && !panel && (
         <div className="game-overheard" role="status" key={lastLine.current.at}>
           <span>{overheard.who}</span>
@@ -1341,24 +1576,152 @@ export default function Game({ onExit, onRecord }) {
         </div>
       )}
 
-      {panel && (
+      {panel === "photo" && (
+        <section
+          className="game-photo-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Photo mode"
+          onKeyDown={(e) => {
+            if (e.key !== "Tab") return;
+            const controls = [
+              ...e.currentTarget.querySelectorAll(
+                "a[href], button:not(:disabled)",
+              ),
+            ];
+            const first = controls[0],
+              last = controls.at(-1);
+            if (e.shiftKey && document.activeElement === first) {
+              e.preventDefault();
+              last?.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+              e.preventDefault();
+              first?.focus();
+            }
+          }}
+        >
+          <h2>Your Kerala postcard</h2>
+          <p>
+            The world is paused. Return to the world to move or frame another
+            view.
+          </p>
+          {postcard && (
+            <img
+              src={postcard}
+              alt="Your captured Kerala game view with a branded postcard footer"
+            />
+          )}
+          {photoError && <p role="alert">{photoError}</p>}
+          <div className="game-photo-actions">
+            {postcard && (
+              <a
+                className="game-primary"
+                href={postcard}
+                download="kerala-postcard.png"
+              >
+                Download postcard
+              </a>
+            )}
+            {postcard && typeof navigator.share === "function" && (
+              <button
+                className="game-secondary"
+                onClick={async () => {
+                  try {
+                    const file = postcardFile(postcard);
+                    if (!navigator.canShare?.({ files: [file] })) {
+                      setPhotoError(
+                        "Photo sharing is unavailable here. Download the postcard and share the saved image.",
+                      );
+                      return;
+                    }
+                    await navigator.share({
+                      files: [file],
+                      title: "My Kerala postcard",
+                    });
+                  } catch (e) {
+                    if (e.name !== "AbortError")
+                      setPhotoError(
+                        "Sharing did not finish. You can download the postcard instead.",
+                      );
+                  }
+                }}
+              >
+                Share postcard
+              </button>
+            )}
+            <button
+              className="game-secondary"
+              autoFocus
+              onClick={() => {
+                setPanel(null);
+                setPostcard(null);
+              }}
+            >
+              Return to world
+            </button>
+          </div>
+          <small>
+            Saved on your device. Sharing happens only when you choose it.
+          </small>
+        </section>
+      )}
+      {panel && panel !== "photo" && (
         <GameDialog
           title={
-            panel === "story"
-              ? activeStory?.title || "Photo story"
-              : panel === "encounter"
-                ? encounterSite.name
-                : panel === "passport"
-                  ? "Kerala game passport"
-                  : panel === "map"
-                    ? "Exploration map"
-                    : panel === "travel"
-                      ? "Naadan bus network"
-                      : "Game menu"
+            panel === "jeep"
+              ? "Find my jeep"
+              : panel === "story"
+                ? activeStory?.title || "Photo story"
+                : panel === "encounter"
+                  ? encounterSite.name
+                  : panel === "passport"
+                    ? "Kerala game passport"
+                    : panel === "map"
+                      ? "Exploration map"
+                      : panel === "travel"
+                        ? "Naadan bus network"
+                        : "Game menu"
           }
           onClose={closePanel}
           className={`game-panel-${panel}`}
         >
+          {panel === "jeep" && (
+            <>
+              <span className="game-overline">YOUR HILL JEEP</span>
+              <h2>Back to the driver's seat.</h2>
+              <p>
+                {parkedJeep
+                  ? `Parked ${Math.round(jeepDistance)} metres away.`
+                  : "Locating your jeep…"}
+              </p>
+              <button
+                className="game-primary"
+                disabled={!parkedJeep || !canReturnToJeep}
+                onClick={returnToJeep}
+              >
+                Return to jeep <Car size={18} />
+              </button>
+              {!canReturnToJeep && (
+                <p>Step out of your current ride or seat to return.</p>
+              )}
+              <button
+                className="game-secondary"
+                disabled={!parkedJeep}
+                onClick={() => {
+                  setJeepGuide(true);
+                  setPanel(null);
+                }}
+              >
+                Show direction
+              </button>
+              <p>
+                Return takes you directly to a clear spot beside your parked
+                jeep. Direction guidance points toward it; follow the paths and
+                bridges around obstacles.
+              </p>
+              {jeepReturnError && <p role="alert">{jeepReturnError}</p>}
+            </>
+          )}
           {panel === "story" && activeStory && (
             <StoryCard
               key={storyId}
@@ -1694,7 +2057,9 @@ export default function Game({ onExit, onRecord }) {
                       {memory.id.startsWith("story-") &&
                         storyById(memory.id.slice(6)) && (
                           <button onClick={() => openStory(memory.id.slice(6))}>
-                            Reopen photo story
+                            {storyById(memory.id.slice(6))?.image
+                              ? "Reopen photo story"
+                              : "Reopen story"}
                           </button>
                         )}
                       <button
@@ -1754,6 +2119,33 @@ export default function Game({ onExit, onRecord }) {
                   : "Find your feet."}
               </h2>
               <p>The world is paused. Your journey is saved automatically.</p>
+              {pilot.current && (
+                <details className="game-playtest">
+                  <summary>Local playtest summary</summary>
+                  <p>
+                    Only this browser. No uploads or personal information.
+                    Select the summary to share it with your feedback.
+                  </p>
+                  <textarea
+                    aria-label="Local playtest summary"
+                    readOnly
+                    value={playtestSummary(priorPilot.current, pilot.current)}
+                  />
+                  <button
+                    className="game-secondary"
+                    onClick={() => {
+                      try {
+                        localStorage.removeItem(PLAYTEST_KEY);
+                      } catch {}
+                      priorPilot.current = [];
+                      pilot.current = createPlaytest(!firstVisit.current);
+                      setPanel(null);
+                    }}
+                  >
+                    Clear local summary
+                  </button>
+                </details>
+              )}
               <div className="game-help-grid">
                 <span>
                   <kbd>W A S D</kbd>

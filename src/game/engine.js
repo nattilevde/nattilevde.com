@@ -1,3 +1,4 @@
+import { advanceJeep, jeepExit } from "./jeep.js";
 import { teaOpen, teaProgramme } from "./tea-shop.js";
 import { keepPhotoStory } from "./life.js";
 import { createTransportMotion } from "./transport-motion.js";
@@ -87,6 +88,7 @@ export function createGame(
   });
   const { player, playerLimbs, canoe, scooter, scooterWheels, beacons } =
     environment;
+  const { jeep, jeepWheels } = environment;
   const position = new THREE.Vector3(initial.position.x, 0, initial.position.z);
   const renderPosition = position.clone();
   const desiredTarget = new THREE.Vector3();
@@ -118,6 +120,7 @@ export function createGame(
     moving = false,
     boating = false,
     riding = false,
+    driving = false,
     sprint = false,
     night = false,
     sound = false;
@@ -164,6 +167,7 @@ export function createGame(
   function interaction() {
     if (
       paused ||
+      driving ||
       riding ||
       life.ferry.player ||
       life.bus.player ||
@@ -180,6 +184,7 @@ export function createGame(
   function sit() {
     if (
       paused ||
+      driving ||
       riding ||
       boating ||
       life.ferry.player ||
@@ -213,6 +218,7 @@ export function createGame(
       !Number.isFinite(destination.x) ||
       !Number.isFinite(destination.z) ||
       !canWalk(destination.x, destination.z) ||
+      driving ||
       riding ||
       boating ||
       life.ferry.player ||
@@ -244,6 +250,7 @@ export function createGame(
     if (
       paused ||
       boating ||
+      driving ||
       sitting ||
       life.ferry.player ||
       life.bus.player ||
@@ -265,6 +272,34 @@ export function createGame(
       chime();
     }
     velocity.set(0, 0);
+    publish();
+    return true;
+  }
+  const nearJeep = () =>
+    !boating &&
+    !riding &&
+    !sitting &&
+    !life.ferry.player &&
+    !life.bus.player &&
+    !life.auto.player &&
+    Math.hypot(position.x - life.jeep.x, position.z - life.jeep.z) < 4;
+  function drive() {
+    if (paused) return false;
+    if (driving) {
+      if (Math.abs(life.jeep.speed) > 0.5) return false;
+      const exit = jeepExit(life.jeep);
+      if (!exit) return false;
+      driving = false;
+      position.set(exit.x, terrainHeight(exit.x, exit.z), exit.z);
+    } else {
+      if (!nearJeep()) return false;
+      driving = true;
+      yaw = life.jeep.heading;
+      position.set(life.jeep.x, life.jeep.y, life.jeep.z);
+    }
+    velocity.set(0, 0);
+    clearInput();
+    canvas.focus({ preventScroll: true });
     publish();
     return true;
   }
@@ -302,6 +337,31 @@ export function createGame(
       : Number(keys.has("KeyS") || keys.has("ArrowDown")) -
         Number(keys.has("KeyW") || keys.has("ArrowUp")) +
         touchMove.y;
+    if (driving) {
+      advanceJeep(
+        life.jeep,
+        dt,
+        {
+          throttle: -inputZ,
+          steer: inputX,
+          brake: keys.has("Space") || sprint,
+        },
+        rain,
+        [
+          ...life.residents.filter((r) => r.mode !== "passenger"),
+          ...life.community.people,
+          ...life.paddy.people,
+          ...life.town.people,
+          life.paddy.delivery,
+          busPosition(life.bus),
+          autoPosition(life.auto),
+        ],
+      );
+      position.set(life.jeep.x, life.jeep.y, life.jeep.z);
+      player.rotation.y = life.jeep.heading;
+      moving = Math.abs(life.jeep.speed) > 0.2;
+      return 0;
+    }
     if (sitting && (keys.size || Math.hypot(touchMove.x, touchMove.y) > 0.2))
       stand();
     const magnitude = Math.max(1, Math.hypot(inputX, inputZ));
@@ -381,6 +441,7 @@ export function createGame(
       e.preventDefault();
     keys.add(e.code);
     if (e.code === "KeyE" && !e.repeat) interaction();
+    if (e.code === "KeyJ" && !e.repeat) drive();
     if (e.code === "KeyR" && !e.repeat) ride();
   }
   const keyup = (e) => keys.delete(e.code);
@@ -446,7 +507,10 @@ export function createGame(
       heading: yaw,
       nearby: nearest?.id || null,
       boating,
-      riding,
+      riding: riding || driving,
+      driving,
+      nearJeep: nearJeep(),
+      jeepSpeed: Math.round(Math.abs(life.jeep.speed) * 3.6),
       sitting: sitting?.id || null,
       restSpot: !sitting && nearestRest ? nearestRest.id : null,
       busStop: nearestStop?.id || null,
@@ -543,6 +607,27 @@ export function createGame(
         player.rotation.y = pose.heading;
       }
       player.position.copy(renderPosition);
+      player.visible = true;
+      player.scale.setScalar(driving ? 0.8 : 1);
+      if (driving) player.position.y += 0.4;
+      jeep.position.set(life.jeep.x, life.jeep.y, life.jeep.z);
+      jeep.rotation.set(
+        life.jeep.pitch,
+        life.jeep.heading,
+        life.jeep.roll,
+        "YXZ",
+      );
+      jeepWheels.forEach(({ pivot, wheel, front }) => {
+        pivot.rotation.y = front ? -life.jeep.steer : 0;
+        wheel.rotation.x = life.jeep.travel / 0.46;
+      });
+      if (driving && !pointer)
+        yaw +=
+          Math.atan2(
+            Math.sin(life.jeep.heading - yaw),
+            Math.cos(life.jeep.heading - yaw),
+          ) *
+          (1 - Math.exp(-2 * dt));
       if (life.auto.player) player.position.y -= 0.6;
       if (riding) player.position.y += 0.55;
       if (sitting) {
@@ -550,19 +635,20 @@ export function createGame(
         player.rotation.y = sitting.face;
       }
       playerLimbs.forEach((limb, i) => {
-        limb.rotation.x = riding
-          ? i < 2
-            ? -1.05
-            : -0.55
-          : sitting || life.auto.player
+        limb.rotation.x =
+          riding || driving
             ? i < 2
-              ? -1.5
-              : -0.18 + Math.sin(elapsed * 0.7) * 0.05
-            : moving && !boating
-              ? Math.sin(elapsed * (moveSpeed > 6 ? 14 : 9)) *
-                (i % 2 ? -1 : 1) *
-                0.5
-              : 0;
+              ? -1.05
+              : -0.55
+            : sitting || life.auto.player
+              ? i < 2
+                ? -1.5
+                : -0.18 + Math.sin(elapsed * 0.7) * 0.05
+              : moving && !boating
+                ? Math.sin(elapsed * (moveSpeed > 6 ? 14 : 9)) *
+                  (i % 2 ? -1 : 1) *
+                  0.5
+                : 0;
       });
       canoe.visible = boating;
       if (boating) {
@@ -682,6 +768,8 @@ export function createGame(
           fishing: life.fishing.phase === "unloading" && life.fishing.cargo > 0,
           fishMarket: fishMarketOpen(life.fishing, lifeHour(life), rain),
           rehearsal: life.rehearsal.active,
+          sevens: life.community.active,
+          jeep: driving ? Math.abs(life.jeep.speed) + 1 : 0,
           ferry: {
             ...ferryPosition(life),
             moving: life.ferry.phase === "crossing",
@@ -711,17 +799,26 @@ export function createGame(
     scene.fog.density = 0.004 + rain * 0.006;
     sun.intensity *= 1 - rain * 0.5;
     hemisphere.intensity *= 1 - rain * 0.25;
-    sun.color.set(night ? "#acc8ed" : "#ffe5b6");
+    const goldenHour = lifeHour(life) < 8 || lifeHour(life) > 16;
+    sun.color.set(night ? "#acc8ed" : goldenHour ? "#ffd29a" : "#ffe5b6");
     sun.position.set(
       renderPosition.x - 45,
       renderPosition.y + 65,
       renderPosition.z + 30,
     );
     sun.target.position.copy(renderPosition);
+    environment.setJeepLighting(
+      driving && (night || rain > 0.2),
+      driving && life.jeep.braking,
+    );
     // Sitting eases the camera into a low, close, slowly drifting view.
     viewDistance = THREE.MathUtils.lerp(
       viewDistance,
-      sitting ? 5.6 : distance,
+      sitting
+        ? 5.6
+        : driving
+          ? 10 + Math.abs(life.jeep.speed) * 0.12
+          : distance,
       Math.min(1, dt * 1.6),
     );
     viewPitch = THREE.MathUtils.lerp(
@@ -782,6 +879,15 @@ export function createGame(
   publish();
 
   return {
+    captureFrame() {
+      // Copy immediately after rendering; no persistent WebGL buffer needed.
+      renderer.render(scene, camera);
+      const snapshot = document.createElement("canvas");
+      snapshot.width = renderer.domElement.width;
+      snapshot.height = renderer.domElement.height;
+      snapshot.getContext("2d").drawImage(renderer.domElement, 0, 0);
+      return snapshot;
+    },
     setPaused(value) {
       paused = value;
       invalidatedAt = performance.now();
@@ -822,7 +928,7 @@ export function createGame(
       });
     },
     lifeAction(action) {
-      if (paused || boating || riding || sitting) return false;
+      if (paused || boating || driving || riding || sitting) return false;
       const result = actOnLife(life, action, position);
       if (result && action === "rehearsal") playBeat();
       if (result && action === "leave-ferry") {
@@ -897,11 +1003,17 @@ export function createGame(
     bell: () => soundscape.bell(),
     interact: interaction,
     ride,
+    drive,
     sit,
     stand,
     travelTo,
+    returnToJeep() {
+      const at = jeepExit(life.jeep);
+      return at ? travelTo(at) : false;
+    },
     board() {
       if (
+        driving ||
         riding ||
         sitting ||
         life.ferry.player ||

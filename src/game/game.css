@@ -1728,3 +1728,153 @@
   place-items: center;
   padding: 20px;
 }
+
+.game-jeep-guide {
+  position: absolute;
+  top: 108px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #f3e7c9;
+  color: #244d46;
+  z-index: 12;
+  font-size: 14px;
+}
+.game-jeep-guide > span:first-child {
+  font-size: 27px;
+}
+.game-jeep-guide small {
+  display: block;
+  font-size: 10px;
+}
+.game-jeep-guide button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 8px;
+}
+.game-panel-jeep .game-secondary {
+  margin-top: 12px;
+}
+@media (max-width: 600px) {
+  .game-jeep-guide {
+    top: 145px;
+    right: 12px;
+  }
+}
+@media (max-width: 600px) {
+  .game-top .game-wordmark {
+    display: none;
+  }
+}
+
+.game-drive-hint {
+  position: absolute;
+  z-index: 12;
+  top: 88px;
+  right: 18px;
+  width: min(330px, calc(100% - 36px));
+  padding: 16px;
+  background: #f5f2deee;
+  color: #284838;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.game-drive-hint p {
+  line-height: 1.5;
+  margin: 8px 0;
+}
+.game-drive-hint button {
+  min-height: 40px;
+  padding: 8px 18px;
+  background: #28533d;
+  color: #fff8df;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.game-playtest {
+  margin: 18px 0;
+}
+.game-playtest summary {
+  cursor: pointer;
+  padding: 10px 0;
+}
+.game-playtest textarea {
+  display: block;
+  width: 100%;
+  min-height: 230px;
+  padding: 12px;
+  font-size: 13px;
+  color: #254638;
+  background: #f5f2de;
+}
+.game-intro > .game-secondary {
+  margin: 10px 0;
+}
+.game-intro {
+  max-height: calc(100dvh - 180px);
+  overflow-y: auto;
+  padding-right: 10px;
+}
+@media (max-height: 550px) {
+  .game-intro {
+    max-height: calc(100dvh - 130px);
+  }
+}
+
+.game-photo-mode > :not(.game-canvas-host):not(.game-photo-panel) {
+  display: none !important;
+}
+.game-photo-panel {
+  position: absolute;
+  z-index: 40;
+  inset: 0;
+  overflow: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #f5efd9;
+  background: #102a22ed;
+  text-align: center;
+}
+.game-photo-panel h2,
+.game-photo-panel p {
+  margin: 0;
+}
+.game-photo-panel img {
+  display: block;
+  max-width: 100%;
+  max-height: 65dvh;
+  object-fit: contain;
+  border-radius: 4px;
+}
+.game-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+.game-photo-actions a {
+  text-decoration: none;
+}
+.game-photo-actions .game-primary,
+.game-photo-actions .game-secondary {
+  margin: 0;
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .game-top-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .game-photo-panel {
+    padding: 16px;
+  }
+}

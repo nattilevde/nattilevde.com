@@ -133,3 +133,139 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
       play and nearby captions. Reload during a visit: no duplicate snack sale.
 - [ ] On a phone, inspect the tray/TV and revisit photo stories; confirm smooth
       walking and bus/auto/boat rides remain intact.
+
+## Faith lanes and Malabar sevens — deferred combined manual pass
+
+- [ ] Visit the mosque lane northwest of the Malabar market (x -18, z -1050),
+      temple lane north of Pooram Ground (90, -785), and church lane south of the
+      old street (-24, 582). Check exterior appearance, terrain contact and paths.
+- [ ] Morning neighbours arrive at different times: temple 06:00–08:30,
+      mosque 07:00–09:00, church 08:00–10:00. These are fictional exterior visiting
+      hours, not prayer/service schedules. Check arrivals, shade and departures.
+- [ ] Find the Malabar ground east of the market (55, -1040), around 16:00–18:00.
+      Fourteen players arrive, then pass a ball in a sevens warm-up. Check sound,
+      smooth ball movement, team colours and the optional witnessed memory.
+- [ ] Rain interrupts the warm-up and sends players under the ground shelter.
+      Play waits for the ground to dry; evening departures still happen.
+- [ ] Reload during a gathering; check continuity. On phone, check performance,
+      muted captions and existing transport smoothness. Review local architectural
+      details before treating these fictional exteriors as authentic recreations.
+
+## Thumba, Chemmeen and Silent Valley — deferred manual pass
+
+- [ ] Find the coastal science board near the southern lighthouse (-58, 620),
+      film-club board near Kadal shore (-67, 23), and forest reading board (456, -477).
+      Check visibility and approach from both sides; no panel opens automatically.
+- [ ] Read each in English and Malayalam; check source links, save to passport,
+      reload and reopen. Malayalam needs local wording review.
+- [ ] These three are text reading boards. Confirm they never show a broken image
+      or imply an archival photo, film still or exact geographical recreation.
+- [ ] Revisit an existing photo story: photo, credits, language and saved memory
+      still work. Check phone readability and resuming movement after closing.
+
+## Jeep, laterite loop and moving football players
+
+- [ ] Find the jeep beside the village stand/scooter (13, 78). Enter with J or
+      the button; W/S drive/brake/reverse, A/D steer, Space brakes. Stop to exit.
+- [ ] Try the touch stick and BRAKE toggle. Check that other ride/interaction
+      buttons do not conflict while driving and pausing stops movement/sound.
+- [ ] Cross the village bridge, take the far-bank lane toward (58, 65), then head
+      east to the laterite loop. Compare bends, hills, coasting and wet grip.
+- [ ] Check chase-camera comfort, collision stopping near walls/water/people,
+      safe exit and parked position after reload. Report any tree/rock clipping.
+- [ ] Visit sevens around 16:00–18:00: players chase passes and move into support;
+      rain shelter and evening departures still work. This is still a warm-up.
+- [ ] Compare existing scooter, bus, auto and boat rides for regressions.
+
+## Paddy Lane destination — deferred combined manual pass
+
+- [ ] Follow the laterite loop east; take the branch near (220, 111) to Paddy
+      Lane (285, 110). Check the jeep approach and pedestrian paths to homes.
+- [ ] Walk the bunds beside six paddy plots; check crop rows, channels, terrain
+      contact, shaded verandas and the produce stall.
+- [ ] Visit between 07:00–17:00 for farm work, 08:00–18:00 for the stall and
+      around 16:00–18:00 for children in the courtyard. Look for actual movement.
+- [ ] Check the jeep cannot enter the railed play courtyard. Rain should send
+      people home; market produce decreases after resident visits and survives reload.
+- [ ] Check phone performance, ball movement, garden/home appearance and existing
+      jeep handling. The fields are stylised; farming seasons and player shopping
+      transactions remain future work.
+
+## Rain pacing adjustment
+
+- [ ] Dry periods now last 8–14 active-play minutes; showers last 25–45 seconds,
+      plus the existing fade. Existing saves finish their current weather timer.
+- [ ] Reload midway through a long dry period; the interval should not shorten.
+      Pause menus should not advance it. Verify wet driving and shelter routines.
+
+## Jeep lights and stronger acceleration
+
+- [ ] Drive at night and in rain: twin headlights should light the road ahead
+      through bends and slopes, with dim red tail lights visible from behind.
+- [ ] Brake using Space, the touch brake toggle or opposite throttle while
+      moving: rear lamps should brighten, then dim again when released.
+- [ ] Compare acceleration, high-speed steering and stopping distance on the
+      laterite loop and highway. Speed is capped at 108 km/h; wet grip still matters.
+- [ ] Check headlights switch off after exiting and performance remains acceptable
+      on a phone. Check road visibility rather than only the glowing lamp lenses.
+
+## Visual polish, market junction and sevens game
+
+- [ ] Revisit Paddy Lane in morning/evening: warmer sunlight, field-edge plants,
+      garden walls and clotheslines should add detail without hiding the paths.
+- [ ] Continue east to the bakery and cycle-repair shop (343/363, 94). Staff arrive
+      during opening hours; shutters close when staff leave or shelter from rain.
+- [ ] Use the marked parking area south of the shops. Around 09:00 a delivery van
+      approaches, unloads beside the produce stall and returns. Check it waits if
+      the jeep blocks its lane; stock is replenished once for that day's run.
+- [ ] Watch sevens: possession/dribbling, passes under pressure, shots, goalkeeper
+      interceptions, goals and reset periods. Compare the physical score board.
+- [ ] Reload mid-game or delivery; progress should persist. Recheck rain pauses,
+      evening departures, village pedestrians, jeep headlights and phone performance.
+
+## Quick jeep access
+
+- [ ] Use the car icon / “Find my jeep” in the top toolbar after parking elsewhere.
+      “Return to jeep” should place you beside it and immediately allow entry.
+- [ ] “Show direction” displays a camera-relative arrow and distance. Rotate the
+      view, walk closer and cancel guidance. This is a bearing, not a routed path.
+- [ ] Reload after parking: the shortcut should use the saved location. Returning
+      should be unavailable while seated or using another vehicle. Check on phone.
+
+## Harbour quarter and inland drive
+
+- [ ] Drive north from Kadal on the main road. The harbour quarter begins near
+      (0, -190) and continues to (-355 on the z-axis). Explore cross-streets,
+      harbour-front/back-lane loop, shopfronts, two-storey buildings and parking.
+- [ ] Walk the waterfront near (-66, -287): moored boats and working residents
+      should be visible after morning arrivals. Rain sends workers home by streets.
+- [ ] At (0, -190), turn east to (150, -190), then follow the inland road south
+      past homes to the laterite loop and Paddy Lane. Try the return journey too.
+- [ ] Check new discoveries appear on the map, roadside scenery avoids the road,
+      jeep lights/steering remain usable and parked-jeep return still works.
+- [ ] Check phone performance and distant building appearance. Report blocked
+      turns, clipping, empty-looking streets or repetitive scenery for refinement.
+
+## Highland drive
+
+- [ ] Drive east beyond Paddy Lane (381, 110). Follow the climb to the ridge and continue north to the older hill road; return to the coast through the foothills.
+- [ ] Take the red-earth branch at (448, 140). Check narrow turns, uphill grip, downhill braking and its rejoin at (555, 85), in dry weather and rain.
+- [ ] At (705, 90), take the ridge spur. Park, exit, find the viewpoint and sit at the bench. Reload and check parked-jeep access and discoveries.
+- [ ] Check roads do not disappear into terrain, foliage avoids the bends, and headlights illuminate the road at night. Edge posts are visual markers only.
+- [ ] Check camera comfort and phone performance through the woodland and ridge. Report sharp turns, visual clipping or repetitive scenery.
+
+## First journey pilot
+
+- [ ] Fresh profile: Start with the jeep, controls hint, walking alternative and phone layout.
+- [ ] Returning save keeps location/time; drive harbour → Paddy Lane → ridge using roadside signs.
+- [ ] Discover Paddy Lane Market and sit at the shaded fieldside bench.
+- [ ] Pause → Local playtest summary: active/driving time, first jeep use and discoveries; check pause/tab hiding and clear without losing game progress.
+- Full details: [First journey pilot](FIRST_JOURNEY_PILOT.md).
+
+## Photo postcards
+
+- [ ] Open the camera button or press C while walking, parked or riding. The world should pause; the postcard must contain the scene without HUD, notices or controls.
+- [ ] Download the PNG; confirm the location/region name and nattilevde.com footer are readable. Try landscape and portrait screens, daylight, night and rain.
+- [ ] Return to world or press Escape; movement, sound and rides resume. Photo time should not increase local active-play time.
+- [ ] On supported phones, Share postcard opens the device share sheet only when tapped. Cancel it, try again, and check download fallback where file sharing is unavailable.
+- [ ] Keyboard Tab stays in photo controls. Repeated captures do not retain old images. Frame the view in normal play before opening the camera.

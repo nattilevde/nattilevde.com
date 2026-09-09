@@ -432,6 +432,33 @@ export function createSoundscape() {
         tone(out, { from: 1800, to: 1500, peak: 0.025, decay: 0.12 });
       },
     },
+    {
+      id: "sevens-ball",
+      range: 60,
+      level: 0.4,
+      at: { x: 55, z: -1040 },
+      when: (l) => !!l.sevens,
+      every: () => 2.5,
+      fire(out) {
+        tone(out, { from: 130, to: 55, peak: 0.16, decay: 0.12 });
+      },
+    },
+    {
+      id: "jeep-engine",
+      at: (l) => ({ x: l.x, z: l.z }),
+      range: Infinity,
+      level: 0.22,
+      when: (l) => !!l.jeep,
+      every: () => 0.09,
+      fire(out, l) {
+        tone(out, {
+          from: 45 + l.jeep * 2,
+          to: 38 + l.jeep * 2,
+          peak: 0.035,
+          decay: 0.12,
+        });
+      },
+    },
     // The chaayakkada: a stove hiss, glass on glass, and unhurried talk.
     {
       id: "chaayakkada",
