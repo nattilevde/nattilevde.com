@@ -3037,3 +3037,87 @@ h1 em {
     bottom: max(16px, env(safe-area-inset-bottom));
   }
 }
+
+/* Keep the introduction outside the interactive map at every width. */
+.world-panel > .map-intro {
+  position: static;
+  padding: 22px 24px;
+  pointer-events: auto;
+  background: #f9faf3;
+  border-bottom: 1px solid #dcdfd2;
+}
+.world-panel > .map-intro h2 {
+  font-size: 26px;
+  margin: 8px 0;
+}
+.world-panel > .map-intro h2 br,
+.world-panel > .map-intro p br {
+  display: none;
+}
+.world-panel > .map-intro p {
+  font-size: 14px;
+  color: #52664e;
+}
+.world-panel > .map-intro .map-kicker {
+  font-size: 10px;
+  color: #52664e;
+}
+.world-panel > .map-intro .map-filter {
+  max-width: none;
+  margin-top: 14px;
+}
+.world-panel > .map-intro .map-filter button {
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.story-page-link {
+  display: inline-block;
+  color: #28533d;
+  margin: 0 0 20px;
+  text-underline-offset: 4px;
+}
+@media (max-width: 1199px) {
+  .floating-guide {
+    position: static;
+    margin: 20px auto;
+  }
+}
+
+.page-footer {
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.project-support {
+  flex-basis: 100%;
+  padding: 18px 0;
+  border-bottom: 1px solid #dcdfd2;
+  color: #52664e;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.project-support p {
+  margin: 0 0 12px;
+}
+.project-support nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.project-support a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid #c6d0be;
+  border-radius: 6px;
+  color: #28533d;
+  text-underline-offset: 3px;
+}
+.project-support a:hover {
+  background: #e8eddd;
+}
+.project-support a:focus-visible {
+  outline: 2px solid #28533d;
+  outline-offset: 3px;
+}

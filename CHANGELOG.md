@@ -17,6 +17,9 @@ to saved progress or to the world's data shapes.
 
 ### Added
 
+- Three optional Kerala photo stories with credited local photographs, draft
+  Malayalam, source links, passport saving and an original film-club experiment.
+
 - Kadal fishing-to-market cycle: weather-dependent catches, visible basket
   deliveries, perishable stall stock, buyer activity and connected memories.
 
@@ -144,3 +147,62 @@ the 3D world — are playable end to end.
 - The portal loads photographs and fonts from third-party hosts at runtime, so
   it needs network access; the 3D world needs WebGL and Web Audio.
 - The 3D world has not been profiled on low-end mobile hardware.
+
+- Tea-shop life: resident-driven tea pouring, saved snack portions, changing tray,
+  original in-world TV animations, scheduled viewers and local sound/text cues.
+
+- Added fictional mosque, temple and church exterior lanes with timed local
+  visitors, plus a rain-sensitive Malabar sevens warm-up and witnessed memory.
+
+- Added sourced Thumba, Chemmeen and Silent Valley reading boards with draft
+  Malayalam and passport saving; supports place stories without photographs.
+
+- Added a controllable hill jeep with fixed-step grounded physics, braking,
+  wet grip, body suspension and chase camera; added a scenic laterite loop.
+- Sevens warm-up players now chase passes and move into support.
+
+- Added Paddy Lane off the jeep trail: six paddy plots, home verandas, a produce
+  stall, farm/market routines and a rain-responsive children's play courtyard.
+
+- Reduced rain frequency: 8–14 minutes of dry play between 25–45-second showers;
+  increased saved weather timer bounds so reloads preserve the longer intervals.
+
+- Jeep headlights now illuminate the road at night/in rain; rear lamps brighten
+  under braking. Increased acceleration and top speed with stronger braking and
+  reduced high-speed steering sensitivity.
+
+- Polished field edges, home gardens and morning/evening light; expanded Paddy
+  Lane with staffed shops, shutters, deliveries, pedestrians and jeep parking.
+- Replaced static sevens passing with possession, dribbling, pressure, shots,
+  goalkeeper interceptions, goals, resets and a saved physical scoreboard.
+
+- Added “Find my jeep” with optional direction/distance guidance and direct return
+  to a walkable spot beside the saved parked vehicle.
+
+- Expanded the coast north of Kadal into a harbour quarter with 23 town/inland
+  buildings, waterfront props, moored boats, ten local residents, parking and
+  connected roads toward Paddy Lane; added three optional place discoveries.
+
+### Connected highland drive
+
+- Added a winding road from Paddy Lane to the existing highland route, with an alternate laterite estate track and ridge parking spur.
+- Added woodland, cultivated bands, road-edge reflectors, two discoveries and a ridge resting bench.
+- Added curved-route jeep clearance, gradient and browser checks; appended the deferred manual checklist.
+
+### Portal readability and SEO foundation
+
+- Separated the map introduction/filters from map labels and reduced floating-guide overlap on smaller screens.
+- Added crawlable district and place guides with existing food/culture context, related links, unique metadata, canonical URLs and structured data.
+- Build now emits a sitemap, robots rules, branded sharing metadata and a 404 document; added automated output validation and a deployment/manual checklist.
+
+### First journey pilot
+
+- Added optional first-visit jeep start and dismissible driving controls, preserving returning saves.
+- Added roadside route cues, Paddy Lane Market discovery and a shaded fieldside rest stop.
+- Added bounded browser-local playtest summaries in Pause/Help, with no uploads and independent clearing.
+
+### Photo postcards
+
+- Added camera-button/C capture, a paused postcard preview, PNG download and optional device sharing.
+- Export omits game HUD and includes a location/region title plus the game/domain footer.
+- Added a capture/download/resume check and deferred phone/share-sheet checklist.

@@ -407,6 +407,58 @@ export function createSoundscape() {
         );
       },
     })),
+    {
+      id: "tea-tv",
+      range: 24,
+      level: 0.24,
+      at: { x: -12.4, z: 28 },
+      when: (l) => !!l.teaTV,
+      every: () => 7,
+      fire(out, l) {
+        // Original short tones; no sampled broadcast or actor voices.
+        [330, 440, l.teaTV === "football" ? 660 : 392].forEach((f, i) =>
+          tone(out, { from: f, peak: 0.035, decay: 0.22, at: i * 0.18 }),
+        );
+      },
+    },
+    {
+      id: "tea-pour",
+      range: 12,
+      level: 0.3,
+      at: { x: -12, z: 32 },
+      when: (l) => !!l.teaPour,
+      every: () => 2,
+      fire(out) {
+        tone(out, { from: 1800, to: 1500, peak: 0.025, decay: 0.12 });
+      },
+    },
+    {
+      id: "sevens-ball",
+      range: 60,
+      level: 0.4,
+      at: { x: 55, z: -1040 },
+      when: (l) => !!l.sevens,
+      every: () => 2.5,
+      fire(out) {
+        tone(out, { from: 130, to: 55, peak: 0.16, decay: 0.12 });
+      },
+    },
+    {
+      id: "jeep-engine",
+      at: (l) => ({ x: l.x, z: l.z }),
+      range: Infinity,
+      level: 0.22,
+      when: (l) => !!l.jeep,
+      every: () => 0.09,
+      fire(out, l) {
+        tone(out, {
+          from: 45 + l.jeep * 2,
+          to: 38 + l.jeep * 2,
+          peak: 0.035,
+          decay: 0.12,
+        });
+      },
+    },
     // The chaayakkada: a stove hiss, glass on glass, and unhurried talk.
     {
       id: "chaayakkada",
