@@ -275,3 +275,209 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
 - [ ] Clear site data in a test profile, reopen and immediately start with the jeep when ready. Compare the first 30 seconds with a later ride, using the same device and route.
 - [ ] Check loading finishes without showing temporary camera views; returning saves and photo mode still work.
 - [ ] If the first ride still stutters, note device/browser, sound on/off and approximate duration. Graphics warm-up addresses a likely source, not a confirmed device-level diagnosis.
+
+## Changing roadside scenes
+
+- [ ] Harbour near (-72, -279): after workers arrive, net work appears in the morning on alternating in-game days; rope preparation appears in the afternoon on the other days. Outside those hours the work table stays packed.
+- [ ] Paddy stall near (313, 101): bundles reflect stock, purchases and delivery restocking. Display stops when the seller leaves or rain sends people to shelter.
+- [ ] Stand nearby briefly: a memory should appear once per scene variant/day. Reload and confirm it remains; no repeated pop-up objectives.
+- [ ] Check tables, workers and produce do not overlap roads or existing stalls on phone and desktop. Existing NPC movement remains unchanged.
+- [ ] Changes use saved in-game time, not real-world dates; immediately reopening the game should preserve the scene rather than reroll it.
+
+## Sevens after dark
+- Visit the Malabar ground near (55, -1040) after 19:00: both teams still pass and shoot.
+- Check the pitch is readable under two floodlights; daylight and jeep performance remain smooth.
+- Watch a rain interruption and return to play when dry.
+- After 21:30 players leave; lights fade out by 22:00.
+- Check pitch-side benches, approach and rain shelter remain accessible.
+- Save/reload during the evening and confirm the match continues.
+
+## Firefly evening discoveries
+- After 18:30, visit the inland groves near (92, -70), (77, -118) or (470, -500).
+- Look for independently glowing, gently drifting lights; check visibility against vegetation.
+- Approach within 12 metres: a grove memory should appear once and survive reload.
+- Open photo mode and download a postcard with the lights in frame.
+- Check daylight hides them, rain dims them, and late night fades them away.
+- Check riding nearby remains smooth. Visual brightness and real-device performance need manual review.
+
+## Chenda listen-and-repeat
+- Meet Hari during dry courtyard rehearsal (07:00–09:30 or 16:00–18:30).
+- Listen: four or five numbered beats should match the drum sounds.
+- Repeat the spacing using Tap drum, touch, or keyboard focus + Enter/Space.
+- A matched phrase saves the encounter and advances to another original exercise.
+- Rapid clicking should invite another attempt; retries and replay remain available.
+- Test muted play using the visual beats.
+- Close mid-demonstration or switch browser tabs: no leftover demonstration beats.
+- Leave the encounter freely; verify ordinary exploration controls resume.
+
+## Lagoon boat-training groundwork
+- Visit Ashtamudi Reach (138, 442) around 08:00 or 16:30 in dry weather.
+- Look southeast for a small six-person crew following a loop.
+- Paddles and bodies should move together, with gentle speed variation and smooth turns.
+- Observe nearby to receive the lagoon training memory; check save/reload.
+- Rain or practice closing should send the crew around to their starting position,
+  then stop paddling. No teleport or disappearing hull.
+- Check the hull stays afloat, clears the houseboat, and is visible in photo mode.
+- The crew currently rests aboard between sessions; boarding, shore routines,
+  authentic song and a full snake-boat race are future work.
+
+## Onam preparation: pookalam
+- Walk north from the starting point toward the tea shop: flowers are beside the lane at (-7, 47).
+- Check the carpet sits above the ground and its colours read clearly.
+- During dry daylight, choose “Add a few flowers”: an outer ring and memory should appear once.
+- Save/reload: your added flowers and memory remain.
+- Compare early and later world days: one ring per day, up to ten, without requiring visits.
+- Existing saves past day ten show the finished carpet immediately.
+- Verify no flower action while riding, during rain or at night.
+- This first episode remains displayed after day ten; NPC flower-laying, sadya,
+  a repeating festival calendar and processions are not implemented yet.
+
+## Pookalam neighbours
+- Near (-7, 47), watch Meera and Ravi arrive after 07:00 during the first ten world days.
+- They should walk around the flower carpet and lean/reach beside the flower trays.
+- At 16:30, check their short afternoon visit and gestures.
+- Rain sends them back toward home; dry weather within visiting hours brings them back.
+- After 17:30, watch them leave rather than disappear.
+- Save/reload while they are walking; verify continuous movement.
+- Add your own flowers while they are present: their routines must continue.
+- Review animation, spacing and roof cover at their home approaches manually.
+
+## Contextual flower-neighbour conversations
+- Approach Meera or Ravi within four metres while they are at the carpet.
+- Before helping, hear about their work; after adding flowers, hear acknowledgement.
+- Reload and confirm the acknowledgement remains.
+- Rain should switch the conversation to getting under cover.
+- While walking, they should avoid talking as though already at the carpet.
+- Walk away: no remote dialogue. Stay nearby: verify the existing dialogue cooldown
+  prevents repeated chatter. These are text lines, not recorded voices.
+
+## Post-rain ground polish
+- After a shower, watch the rain stop while roads and field edges remain darker.
+- Check small puddles on Kadal lane, the far-bank path and Paddy Lane/market parking.
+- Surfaces should gradually dry over roughly two minutes after heavy rain; reload
+  partway through drying and check they retain their damp appearance.
+- Check paddy water catches light more strongly while wet.
+- Drive through patches: grip, steering and road access should remain unchanged.
+- Check low graphics and night + headlights for readability and smoothness.
+- Inspect puddles for terrain clipping or flicker, especially Paddy Lane field bunds.
+- Real-device visual/performance checks remain manual; puddles use surface highlights,
+  not mirrored scene reflections.
+
+## Combined pass — September 2026 additions
+
+Automated behaviour coverage: 21 combined tests passed (boat training, drum timing,
+community/football, fireflies, Onam, roadside events and wet ground).
+
+Use the existing save; do not clear progress just to test. Visit when the world clock
+matches the activity. A night lighting override alone may not advance NPC schedules.
+
+### Short manual route
+1. **Kadal lane → courtyard, morning:** flowers at (-7, 47), neighbour movement and
+   dialogue, then Hari at (-19, -23). Listen and repeat one phrase, retry once,
+   and close mid-demo to check no sound keeps playing.
+2. **Jeep → Paddy Lane:** check driving smoothness and market activity. If a shower
+   happens, inspect road/parking puddles and field bunds after it stops. Reload once
+   while damp; the ground should retain moisture and subsequently dry.
+3. **Ashtamudi Reach, dry 07:00–09:00 or 16:00–18:00:** observe the training crew
+   from (138, 442), checking water alignment, paddles and turns.
+4. **Evening inland grove → Malabar ground:** fireflies near (92, -70) after 18:30;
+   take a postcard, then sevens near (55, -1040) around 19:00–21:00.
+   Check that the ball, players and road remain readable at night.
+
+Do these across normal play sessions rather than waiting for every time/weather
+condition in one sitting. Day-ten flower progression and every individual schedule
+remain covered by the saved detailed checklist and automated tests.
+
+Report only: location/activity, what looked or felt wrong, device/browser, approximate
+world time and whether it was raining. A short clip or screenshot is useful if available.
+Visual appearance, real-device frame pacing, audible timing and mobile touch remain
+manual checks; automated timing tests do not establish that they feel good to play.
+
+Production verification: build passed; metadata, structured data, sitemap and links
+passed for 45 pages; all 3 browser smoke tests passed (1280px, 390px and static pages
+without JavaScript). The existing large game-bundle warning remains (~754 kB minified).
+These browser tests cover startup, entering the jeep and postcard access, not a full
+visual inspection of every new destination.
+
+## Sevens supporters
+- Visit the Malabar ground near (55, -1040) after 17:00 or under floodlights at 19:00.
+- Six supporters should approach at staggered times and stand outside the west touchline.
+- Their gaze should follow the ball; a goal produces a brief celebration from that
+  team's supporters and a subdued response from the other side.
+- Check no repeated celebration without a new goal.
+- Rain sends them along the approach to the new shelter south of the ground;
+  dry weather during match hours brings them back.
+- After approximately 21:30, they leave toward their home approaches.
+- Reload mid-walk or reaction; verify smoothness and no fresh goal celebration.
+- Check shelter posts, pitch spacing, nighttime visibility and frame pacing manually.
+
+## Warm nighttime gathering places
+- At dusk/night, inspect the tea-shop frontage (-10, 32), harbour shelter (10, -177),
+  Paddy Lane bakery (343, 98), cycle shop (363, 98) and parking (332, 130).
+- Lamps should glow warmly and illuminate nearby ground and people.
+- Approach and leave by jeep: local lighting should fade without sudden changes
+  between nearby shops; check road readability with headlights.
+- Compare daylight: lights should no longer illuminate the scene.
+- Check night + rain: highlights should remain readable rather than washed out.
+- Test low graphics and mobile smoothness. Only two nearby shadow-free point lights
+  are used; distant fixtures remain visible without lighting the whole map.
+- Frontage lamps are exterior courtesy lights, not indicators that a shop is open.
+
+## Forest Churam and first wildlife pass
+- From Paddy Lane, drive uphill to Estate Bend (488, 48), then take the signed
+  Forest Churam branch north through successive bends to the older hill road (450, -200).
+- Check the switchbacks in both directions: steering room, slope, road edges,
+  trees and reflector positions, especially at night and in rain.
+- Stop near (486, -109), looking east toward the forest deer around (513, -94).
+- Watch quietly, approach on foot, then approach with a moving jeep: compare
+  grazing/walking, raised-head alertness and retreat. Do not expect combat.
+- Back away and wait: they should settle and gradually wander back.
+- Reload near them; verify position continuity and terrain alignment.
+- Check the forest's appearance and frame pacing on your device. This is a fictional
+  ghat route, not a geographical recreation of Thamarassery, Gavi or another real pass.
+- Deer use simple stylised bodies. Species-specific anatomy, canopy animals, wildlife
+  sounds, avoidance of all decorative vegetation and vehicle/animal collision need future work.
+
+## Forest atmosphere and canopy pass
+- Forest Churam: stop the jeep and listen near (463, -42) and (515, -104).
+  Quiet directional calls should vary by position; they pause in rain/night and
+  when the player is driving quickly. Synthetic sounds are not species recordings.
+- Look up at the branch trees at (506, -119) and (528, -62): squirrels move along
+  branches and tuck toward cover when approached, in rain or outside daytime hours.
+- Check branch alignment, leaf occlusion, gradual movement and visibility from below.
+- Inspect deer eyes, ears, pale underside and alert tail movement.
+- Verify mute, pause/resume, night and photo mode; check no sound persists after exit.
+
+## Forest navigation and stopping-place polish
+- Approach deer near the grove and watch them steer around trunks instead of walking through them.
+- Check all three deer start clear of trees, and keep space from one another.
+- Reload an older forest save: a position inside a new tree clearance may reset to its home spot.
+- Park at (486, -109); check the new bench and sign leave room to enter, exit and turn.
+- Drive the switchbacks both ways, checking edge markers and vegetation.
+- Review real-device smoothness; browser smoke checks are not a frame-rate benchmark.
+- Avoidance currently covers the dedicated forest/canopy trees and existing world solids,
+  not every decorative shrub or randomly scattered tree elsewhere in the world.
+
+## First road car and shared handling foundation
+- Find the Coastal Saloon at (20, 78), beside the starting jeep.
+- Approach each vehicle: the J/action prompt should name the nearest vehicle.
+- Drive, brake fully and exit the car; then drive the jeep. Neither parked vehicle
+  should move with the other, and they should block driving through each other.
+- Compare steering and acceleration: the saloon has gentler steering, a lower initial
+  pull, a higher speed cap and a stricter slope limit.
+- Check car headlights in night/rain and brake lights while braking.
+- Park both elsewhere and reload: both positions persist; entry starts on foot.
+- Use Find jeep: it must still target the jeep, even after driving the car.
+- Check camera, wheels, player/body clipping, shadows and low-graphics performance.
+- First-car body and sound are stylised placeholders, not a BMW/Benz replica or
+  an accurate model-specific engine recording. Detailed interiors remain future work.
+
+## Trail motorcycle
+- Find it at (27, 78), beside the saloon and jeep; press J or use the named action.
+- Check acceleration, low-speed steering, cornering lean, braking and safe exit.
+- Verify helmet/rider posture, wheel alignment, headlight and brake light.
+- Park all three vehicles separately and reload; check their positions and the nearest-vehicle prompt.
+- Find jeep must still target the original jeep.
+- Try the estate track and gentle forest bends before faster riding.
+- Check touch controls and frame pacing. This first bike uses assisted balance and
+  shared vehicle physics; it is not a model-accurate Himalayan/XPulse simulation.

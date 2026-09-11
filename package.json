@@ -33,7 +33,8 @@
     "preview": "vite preview",
     "test": "playwright test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:release": "npm run build && node scripts/check-seo.mjs && playwright test --config playwright.release.config.js"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

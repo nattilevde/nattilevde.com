@@ -8,6 +8,7 @@ const ci = !!process.env.CI;
 
 export default defineConfig({
   testDir: "./tests",
+  testIgnore: "release.spec.js",
   fullyParallel: !ci,
   workers: ci ? 1 : 2,
   retries: ci ? 2 : 0,

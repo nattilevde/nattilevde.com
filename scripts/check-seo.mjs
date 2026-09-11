@@ -4,6 +4,7 @@ import { districts } from "../src/portal/data.js";
 const paths = [
   "/",
   "/districts/",
+  "/game/",
   ...districts.flatMap((d) => [
     `/districts/${d.id}/`,
     ...d.places.map((p) => `/places/${p.id}/`),

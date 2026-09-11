@@ -212,3 +212,66 @@ the 3D world — are playable end to end.
 - Wait for shader compilation and nearby spawn/jeep render preparation before enabling Start.
 - Keep simulation paused during preparation and reset frame timing on resume, avoiding loading-time catch-up.
 - Added a fresh-session comparison to the manual checklist; cold-device performance still requires confirmation.
+
+### Changing roadside scenes
+
+- Added harbour net/rope work variants driven by existing workers, clock and rain.
+- Added a produce display driven by seller presence and actual remaining stock.
+- Added nearby cues and saved observation memories without new mandatory objectives.
+
+### Game search identity
+
+- Added an indexable /game/ page describing the browser game, jeep driving, controls and local progress, with VideoGame structured data.
+- Connected Nattilevde and Kerala Unfolded in homepage metadata and visible copy; linked the game page from guides and included it in the sitemap.
+
+### Release readiness checks
+
+- Added a repeatable production-build release check for desktop/phone layouts, first jeep entry, photo controls and JavaScript-free guide navigation.
+- Recorded remaining device, hosting and Search Console checks in docs/RELEASE_READINESS.md.
+
+### Cultural world expansion
+- Extended neighbourhood sevens into the evening with gradual floodlights and
+  pitch-side benches; retained rain retreats and nighttime departures.
+- Added the phased cultural-world roadmap and evening match playtest checklist.
+
+- Improved existing firefly pockets with independent drifting glows, gradual evening
+  activity, rain suppression and persistent local discovery memories; visible in photo mode.
+
+- Replaced Hari's three-click encounter with optional listen-and-repeat drum practice,
+  three original phrases, visual beat cues, timing feedback and unlimited replay.
+
+- Added a small lagoon training crew with coordinated paddling, a continuous water
+  route, weather-dependent practice, return/rest behaviour and a saved sighting.
+
+- Added a gradually growing neighbourhood pookalam with optional flower contribution,
+  persistent decoration and a saved memory.
+
+- Added two pookalam neighbours with staggered preparation and visiting hours,
+  flower trays, working gestures, rain retreats and persistent walking progress.
+
+- Connected flower neighbours to ambient dialogue, including activity, rain and
+  remembered acknowledgement of the player's flower contribution.
+
+- Added lingering damp roads and field bunds, small terrain-following puddles and
+  wetter paddy highlights, driven by saved surface moisture without changing rain frequency.
+
+- Added six sevens supporters with staggered arrivals, ball tracking, team-specific
+  goal reactions, rain shelter routes and saved movement/reaction progress.
+
+- Added warm exterior lamps at village, market and harbour gathering places, with
+  two pooled nearby lights and gradual distance/daylight fading.
+
+- Added a connected fictional Forest Churam drive with switchbacks, denser woodland,
+  reflectors and a stopping place, plus three reactive forest deer with saved state.
+
+- Added canopy squirrels, directional forest ambience and clearer deer details;
+  documented the requested Kerala vehicle catalogue and implementation sequence.
+
+- Shared the forest tree layout between rendering and deer navigation, added local
+  obstacle steering and spacing, corrected one deer spawn, and furnished the forest stop.
+
+- Added an original drivable Coastal Saloon with separate parking persistence,
+  shared vehicle handling profiles, nearest-vehicle entry and car lighting.
+
+- Added an original trail motorcycle with separate saved parking, narrower footprint,
+  assisted leaning, rider model, wheel steering and working lights.

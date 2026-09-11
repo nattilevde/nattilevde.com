@@ -14,17 +14,18 @@ const placeUrl = (p) => `/places/${p.id}/`;
 const links = (items) =>
   `<ul>${items.map(([url, name]) => `<li><a href="${url}">${esc(name)}</a></li>`).join("")}</ul>`;
 const homeDescription =
-  "Explore Kerala’s 14 districts, local food, living traditions and places to discover. Start your journey with Kerala Unfolded and its playable 3D world.";
+  "Nattilevde (Kerala Unfolded) is a free Kerala 3D browser game and discovery portal. Drive a jeep, explore villages and highland roads, and discover local culture.";
 const metadata = (title, description, path, schema) =>
   `<title>${esc(title)}</title><meta name="description" content="${esc(description)}"><link rel="canonical" href="${origin}${path}"><meta property="og:type" content="website"><meta property="og:site_name" content="Kerala Unfolded"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${origin}${path}"><meta property="og:image" content="${origin}/logo-with-domain-label.png"><meta property="og:image:alt" content="Kerala Unfolded"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${origin}/logo-with-domain-label.png"><script type="application/ld+json">${JSON.stringify(schema).replace(/</g, "\\u003c")}</script>`;
 const header =
-  '<header><a href="/">Kerala Unfolded</a><nav aria-label="Main"><a href="/districts/">All districts</a><a href="/#world">Enter the 3D world</a></nav></header>';
+  '<header><a href="/">Kerala Unfolded</a><nav aria-label="Main"><a href="/game/">About the game</a><a href="/districts/">All districts</a><a href="/#world">Enter the 3D world</a></nav></header>';
 const footer =
   '<footer><p>Open source. Made with care for Kerala. Explore the code, contribute, or support the project.</p><nav aria-label="Project and support"><a href="https://github.com/nattilevde/nattilevde.com" target="_blank" rel="noopener noreferrer">Open source on GitHub ↗</a><a href="https://buymeacoffee.com/nabeelc" target="_blank" rel="noopener noreferrer">Buy me a coffee ↗</a></nav><p>The portal describes real Kerala. The game is a fictional, stylised interpretation.</p><a href="/">Return to the interactive map, passport and photo credits</a></footer>';
-async function page(path, title, description, body, crumbs) {
+async function page(path, title, description, body, crumbs, entity = null) {
   const schema = {
     "@context": "https://schema.org",
     "@graph": [
+      ...(entity ? [entity] : []),
       {
         "@type": "WebPage",
         name: title,
@@ -73,9 +74,41 @@ for (const d of districts) {
       [rootCrumb, [d.name, districtUrl(d)], [p.name, placeUrl(p)]],
     );
 }
+await page(
+  "/game/",
+  "Nattilevde — Free Kerala 3D Open-World Browser Game",
+  "Play Nattilevde, a free Kerala-inspired 3D browser game. Drive a jeep through coastal villages, markets, paddy lanes and winding highland roads.",
+  `<h1>Nattilevde: a Kerala 3D world to explore</h1>
+  <p class="lead">Nattilevde, also called Kerala Unfolded, is a free, open-source browser game inspired by Kerala. Drive a hill jeep, stop in a village, and follow the road at your own pace.</p>
+  <p><a href="/#world">Play Nattilevde in your browser →</a></p>
+  <h2>Drive from the coast into the hills</h2><p>Start in Kadal, a fictional coastal village. Explore harbour streets, small shops, Paddy Lane and a winding highland loop. The jeep has steering, braking, headlights and terrain-responsive suspension.</p>
+  <h2>A world with everyday life</h2><p>Residents follow routines. Rain changes activity, fishing boats come and go, and local football and market scenes give you reasons to stop. Discover places, keep memories in your passport and download a postcard of your journey.</p>
+  <h2>How to play</h2><p>Open the game and wait for graphics preparation. Choose “Start with the jeep” or explore on foot. On a keyboard, use W/A/S/D to move, Space to brake while driving and J to enter or park the jeep. Touch controls are available on phones.</p>
+  <h2>Do I need to install anything?</h2><p>No app installation or account is required. Play in a browser with WebGL support. Performance varies by device; the game includes a lower-quality graphics option.</p>
+  <h2>Is this a real map of Kerala?</h2><p>The 3D landscape is fictional and stylised, inspired by Kerala. The accompanying <a href="/districts/">district guides</a> introduce real places, food and traditions.</p>
+  <h2>Where is my progress saved?</h2><p>Your journey is saved in this browser. Clearing site data removes local progress. The game is single-player and under active development.</p>
+  <h2>Who makes Nattilevde?</h2><p>Nattilevde is an open-source project by Muhammed Nabeel. <a href="https://github.com/nattilevde/nattilevde.com">Explore the source and contribute on GitHub</a>.</p>`,
+  [rootCrumb, ["Kerala 3D game", "/game/"]],
+  {
+    "@type": "VideoGame",
+    "@id": origin + "/game/#game",
+    name: "Nattilevde",
+    alternateName: "Kerala Unfolded",
+    url: origin + "/game/",
+    description:
+      "A free, single-player Kerala-inspired 3D browser exploration game with jeep driving and village life.",
+    isAccessibleForFree: true,
+    gamePlatform: "Web browser",
+    playMode: "SinglePlayer",
+    genre: ["Exploration", "Driving"],
+    author: { "@type": "Person", name: "Muhammed Nabeel" },
+    sameAs: ["https://github.com/nattilevde/nattilevde.com"],
+  },
+);
 const paths = [
   "/",
   "/districts/",
+  "/game/",
   ...districts.flatMap((d) => [districtUrl(d), ...d.places.map(placeUrl)]),
 ];
 await writeFile(
@@ -93,21 +126,21 @@ home = home
   .replace(
     "</head>",
     metadata(
-      "Kerala Unfolded | Explore Kerala’s Places, Food & Culture",
+      "Nattilevde | Kerala 3D Browser Game & Discovery Portal",
       homeDescription,
       "/",
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        name: "Kerala Unfolded",
-        alternateName: "Nattilevde",
+        name: "Nattilevde",
+        alternateName: "Kerala Unfolded",
         url: origin + "/",
       },
     ) + "</head>",
   );
 home = home.replace(
   '<div id="root"></div>',
-  `<div id="root"><main><h1>Kerala Unfolded</h1><p>${homeDescription}</p><a href="/districts/">Explore all districts</a>${links(districts.map((d) => [districtUrl(d), d.name]))}</main></div>`,
+  `<div id="root"><main><h1>Nattilevde — Kerala Unfolded</h1><p>${homeDescription}</p><a href="/game/">Explore the Kerala 3D game</a><a href="/districts/">Explore all districts</a>${links(districts.map((d) => [districtUrl(d), d.name]))}</main></div>`,
 );
 await writeFile("dist/index.html", home);
 await writeFile(

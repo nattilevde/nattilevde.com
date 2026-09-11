@@ -1,4 +1,4 @@
-import { advanceJeep, jeepExit } from "./jeep.js";
+import { advanceJeep, jeepExit, VEHICLE_PROFILES } from "./jeep.js";
 import { teaOpen, teaProgramme } from "./tea-shop.js";
 import { keepPhotoStory } from "./life.js";
 import { createTransportMotion } from "./transport-motion.js";
@@ -276,6 +276,18 @@ export function createGame(
     publish();
     return true;
   }
+  let vehicleKind = "jeep";
+  const vehicle = () => life[vehicleKind];
+  const vehicleKinds = ["jeep", "car", "motorcycle"];
+  const nearestVehicle = () =>
+    vehicleKinds.reduce(
+      (best, kind) =>
+        Math.hypot(position.x - life[kind].x, position.z - life[kind].z) <
+        Math.hypot(position.x - life[best].x, position.z - life[best].z)
+          ? kind
+          : best,
+      "jeep",
+    );
   const nearJeep = () =>
     !boating &&
     !riding &&
@@ -283,20 +295,24 @@ export function createGame(
     !life.ferry.player &&
     !life.bus.player &&
     !life.auto.player &&
-    Math.hypot(position.x - life.jeep.x, position.z - life.jeep.z) < 4;
+    Math.hypot(
+      position.x - life[nearestVehicle()].x,
+      position.z - life[nearestVehicle()].z,
+    ) < 4;
   function drive() {
     if (paused) return false;
     if (driving) {
-      if (Math.abs(life.jeep.speed) > 0.5) return false;
-      const exit = jeepExit(life.jeep);
+      if (Math.abs(vehicle().speed) > 0.5) return false;
+      const exit = jeepExit(vehicle());
       if (!exit) return false;
       driving = false;
       position.set(exit.x, terrainHeight(exit.x, exit.z), exit.z);
     } else {
       if (!nearJeep()) return false;
+      vehicleKind = nearestVehicle();
       driving = true;
-      yaw = life.jeep.heading;
-      position.set(life.jeep.x, life.jeep.y, life.jeep.z);
+      yaw = vehicle().heading;
+      position.set(vehicle().x, vehicle().y, vehicle().z);
     }
     velocity.set(0, 0);
     clearInput();
@@ -340,7 +356,7 @@ export function createGame(
         touchMove.y;
     if (driving) {
       advanceJeep(
-        life.jeep,
+        vehicle(),
         dt,
         {
           throttle: -inputZ,
@@ -349,6 +365,9 @@ export function createGame(
         },
         rain,
         [
+          ...vehicleKinds
+            .filter((kind) => kind !== vehicleKind)
+            .map((kind) => life[kind]),
           ...life.residents.filter((r) => r.mode !== "passenger"),
           ...life.community.people,
           ...life.paddy.people,
@@ -358,9 +377,9 @@ export function createGame(
           autoPosition(life.auto),
         ],
       );
-      position.set(life.jeep.x, life.jeep.y, life.jeep.z);
-      player.rotation.y = life.jeep.heading;
-      moving = Math.abs(life.jeep.speed) > 0.2;
+      position.set(vehicle().x, vehicle().y, vehicle().z);
+      player.rotation.y = vehicle().heading;
+      moving = Math.abs(vehicle().speed) > 0.2;
       return 0;
     }
     if (sitting && (keys.size || Math.hypot(touchMove.x, touchMove.y) > 0.2))
@@ -511,7 +530,9 @@ export function createGame(
       riding: riding || driving,
       driving,
       nearJeep: nearJeep(),
-      jeepSpeed: Math.round(Math.abs(life.jeep.speed) * 3.6),
+      vehicleName:
+        VEHICLE_PROFILES[driving ? vehicleKind : nearestVehicle()].name,
+      jeepSpeed: Math.round(Math.abs(vehicle().speed) * 3.6),
       sitting: sitting?.id || null,
       restSpot: !sitting && nearestRest ? nearestRest.id : null,
       busStop: nearestStop?.id || null,
@@ -609,7 +630,7 @@ export function createGame(
         player.rotation.y = pose.heading;
       }
       player.position.copy(renderPosition);
-      player.visible = true;
+      player.visible = !(driving && vehicleKind === "motorcycle");
       player.scale.setScalar(driving ? 0.8 : 1);
       if (driving) player.position.y += 0.4;
       jeep.position.set(life.jeep.x, life.jeep.y, life.jeep.z);
@@ -626,8 +647,8 @@ export function createGame(
       if (driving && !pointer)
         yaw +=
           Math.atan2(
-            Math.sin(life.jeep.heading - yaw),
-            Math.cos(life.jeep.heading - yaw),
+            Math.sin(vehicle().heading - yaw),
+            Math.cos(vehicle().heading - yaw),
           ) *
           (1 - Math.exp(-2 * dt));
       if (life.auto.player) player.position.y -= 0.6;
@@ -771,7 +792,7 @@ export function createGame(
           fishMarket: fishMarketOpen(life.fishing, lifeHour(life), rain),
           rehearsal: life.rehearsal.active,
           sevens: life.community.active,
-          jeep: driving ? Math.abs(life.jeep.speed) + 1 : 0,
+          jeep: driving ? Math.abs(vehicle().speed) + 1 : 0,
           ferry: {
             ...ferryPosition(life),
             moving: life.ferry.phase === "crossing",
@@ -809,9 +830,18 @@ export function createGame(
       renderPosition.z + 30,
     );
     sun.target.position.copy(renderPosition);
+    environment.setMotorcycleLighting(
+      driving && vehicleKind === "motorcycle" && (night || rain > 0.2),
+      driving && vehicleKind === "motorcycle" && life.motorcycle.braking,
+      driving && vehicleKind === "motorcycle",
+    );
+    environment.setCarLighting(
+      driving && vehicleKind === "car" && (night || rain > 0.2),
+      driving && vehicleKind === "car" && life.car.braking,
+    );
     environment.setJeepLighting(
-      driving && (night || rain > 0.2),
-      driving && life.jeep.braking,
+      driving && vehicleKind === "jeep" && (night || rain > 0.2),
+      driving && vehicleKind === "jeep" && life.jeep.braking,
     );
     // Sitting eases the camera into a low, close, slowly drifting view.
     viewDistance = THREE.MathUtils.lerp(
@@ -819,7 +849,7 @@ export function createGame(
       sitting
         ? 5.6
         : driving
-          ? 10 + Math.abs(life.jeep.speed) * 0.12
+          ? 10 + Math.abs(vehicle().speed) * 0.12
           : distance,
       Math.min(1, dt * 1.6),
     );
@@ -887,7 +917,7 @@ export function createGame(
       if (disposed) return false;
       // Upload nearby geometry/textures and shadow resources from both spawn
       // and jeep views. Yield between views so loading can remain responsive.
-      for (const at of [position, life.jeep]) {
+      for (const at of [position, life.jeep, life.car, life.motorcycle]) {
         for (const angle of [0, Math.PI]) {
           if (disposed) return false;
           const y = terrainHeight(at.x, at.z);
@@ -967,6 +997,15 @@ export function createGame(
       beacons.forEach((beacon, id) => {
         beacon.visible = value && !discovered.has(id);
       });
+    },
+    practiceBeat() {
+      if (sound && paused && !document.hidden) soundscape.beat(true);
+    },
+    completePractice() {
+      if (!paused || boating || driving || riding || sitting) return false;
+      const result = actOnLife(life, "rehearsal", position);
+      if (result) publish();
+      return result;
     },
     lifeAction(action) {
       if (paused || boating || driving || riding || sitting) return false;
