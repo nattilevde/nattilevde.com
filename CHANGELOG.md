@@ -230,6 +230,7 @@ the 3D world — are playable end to end.
 - Recorded remaining device, hosting and Search Console checks in docs/RELEASE_READINESS.md.
 
 ### Cultural world expansion
+
 - Extended neighbourhood sevens into the evening with gradual floodlights and
   pitch-side benches; retained rain retreats and nighttime departures.
 - Added the phased cultural-world roadmap and evening match playtest checklist.

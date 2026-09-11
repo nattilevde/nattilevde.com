@@ -4,6 +4,7 @@ Goal: vehicles should change how a road feels and where the player wants to go.
 Keep the current jeep accessible and saved progress compatible.
 
 ## Requested catalogue
+
 - Cars: BMW and Mercedes-Benz, classic cars and Kerala-style modified street cars.
 - 4×4s: Mahindra Thar and recognisable jeep models.
 - Bikes: Royal Enfield Bullet and Himalayan, KTM, Hero XPulse, older motorcycles.
@@ -14,6 +15,7 @@ generic shape as an accurate replica. Use original or appropriately licensed mes
 textures and sounds, with credits and no suggestion of manufacturer endorsement.
 
 ## Implementation sequence
+
 1. Establish a shared vehicle definition and ownership/parking system, preserving
    current jeep controls and the quick-find function. No required purchase grind.
 2. Add one distinct vehicle per handling class: road car, off-road 4×4, motorcycle,
@@ -26,6 +28,7 @@ textures and sounds, with credits and no suggestion of manufacturer endorsement.
    attendance. A social discovery place, not a menu full of mandatory unlocks.
 
 ## Handling differences
+
 - Road cars: stable cruising, longer braking distance and limited rough-ground clearance.
 - 4×4: suspension travel, torque delivery and traction on climbs; do not merely add speed.
 - Bullet/classic bikes: weight and relaxed response; Himalayan/XPulse: rough-road control;
@@ -33,11 +36,13 @@ textures and sounds, with credits and no suggestion of manufacturer endorsement.
 - Cycles: momentum, coasting, hill effort and a quieter way to notice wildlife.
 
 ## References to collect later
+
 User's preferred model/year or reference photos for the first car and bike; examples
 of Kerala modifications; asset budget if buying models. These do not block forest work.
 Branded replicas, detailed interiors and recorded engine sounds are not implemented yet.
 
 ## First implementation delivered
+
 - Shared handling profiles for the existing jeep and an original Coastal Saloon.
 - Separate saved parking positions, nearest-vehicle entry, shared driving/braking
   and camera controls; Find jeep remains specifically attached to the jeep.
@@ -47,6 +52,7 @@ Branded replicas, detailed interiors and recorded engine sounds are not implemen
   ownership/garage menus and branded assets remain future work.
 
 ## Trail motorcycle foundation
+
 An original trail motorcycle joins the jeep and saloon with its own saved position,
 narrower collision footprint, stronger initial acceleration and cornering lean.
 It includes a helmeted rider, steering fork, wheels and lights. Balance is assisted;

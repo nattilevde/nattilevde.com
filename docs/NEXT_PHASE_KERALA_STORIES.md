@@ -20,13 +20,13 @@ life, food, landscape, architecture, art and contemporary youth culture.
 
 ## Experience layers
 
-| Layer | Experience | Example proposal |
-| --- | --- | --- |
-| Notice | Something belongs naturally in the scene | A framed photograph in a tea shop; an illustrated boat shed wall; a cinema noticeboard |
-| Investigate | Player chooses to inspect or speak | A subtle nearby action appears; proximity alone never opens a reading panel |
-| Connect | Briefly meet the real Kerala behind the scene | One photograph, one memorable fact and an explanation of what makes this subject distinctive |
-| Explore further | Optional depth and another reason to wander | A related livelihood, landscape or architectural detail the player can notice elsewhere |
-| Remember | Save a personally meaningful connection | Keep a photo story in the existing passport alongside the player's own visit and circumstances |
+| Layer           | Experience                                    | Example proposal                                                                               |
+| --------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Notice          | Something belongs naturally in the scene      | A framed photograph in a tea shop; an illustrated boat shed wall; a cinema noticeboard         |
+| Investigate     | Player chooses to inspect or speak            | A subtle nearby action appears; proximity alone never opens a reading panel                    |
+| Connect         | Briefly meet the real Kerala behind the scene | One photograph, one memorable fact and an explanation of what makes this subject distinctive   |
+| Explore further | Optional depth and another reason to wander   | A related livelihood, landscape or architectural detail the player can notice elsewhere        |
+| Remember        | Save a personally meaningful connection       | Keep a photo story in the existing passport alongside the player's own visit and circumstances |
 
 Use two image presentations: lightweight images on physical objects in the 3D
 world, and an accessible close-reading view opened deliberately. Keep movement

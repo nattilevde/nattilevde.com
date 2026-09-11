@@ -207,4 +207,3 @@ scan the code.
 Source code is [MIT](LICENSE). Photographs, fonts and other third-party material
 keep their own licences — see [docs/CREDITS.md](docs/CREDITS.md) before you fork
 or redeploy.
-

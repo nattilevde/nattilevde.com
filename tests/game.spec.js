@@ -15,6 +15,10 @@ import {
 
 test.describe.configure({ mode: "serial" });
 
+// CI runners render the 3D world in software, so every step takes longer
+// there. Per-test budgets scale rather than capping the config value.
+const budget = (ms) => (process.env.CI ? ms * 2 : ms);
+
 async function enter(page, position, discoveries = []) {
   if (position)
     await page.addInitScript(
@@ -56,7 +60,9 @@ test("world collision and activity definitions are traversable", () => {
   expect(canWalk(250, 450)).toBe(false); // Ashtamudi lagoon
   expect(canWalk(-62, -1350)).toBe(true); // fort interior
   expect(canWalk(-91, -1352)).toBe(false); // fort wall
-  expect(terrainHeight(83, 111)).toBe(9);
+  // The laterite bumps beside the off-road loop are Gaussians, so they never
+  // decay to exactly zero; the lookout hill still peaks at 9.
+  expect(terrainHeight(83, 111)).toBeCloseTo(9, 6);
   expect(terrainHeight(700, -300)).toBeGreaterThan(30); // the High Ranges climb
   expect(regionAt(0, -1200).id).toBe("malabar");
   expect(regionAt(600, -260).id).toBe("highlands");
@@ -114,21 +120,25 @@ test("fast travel opens up through progress, not by walking to every stop", () =
 test("3D player walks, discovers, pauses, and preserves the portal passport", async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(budget(60000));
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await enter(page);
   const game = page.getByTestId("kerala-game");
   await page.keyboard.down("w");
+  // The discovery notice is a toast that clears itself after a few seconds, so
+  // watch for it while still walking. Polling a coordinate first and only then
+  // looking for the toast raced with its own dismissal on a loaded machine.
+  await expect(page.locator(".game-discovery-notice")).toContainText(
+    "Kadal Village",
+    { timeout: budget(30000) },
+  );
   await expect
     .poll(async () => Number(await game.getAttribute("data-z")), {
-      timeout: 20000,
+      timeout: budget(20000),
     })
     .toBeLessThan(66);
   await page.keyboard.up("w");
-  await expect(page.locator(".game-discovery-notice")).toContainText(
-    "Kadal Village",
-  );
   await page.keyboard.press("p");
   await expect(page.getByRole("dialog")).toContainText(`1/${sites.length}`);
   const z = Number(await game.getAttribute("data-z"));
@@ -152,7 +162,7 @@ test("3D player walks, discovers, pauses, and preserves the portal passport", as
 test("local food interaction saves and canoe can be boarded and steered", async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(budget(60000));
   await enter(page, { x: -11, z: 30 });
   await expect(page.locator(".game-interaction")).toContainText("Leela");
   await page.keyboard.press("e");
@@ -232,12 +242,13 @@ test("hidden places stay concealed until reached and culture activity is interac
     "The Lotus Hideaway",
   );
   await page.keyboard.press("Escape");
+  // Hari's encounter is now the listen-and-repeat practice, which only offers
+  // its beats while a rehearsal is running; outside one the courtyard still
+  // opens and tells its story. The practice itself is covered by
+  // chenda-practice.spec.js and the rehearsal window by life.spec.js.
   await page.keyboard.press("e");
-  for (let i = 1; i <= 3; i++)
-    await page.getByRole("button", { name: `Play beat ${i} of 3` }).click();
-  await expect(
-    page.getByRole("button", { name: "A moment in your passport" }),
-  ).toBeDisabled();
+  await expect(page.getByRole("dialog")).toContainText("The Rhythm Courtyard");
+  await expect(page.getByRole("dialog")).toContainText("chenda");
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Pause game" }).click();
   await page.getByLabel("World atmosphere").selectOption("night");
@@ -307,7 +318,7 @@ test("finding the hidden pond unlocks its map marker and reload restores the jou
 });
 
 test("scooter can be borrowed, ridden fast, and parked", async ({ page }) => {
-  test.setTimeout(60000);
+  test.setTimeout(budget(60000));
   await enter(page, { x: 7, z: 73 });
   const game = page.getByTestId("kerala-game");
   await expect(page.locator(".game-interaction")).toContainText(
@@ -332,7 +343,7 @@ test("scooter can be borrowed, ridden fast, and parked", async ({ page }) => {
 test("the highway bridge carries the player across the river into Central Kerala", async ({
   page,
 }) => {
-  test.setTimeout(120000);
+  test.setTimeout(budget(120000));
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await enter(page, { x: 2, z: -580 });
@@ -353,7 +364,7 @@ test("the highway bridge carries the player across the river into Central Kerala
 test("the bus network unlocks with discovery and fast travels across Kerala", async ({
   page,
 }) => {
-  test.setTimeout(90000);
+  test.setTimeout(budget(90000));
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await enter(page, { x: 8, z: 84 });
@@ -413,7 +424,7 @@ test("the bus network unlocks with discovery and fast travels across Kerala", as
 test("a discovered place can be picked straight off the map and travelled to", async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(budget(60000));
   await enter(page, { x: 0, z: 76 }, ["village", "beach"]);
   const game = page.getByTestId("kerala-game");
   await page.keyboard.press("m");
@@ -433,7 +444,7 @@ test("a discovered place can be picked straight off the map and travelled to", a
 test("sitting at a rest spot records a quiet moment in the passport", async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(budget(60000));
   await enter(page, { x: -70, z: 21 });
   await expect(page.locator(".game-interaction")).toContainText("Sit a while");
   await page.keyboard.press("e");
@@ -499,7 +510,7 @@ test("the canoe paddles like a boat: slow to build way, long to lose it", () => 
 test("the canoe can be boarded, paddled forward, and comes to rest", async ({
   page,
 }) => {
-  test.setTimeout(90000);
+  test.setTimeout(budget(90000));
   await enter(page, { x: 24, z: 5 });
   const game = page.getByTestId("kerala-game");
   const z = async () => Number(await game.getAttribute("data-z"));
@@ -525,7 +536,7 @@ test("the canoe can be boarded, paddled forward, and comes to rest", async ({
 });
 
 test("the world is overheard, not narrated", async ({ page }) => {
-  test.setTimeout(90000);
+  test.setTimeout(budget(90000));
   // Standing in the chaayakkada, you pick up the talk at the counter.
   await enter(page, { x: -12, z: 34 }, ["village", "tea-shop"]);
   const line = page.locator(".game-overheard");
@@ -542,7 +553,7 @@ test("the world is overheard, not narrated", async ({ page }) => {
 test("fast travel is a bus ride with a conductor, not a teleport", async ({
   page,
 }) => {
-  test.setTimeout(90000);
+  test.setTimeout(budget(90000));
   await enter(page, { x: 8, z: 84 }, ["village", "beach", "jetty"]);
   const game = page.getByTestId("kerala-game");
   await page.keyboard.press("b");

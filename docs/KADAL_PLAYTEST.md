@@ -285,6 +285,7 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
 - [ ] Changes use saved in-game time, not real-world dates; immediately reopening the game should preserve the scene rather than reroll it.
 
 ## Sevens after dark
+
 - Visit the Malabar ground near (55, -1040) after 19:00: both teams still pass and shoot.
 - Check the pitch is readable under two floodlights; daylight and jeep performance remain smooth.
 - Watch a rain interruption and return to play when dry.
@@ -293,6 +294,7 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
 - Save/reload during the evening and confirm the match continues.
 
 ## Firefly evening discoveries
+
 - After 18:30, visit the inland groves near (92, -70), (77, -118) or (470, -500).
 - Look for independently glowing, gently drifting lights; check visibility against vegetation.
 - Approach within 12 metres: a grove memory should appear once and survive reload.
@@ -301,6 +303,7 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
 - Check riding nearby remains smooth. Visual brightness and real-device performance need manual review.
 
 ## Chenda listen-and-repeat
+
 - Meet Hari during dry courtyard rehearsal (07:00–09:30 or 16:00–18:30).
 - Listen: four or five numbered beats should match the drum sounds.
 - Repeat the spacing using Tap drum, touch, or keyboard focus + Enter/Space.
@@ -311,6 +314,7 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
 - Leave the encounter freely; verify ordinary exploration controls resume.
 
 ## Lagoon boat-training groundwork
+
 - Visit Ashtamudi Reach (138, 442) around 08:00 or 16:30 in dry weather.
 - Look southeast for a small six-person crew following a loop.
 - Paddles and bodies should move together, with gentle speed variation and smooth turns.
@@ -322,6 +326,7 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
   authentic song and a full snake-boat race are future work.
 
 ## Onam preparation: pookalam
+
 - Walk north from the starting point toward the tea shop: flowers are beside the lane at (-7, 47).
 - Check the carpet sits above the ground and its colours read clearly.
 - During dry daylight, choose “Add a few flowers”: an outer ring and memory should appear once.
@@ -333,6 +338,7 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
   a repeating festival calendar and processions are not implemented yet.
 
 ## Pookalam neighbours
+
 - Near (-7, 47), watch Meera and Ravi arrive after 07:00 during the first ten world days.
 - They should walk around the flower carpet and lean/reach beside the flower trays.
 - At 16:30, check their short afternoon visit and gestures.
@@ -343,6 +349,7 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
 - Review animation, spacing and roof cover at their home approaches manually.
 
 ## Contextual flower-neighbour conversations
+
 - Approach Meera or Ravi within four metres while they are at the carpet.
 - Before helping, hear about their work; after adding flowers, hear acknowledgement.
 - Reload and confirm the acknowledgement remains.
@@ -352,6 +359,7 @@ Feedback: Fishing / delivery / stall / help / memories / save / phone: PASS or i
   prevents repeated chatter. These are text lines, not recorded voices.
 
 ## Post-rain ground polish
+
 - After a shower, watch the rain stop while roads and field edges remain darker.
 - Check small puddles on Kadal lane, the far-bank path and Paddy Lane/market parking.
 - Surfaces should gradually dry over roughly two minutes after heavy rain; reload
@@ -372,6 +380,7 @@ Use the existing save; do not clear progress just to test. Visit when the world 
 matches the activity. A night lighting override alone may not advance NPC schedules.
 
 ### Short manual route
+
 1. **Kadal lane → courtyard, morning:** flowers at (-7, 47), neighbour movement and
    dialogue, then Hari at (-19, -23). Listen and repeat one phrase, retry once,
    and close mid-demo to check no sound keeps playing.
@@ -400,6 +409,7 @@ These browser tests cover startup, entering the jeep and postcard access, not a 
 visual inspection of every new destination.
 
 ## Sevens supporters
+
 - Visit the Malabar ground near (55, -1040) after 17:00 or under floodlights at 19:00.
 - Six supporters should approach at staggered times and stand outside the west touchline.
 - Their gaze should follow the ball; a goal produces a brief celebration from that
@@ -412,6 +422,7 @@ visual inspection of every new destination.
 - Check shelter posts, pitch spacing, nighttime visibility and frame pacing manually.
 
 ## Warm nighttime gathering places
+
 - At dusk/night, inspect the tea-shop frontage (-10, 32), harbour shelter (10, -177),
   Paddy Lane bakery (343, 98), cycle shop (363, 98) and parking (332, 130).
 - Lamps should glow warmly and illuminate nearby ground and people.
@@ -424,6 +435,7 @@ visual inspection of every new destination.
 - Frontage lamps are exterior courtesy lights, not indicators that a shop is open.
 
 ## Forest Churam and first wildlife pass
+
 - From Paddy Lane, drive uphill to Estate Bend (488, 48), then take the signed
   Forest Churam branch north through successive bends to the older hill road (450, -200).
 - Check the switchbacks in both directions: steering room, slope, road edges,
@@ -439,6 +451,7 @@ visual inspection of every new destination.
   sounds, avoidance of all decorative vegetation and vehicle/animal collision need future work.
 
 ## Forest atmosphere and canopy pass
+
 - Forest Churam: stop the jeep and listen near (463, -42) and (515, -104).
   Quiet directional calls should vary by position; they pause in rain/night and
   when the player is driving quickly. Synthetic sounds are not species recordings.
@@ -449,6 +462,7 @@ visual inspection of every new destination.
 - Verify mute, pause/resume, night and photo mode; check no sound persists after exit.
 
 ## Forest navigation and stopping-place polish
+
 - Approach deer near the grove and watch them steer around trunks instead of walking through them.
 - Check all three deer start clear of trees, and keep space from one another.
 - Reload an older forest save: a position inside a new tree clearance may reset to its home spot.
@@ -459,6 +473,7 @@ visual inspection of every new destination.
   not every decorative shrub or randomly scattered tree elsewhere in the world.
 
 ## First road car and shared handling foundation
+
 - Find the Coastal Saloon at (20, 78), beside the starting jeep.
 - Approach each vehicle: the J/action prompt should name the nearest vehicle.
 - Drive, brake fully and exit the car; then drive the jeep. Neither parked vehicle
@@ -473,6 +488,7 @@ visual inspection of every new destination.
   an accurate model-specific engine recording. Detailed interiors remain future work.
 
 ## Trail motorcycle
+
 - Find it at (27, 78), beside the saloon and jeep; press J or use the named action.
 - Check acceleration, low-speed steering, cornering lean, braking and safe exit.
 - Verify helmet/rider posture, wheel alignment, headlight and brake light.
