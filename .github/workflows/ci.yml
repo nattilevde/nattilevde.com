@@ -26,7 +26,7 @@ jobs:
   test:
     name: Tests ${{ matrix.shard }}/3
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -41,8 +41,10 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       # The 3D world renders in software on CI, so one browser at a time per
-      # runner. Sharding keeps each job well inside its timeout instead of
-      # running the whole suite serially in one job.
+      # runner. Sharding splits the wall clock across jobs; the shards are
+      # uneven because Playwright shards by file and game.spec.js is both the
+      # largest file and serial, so it alone runs for around 40 minutes. The
+      # timeout is sized for that shard, not the average one.
       - name: Test
         run: npm test -- --shard=${{ matrix.shard }}/3
       - name: Upload Playwright report
