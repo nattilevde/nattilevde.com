@@ -13,7 +13,7 @@ import {
   BOAT,
 } from "../src/game/world.js";
 
-test.describe.configure({ mode: "serial" });
+// Every test owns a fresh browser context and seeds its own journey.
 
 // CI runners render the 3D world in software, so every step takes longer
 // there. Per-test budgets scale rather than capping the config value.
@@ -246,7 +246,10 @@ test("hidden places stay concealed until reached and culture activity is interac
   // its beats while a rehearsal is running; outside one the courtyard still
   // opens and tells its story. The practice itself is covered by
   // chenda-practice.spec.js and the rehearsal window by life.spec.js.
-  await page.keyboard.press("e");
+  // Closing the passport can restore button focus, where world hotkeys are
+  // intentionally ignored. Use the visible encounter action instead.
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await page.getByRole("button", { name: /E Meet Hari/ }).click();
   await expect(page.getByRole("dialog")).toContainText("The Rhythm Courtyard");
   await expect(page.getByRole("dialog")).toContainText("chenda");
   await page.keyboard.press("Escape");

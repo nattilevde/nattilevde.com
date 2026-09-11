@@ -22,6 +22,8 @@ jobs:
         run: npm run format:check
       - name: Build
         run: npm run build
+      - name: Check search pages
+        run: node scripts/check-seo.mjs
 
   test:
     name: Tests ${{ matrix.shard }}/3
@@ -40,11 +42,9 @@ jobs:
       - run: npm ci
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
-      # The 3D world renders in software on CI, so one browser at a time per
-      # runner. Sharding splits the wall clock across jobs; the shards are
-      # uneven because Playwright shards by file and game.spec.js is both the
-      # largest file and serial, so it alone runs for around 40 minutes. The
-      # timeout is sized for that shard, not the average one.
+      # Fully parallel test grouping lets Playwright shard individual tests.
+      # One worker per CI runner still avoids software-rendering contention.
+      # Keep the conservative timeout until new shard timings are measured.
       - name: Test
         run: npm test -- --shard=${{ matrix.shard }}/3
       - name: Upload Playwright report
