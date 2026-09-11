@@ -1,6 +1,24 @@
 // Fictional connected hill drive; shares the existing High Ranges terrain.
 export const HIGHLAND_ROADS = [
   {
+    id: "forest-churam",
+    width: 5.5,
+    surface: "laterite",
+    points: [
+      [488, 48],
+      [466, 20],
+      [442, -5],
+      [435, -30],
+      [475, -45],
+      [480, -65],
+      [442, -80],
+      [436, -100],
+      [478, -115],
+      [500, -150],
+      [450, -200],
+    ],
+  },
+  {
     id: "ridge-climb",
     width: 6,
     points: [
@@ -47,6 +65,17 @@ export const HIGHLAND_ROADS = [
   },
 ];
 export const HIGHLAND_SITES = [
+  {
+    id: "forest-churam",
+    name: "Forest Churam",
+    x: 480,
+    z: -112,
+    radius: 12,
+    kind: "place",
+    line: "Another bend, and the road slips into the trees.",
+    story:
+      "A fictional forest ghat road linking the estate track with the older hill road. Tight bends, shaded verges and a small stopping place invite a slower drive. This is not a replica of a named pass.",
+  },
   {
     id: "estate-bend",
     name: "The Estate Bend",

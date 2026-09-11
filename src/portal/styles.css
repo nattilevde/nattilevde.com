@@ -3121,3 +3121,25 @@ h1 em {
   outline: 2px solid #28533d;
   outline-offset: 3px;
 }
+.portal-game-about {
+  margin-top: 28px;
+  padding: 24px;
+  background: #edf0e3;
+  border: 1px solid #d6ddcf;
+  border-radius: 8px;
+  color: #294c3b;
+}
+.portal-game-about h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 24px;
+}
+.portal-game-about p {
+  max-width: 70ch;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.portal-game-about a {
+  color: #28533d;
+  text-underline-offset: 4px;
+}

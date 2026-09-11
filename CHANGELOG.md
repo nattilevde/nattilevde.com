@@ -1,13 +1,55 @@
 # Changelog
 
-All notable changes to this project are documented here.
-
-The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
-this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-While the version is below `1.0.0`, minor releases may contain breaking changes
-to saved progress or to the world's data shapes.
-
 ## [Unreleased]
+
+## [0.3.0] — Release candidate
+
+Prepared for the next deployment; not yet tagged or published.
+
+### Added
+
+- Shared vehicle handling with a controllable jeep, Coastal Saloon and trail
+  motorcycle, independent saved parking, vehicle lights and quick jeep access.
+- Paddy Lane homes, shops, deliveries and play areas; harbour-quarter expansion,
+  connected hill roads and the fictional Forest Churam with viewing stops.
+- Reactive forest deer, canopy squirrels and directional synthetic forest ambience.
+- Sevens possession, shots, goalkeepers, floodlights, supporters and goal reactions.
+- Listen-and-repeat chenda practice, ambient lagoon boat training, growing pookalam,
+  participating neighbours and contextual recognition.
+- Photo postcards, credited Kerala photo stories and sourced reading boards.
+- Firefly discoveries, lingering wet ground and warm nighttime destination lighting.
+- Portal/game search pages, sitemap and structured data for 45 indexable pages,
+  visible open-source/support links and production browser release checks.
+
+### Changed
+
+- Longer dry intervals, improved jeep acceleration and braking, smoother first rides
+  through graphics warm-up, and clearer portal navigation.
+- Three.js is cached as a separate chunk; removed an unused shipped logo and resized
+  the favicon. Preserved the image used by Open Graph metadata.
+- Restored CI for main/develop with format/build checks and three test shards.
+- Independent game tests and test-level sharding prevent one failure from skipping
+  unrelated scenarios; each CI runner still renders one browser at a time.
+- Existing saves initialise new vehicles, neighbours and wildlife without a reset.
+
+### Fixed
+
+- Chenda practice sounds while the world is paused and records participation.
+- Stable terrain assertions, scoped fishing memories, current chenda encounter
+  coverage, audio measurement overhead and discovery-toast timing.
+- Courtyard test uses the visible interaction after closing the passport, avoiding
+  a hotkey sent while button focus suppresses world controls.
+- CI-aware test budgets and browser coverage for audible chenda practice and saved participation.
+
+### Known limits
+
+- Vehicle and wildlife visuals remain stylised; motorcycle balance is assisted.
+- Boat training is ambient; no playable snake-boat race or licensed vanchipattu yet.
+- Pookalam is a fictional ten-world-day episode, not an annual festival calendar.
+- Real-device performance, touch handling and visual quality need the final smoke
+  pass in docs/RELEASE_READINESS.md. Further features are deferred there.
+
+## [0.2.0] — 2026-09-08
 
 ### Fixed
 
@@ -15,10 +57,18 @@ to saved progress or to the world's data shapes.
   attached to their vehicles; eased camera aim for all movement, including canoe
   rides, and reset visual interpolation after shortened journeys.
 
-### Added
+- The world no longer runs in slow motion on slow hardware. Movement now
+  integrates in fixed steps, as many per frame as real time requires, so walking,
+  riding and paddling cover the same ground per second whatever the frame rate.
+  Previously a frame could advance the simulation by at most 50ms, so a device
+  rendering at 5fps played at a quarter speed.
+- Continuous integration no longer times out. Test runs are serialised on CI,
+  where the 3D world renders in software and parallel browsers starve each
+  other, and local runs are capped to two workers for the same reason.
+- The canoe test now paddles back to the jetty before stepping ashore, instead
+  of assuming the boat drifted nowhere.
 
-- Three optional Kerala photo stories with credited local photographs, draft
-  Malayalam, source links, passport saving and an original film-club experiment.
+### Added
 
 - Kadal fishing-to-market cycle: weather-dependent catches, visible basket
   deliveries, perishable stall stock, buyer activity and connected memories.
@@ -47,19 +97,6 @@ to saved progress or to the world's data shapes.
   canal race, detached boat-song and unreachable train cues are held back.
 - The canoe return check waits for the boat to return, rather than a button
   temporarily enabled while it is still gliding away from the landing.
-
-### Fixed
-
-- The world no longer runs in slow motion on slow hardware. Movement now
-  integrates in fixed steps, as many per frame as real time requires, so walking,
-  riding and paddling cover the same ground per second whatever the frame rate.
-  Previously a frame could advance the simulation by at most 50ms, so a device
-  rendering at 5fps played at a quarter speed.
-- Continuous integration no longer times out. Test runs are serialised on CI,
-  where the 3D world renders in software and parallel browsers starve each
-  other, and local runs are capped to two workers for the same reason.
-- The canoe test now paddles back to the jetty before stepping ashore, instead
-  of assuming the boat drifted nowhere.
 
 ## [0.1.0] — 2026-09-07
 
@@ -147,68 +184,3 @@ the 3D world — are playable end to end.
 - The portal loads photographs and fonts from third-party hosts at runtime, so
   it needs network access; the 3D world needs WebGL and Web Audio.
 - The 3D world has not been profiled on low-end mobile hardware.
-
-- Tea-shop life: resident-driven tea pouring, saved snack portions, changing tray,
-  original in-world TV animations, scheduled viewers and local sound/text cues.
-
-- Added fictional mosque, temple and church exterior lanes with timed local
-  visitors, plus a rain-sensitive Malabar sevens warm-up and witnessed memory.
-
-- Added sourced Thumba, Chemmeen and Silent Valley reading boards with draft
-  Malayalam and passport saving; supports place stories without photographs.
-
-- Added a controllable hill jeep with fixed-step grounded physics, braking,
-  wet grip, body suspension and chase camera; added a scenic laterite loop.
-- Sevens warm-up players now chase passes and move into support.
-
-- Added Paddy Lane off the jeep trail: six paddy plots, home verandas, a produce
-  stall, farm/market routines and a rain-responsive children's play courtyard.
-
-- Reduced rain frequency: 8–14 minutes of dry play between 25–45-second showers;
-  increased saved weather timer bounds so reloads preserve the longer intervals.
-
-- Jeep headlights now illuminate the road at night/in rain; rear lamps brighten
-  under braking. Increased acceleration and top speed with stronger braking and
-  reduced high-speed steering sensitivity.
-
-- Polished field edges, home gardens and morning/evening light; expanded Paddy
-  Lane with staffed shops, shutters, deliveries, pedestrians and jeep parking.
-- Replaced static sevens passing with possession, dribbling, pressure, shots,
-  goalkeeper interceptions, goals, resets and a saved physical scoreboard.
-
-- Added “Find my jeep” with optional direction/distance guidance and direct return
-  to a walkable spot beside the saved parked vehicle.
-
-- Expanded the coast north of Kadal into a harbour quarter with 23 town/inland
-  buildings, waterfront props, moored boats, ten local residents, parking and
-  connected roads toward Paddy Lane; added three optional place discoveries.
-
-### Connected highland drive
-
-- Added a winding road from Paddy Lane to the existing highland route, with an alternate laterite estate track and ridge parking spur.
-- Added woodland, cultivated bands, road-edge reflectors, two discoveries and a ridge resting bench.
-- Added curved-route jeep clearance, gradient and browser checks; appended the deferred manual checklist.
-
-### Portal readability and SEO foundation
-
-- Separated the map introduction/filters from map labels and reduced floating-guide overlap on smaller screens.
-- Added crawlable district and place guides with existing food/culture context, related links, unique metadata, canonical URLs and structured data.
-- Build now emits a sitemap, robots rules, branded sharing metadata and a 404 document; added automated output validation and a deployment/manual checklist.
-
-### First journey pilot
-
-- Added optional first-visit jeep start and dismissible driving controls, preserving returning saves.
-- Added roadside route cues, Paddy Lane Market discovery and a shaded fieldside rest stop.
-- Added bounded browser-local playtest summaries in Pause/Help, with no uploads and independent clearing.
-
-### Photo postcards
-
-- Added camera-button/C capture, a paused postcard preview, PNG download and optional device sharing.
-- Export omits game HUD and includes a location/region title plus the game/domain footer.
-- Added a capture/download/resume check and deferred phone/share-sheet checklist.
-
-### First-run ride preparation
-
-- Wait for shader compilation and nearby spawn/jeep render preparation before enabling Start.
-- Keep simulation paused during preparation and reset frame timing on resume, avoiding loading-time catch-up.
-- Added a fresh-session comparison to the manual checklist; cold-device performance still requires confirmation.

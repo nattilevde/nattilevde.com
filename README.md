@@ -15,8 +15,9 @@ to wander, notice things, and keep what you find in a passport of your own.
 Built with React, Vite and Three.js. Everything runs in the browser: there is no
 backend, no account, and no analytics.
 
-> **v0.1.0 — first public release.** Both the portal and the 3D world are
-> playable end to end. Being pre-1.0, the world's data shapes and saved progress
+> **v0.3.0 — release candidate.** The latest published tag is v0.2.0.
+> See the [release checklist](docs/RELEASE_READINESS.md) for validation and deployment
+> status. Being pre-1.0, the world's data shapes and saved progress
 > may still change between minor versions. See the
 > [changelog](CHANGELOG.md) for what is in this release, and
 > [scope and limitations](#scope-and-limitations) for what it is not.
@@ -207,4 +208,3 @@ scan the code.
 Source code is [MIT](LICENSE). Photographs, fonts and other third-party material
 keep their own licences — see [docs/CREDITS.md](docs/CREDITS.md) before you fork
 or redeploy.
-

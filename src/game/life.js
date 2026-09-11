@@ -1,4 +1,19 @@
+import { createForestWildlife, stepForestWildlife } from "./forest-wildlife.js";
+import {
+  POOKALAM,
+  canAddFlowers,
+  createOnam,
+  stepOnam,
+  flowerNeighbourLine,
+} from "./onam.js";
+import {
+  createBoatTraining,
+  stepBoatTraining,
+  trainingPosition,
+} from "./boat-training.js";
+import { nearbyFireflies } from "./fireflies.js";
 import { createTown, stepTown, townCue } from "./town.js";
+import { roadsideEvents, roadsideCue } from "./roadside-events.js";
 import { createPaddy, stepPaddy, paddyCue } from "./paddy.js";
 import { PADDY_VILLAGE } from "./paddy-data.js";
 import { createJeep } from "./jeep.js";
@@ -96,6 +111,7 @@ function random(state) {
 export function createLife(saved, seed = 7391) {
   const valid = saved?.v === 1;
   const state = {
+    forestWildlife: createForestWildlife(valid ? saved.forestWildlife : null),
     v: 1,
     seed: valid ? bounded(saved.seed, 0, 4294967295, seed) >>> 0 : seed >>> 0,
     clock: valid ? bounded(saved.clock, 0, DAY_SECONDS * 100000, 960) : 960,
@@ -111,6 +127,8 @@ export function createLife(saved, seed = 7391) {
     residents: [],
     coir: { phase: "outside", remaining: 0, helped: -1 },
     rehearsal: { active: false, joined: -1 },
+    onam: createOnam(valid ? saved.onam : null),
+    boatTraining: createBoatTraining(valid ? saved.boatTraining : null),
     ferry: {
       stop: 0,
       phase: "boarding",
@@ -127,6 +145,8 @@ export function createLife(saved, seed = 7391) {
     town: createTown(valid ? saved.town : null),
     paddy: createPaddy(valid ? saved.paddy : null),
     jeep: createJeep(valid ? saved.jeep : null),
+    car: createJeep(valid ? saved.car : null, "car"),
+    motorcycle: createJeep(valid ? saved.motorcycle : null, "motorcycle"),
     community: createCommunity(valid ? saved.community : null),
     tea: createTea(valid ? saved.tea : null),
     memories: [],
@@ -541,6 +561,9 @@ function tickLife(state, dt, player) {
   stepPaddy(state, dt);
   stepTown(state, dt);
   updateRehearsal(state);
+  stepBoatTraining(state.boatTraining, dt, lifeHour(state), w.rain);
+  stepOnam(state, dt);
+  stepForestWildlife(state, dt, player);
   stepFishing(state.fishing, dt, lifeHour(state), w.rain);
   stepFerry(state, dt);
   const fisher = fishingPosition(state.fishing);
@@ -581,6 +604,39 @@ function remember(state, memory) {
 }
 
 export function observeLife(state, player) {
+  if (distance(player, POOKALAM) < 5)
+    remember(state, {
+      id: "pookalam-seen",
+      place: POOKALAM.name,
+      text: "Found a flower carpet taking shape beside the village lane.",
+    });
+
+  if (
+    state.boatTraining.phase === "training" &&
+    distance(player, trainingPosition(state.boatTraining)) < 65
+  )
+    remember(state, {
+      id: "lagoon-boat-training",
+      place: "Ashtamudi Reach",
+      text: "Watched a small crew finding their paddle rhythm on the lagoon.",
+    });
+
+  const fireflies = nearbyFireflies(state, player);
+  if (fireflies)
+    remember(state, {
+      id: `fireflies-${fireflies.id}`,
+      place: fireflies.name,
+      text: "Found small drifting lights in the grove after dusk.",
+    });
+
+  for (const event of roadsideEvents(state)) {
+    if (event.active && distance(player, event) < 8)
+      remember(state, {
+        id: `roadside-${event.id}-${event.variant}-${lifeDay(state)}`,
+        place: event.title,
+        text: event.memory,
+      });
+  }
   if (
     distance(player, PADDY_VILLAGE) < 22 &&
     state.paddy.people.some((p) => p.mode === "farm")
@@ -641,6 +697,17 @@ export function observeLife(state, player) {
 }
 
 export function actOnLife(state, action, player) {
+  if (action === "add-flowers") {
+    if (!canAddFlowers(state, player)) return false;
+    state.onam.helped = true;
+    remember(state, {
+      id: "pookalam-helped",
+      place: POOKALAM.name,
+      text: "Added a small circle of flowers to the neighbourhood pookalam.",
+    });
+    return true;
+  }
+
   if (action === "board-auto")
     return (
       !state.bus.player &&
@@ -742,6 +809,8 @@ export function actOnLife(state, action, player) {
 }
 
 export function villageCue(state, player) {
+  const roadside = roadsideCue(state, player);
+  if (roadside) return roadside;
   const harbour = townCue(state, player);
   if (harbour) return harbour;
   const village = paddyCue(state, player);
@@ -782,6 +851,8 @@ export function villageCue(state, player) {
 }
 
 export function villageLine(state, player) {
+  const flowers = flowerNeighbourLine(state, player);
+  if (flowers) return flowers;
   const fisher = fishingPosition(state.fishing);
   if (!fisher.atSea && distance(player, fisher) < 6 && state.fishing.helped > 0)
     return {

@@ -1,4 +1,13 @@
+import { buildMotorcycle } from "./motorcycle-view.js";
+import { buildRoadCar } from "./road-car-view.js";
+import { buildForestWildlifeView } from "./forest-wildlife-view.js";
+import { buildNightPlaces } from "./night-places.js";
+import { buildWetGround, groundDampness } from "./wet-ground.js";
+import { buildOnamView } from "./onam-view.js";
+import { trainingPosition } from "./boat-training.js";
+import { FIREFLY_POCKETS, fireflyActivity } from "./fireflies.js";
 import { buildTownView } from "./town-view.js";
+import { buildRoadsideView } from "./roadside-events.js";
 import { buildHighlandView } from "./highland-view.js";
 import { buildPaddyView } from "./paddy-view.js";
 import { buildCommunityView } from "./community-view.js";
@@ -176,7 +185,21 @@ export function buildEnvironment(scene) {
     batches.get(key).matrices.push(dummy.matrix.clone());
   }
 
+  const dampGrounds = new Map();
   function ground(name, x0, x1, z0, z1, surface, offset = 0, step = 3) {
+    // Ground gets its own material, so a wet field never darkens house walls.
+    if (surface === m.path || surface === m.earth) {
+      if (!dampGrounds.has(surface)) {
+        const wet = surface.clone();
+        materials.add(wet);
+        dampGrounds.set(surface, {
+          surface: wet,
+          color: surface.color.clone(),
+          roughness: surface.roughness,
+        });
+      }
+      surface = dampGrounds.get(surface).surface;
+    }
     const geometry = ownGeometry(
       new THREE.PlaneGeometry(
         x1 - x0,
@@ -2031,11 +2054,11 @@ export function buildEnvironment(scene) {
     }
   }
 
-  // Chundan vallam practice on the southern canal reach.
+  // Small lagoon training boat; a full-size race needs a separate production pass.
   const snakeBoats = [];
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 1; i++) {
     const vallam = boat(
-      `Chundan vallam ${i + 1}`,
+      "Lagoon practice vallam",
       1.1,
       13,
       material(i ? "#4a3222" : "#332417", { side: THREE.DoubleSide }),
@@ -2062,8 +2085,10 @@ export function buildEnvironment(scene) {
       mesh(rower, sphere, m.skin, 0, 0.78, 0, 0.16, 0.18, 0.16);
       const paddle = group("Paddle");
       rower.add(paddle);
-      paddle.position.set(0.3, 0.45, 0);
+      paddle.position.set(r % 2 ? -0.3 : 0.3, 0.45, 0);
+      paddle.scale.x = r % 2 ? -1 : 1;
       beam(paddle, m.wood, [0.12, 0.3, 0], [0.3, -0.75, 0], 0.035);
+      block(paddle, m.wood, 0.3, -0.8, 0, 0.18, 0.35, 0.05);
       paddlers.push(paddle);
     }
     snakeBoats.push({ vallam, paddlers, lane: i ? 41.2 : 34.8, phase: i * 40 });
@@ -2143,11 +2168,7 @@ export function buildEnvironment(scene) {
     depthWrite: false,
   });
   materials.add(fireflyMaterial);
-  for (const [fx, fz] of [
-    [92, -70],
-    [77, -118],
-    [470, -500],
-  ]) {
+  for (const { x: fx, z: fz } of FIREFLY_POCKETS) {
     const positions = [];
     for (let i = 0; i < 14; i++)
       positions.push(
@@ -2160,7 +2181,20 @@ export function buildEnvironment(scene) {
       "position",
       new THREE.Float32BufferAttribute(positions, 3),
     );
-    const cloud = new THREE.Points(geometry, fireflyMaterial);
+    const material = fireflyMaterial.clone();
+    materials.add(material);
+    const cloud = new THREE.Points(geometry, material);
+    cloud.userData.rest = Float32Array.from(positions);
+    geometry.setAttribute(
+      "color",
+      new THREE.Float32BufferAttribute(
+        new Float32Array(positions.length).fill(1),
+        3,
+      ),
+    );
+    material.vertexColors = true;
+    // Include the small flight envelope in culling.
+    geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 2, 0), 11);
     cloud.name = "Fireflies";
     cloud.position.set(fx, terrainHeight(fx, fz), fz);
     cloud.visible = false;
@@ -3107,6 +3141,25 @@ export function buildEnvironment(scene) {
     palm(x, z, scale);
   roundTree(302, 89, 1.1);
   roundTree(327, 145, 1.1);
+  const motorcycle = buildMotorcycle({
+    group,
+    block,
+    mesh,
+    cylinder,
+    sphere,
+    m,
+    material,
+    human,
+  });
+  const roadCar = buildRoadCar({ group, block, mesh, cylinder, m, material });
+  const forestWildlife = buildForestWildlifeView({
+    block,
+    group,
+    mesh,
+    sphere,
+    m,
+    terrainHeight,
+  });
   buildHighlandView({
     group,
     block,
@@ -3114,6 +3167,14 @@ export function buildEnvironment(scene) {
     sign,
     roundTree,
     instance,
+    sphere,
+    m,
+    terrainHeight,
+  });
+  const roadsideView = buildRoadsideView({
+    group,
+    block,
+    mesh,
     sphere,
     m,
     terrainHeight,
@@ -3150,6 +3211,29 @@ export function buildEnvironment(scene) {
     terrainHeight,
     material,
   });
+  const nightPlaces = buildNightPlaces({
+    group,
+    block,
+    mesh,
+    sphere,
+    m,
+    material,
+    terrainHeight,
+  });
+  const wetGround = buildWetGround({
+    group,
+    material,
+    ownGeometry,
+    terrainHeight,
+  });
+  const onamView = buildOnamView({
+    group,
+    cylinder,
+    m,
+    terrainHeight,
+    human,
+    mesh,
+  });
   const communityView = buildCommunityView({
     group,
     block,
@@ -3165,6 +3249,13 @@ export function buildEnvironment(scene) {
     terrainHeight,
   });
   const animated = new Set([
+    ...motorcycle.animated,
+    ...roadCar.animated,
+    ...forestWildlife.animated,
+    ...nightPlaces.animated,
+    ...wetGround.animated,
+    ...onamView.animated,
+    ...roadsideView.animated,
     ...townView.animated,
     ...paddyView.animated,
     jeep,
@@ -3278,7 +3369,14 @@ export function buildEnvironment(scene) {
       }
     }
     const darkness = THREE.MathUtils.clamp(Number(night) || 0, 0, 1);
+    nightPlaces.update(darkness, world);
     const wetness = THREE.MathUtils.clamp(Number(world.rain) || 0, 0, 1);
+    const damp = groundDampness(world.life?.weather ?? { rain: wetness });
+    wetGround.update(world.life?.weather ?? { rain: wetness });
+    for (const entry of dampGrounds.values()) {
+      entry.surface.color.copy(entry.color).multiplyScalar(1 - damp * 0.22);
+      entry.surface.roughness = entry.roughness - damp * 0.24;
+    }
     if (world.life) {
       const life = world.life;
       const fishing = life.fishing,
@@ -3406,9 +3504,14 @@ export function buildEnvironment(scene) {
         });
       });
       updateTea(life);
+      roadCar.update(life);
+      motorcycle.update(life);
       communityView.update(life, dt);
+      forestWildlife.update(life, dt, world);
+      onamView.update(life, dt);
       paddyView.update(life, dt);
       townView.update(life, dt);
+      roadsideView.update(life);
     }
     waterTime.value = t;
     waterNight.value = darkness;
@@ -3508,19 +3611,27 @@ export function buildEnvironment(scene) {
       beacon.rotation.y = t * 0.9 + phase;
       beacon.material.opacity = 0.62 + Math.sin(t * 2.4 + phase) * 0.22;
     });
-    // Chundan vallams race the canal in long, surging strokes.
-    snakeBoats.forEach(({ vallam, paddlers, lane, phase }, i) => {
-      // Keep the canal clear for its service; races will return as scheduled gatherings.
-      vallam.visible = !world.life;
-      if (!vallam.visible) return;
-      const stroke = t * 1.9 + i;
-      const surge = 0.72 + Math.max(0, Math.sin(stroke)) * 0.55;
-      const travel = ((t * 9 * surge + phase) % 300) - 140;
-      vallam.position.set(lane, -0.05 + Math.sin(t * 1.6 + i) * 0.05, travel);
-      vallam.rotation.y = Math.PI;
-      vallam.rotation.z = Math.sin(stroke) * 0.035;
-      paddlers.forEach((p, j) => {
-        p.rotation.x = Math.sin(stroke - j * 0.12) * 0.85;
+    // The simulation drives a continuous loop and a return, never a position wrap.
+    snakeBoats.forEach(({ vallam, paddlers }) => {
+      const practice = world.life?.boatTraining;
+      vallam.visible = !!practice;
+      if (!practice) return;
+      const position = trainingPosition(practice);
+      const blend = vallam.userData.placed ? 1 - Math.exp(-12 * dt) : 1;
+      vallam.userData.placed = true;
+      vallam.position.x += (position.x - vallam.position.x) * blend;
+      vallam.position.z += (position.z - vallam.position.z) * blend;
+      vallam.position.y = -0.05 + Math.sin(t * 1.6) * 0.025;
+      const turn = Math.atan2(
+        Math.sin(position.heading - vallam.rotation.y),
+        Math.cos(position.heading - vallam.rotation.y),
+      );
+      vallam.rotation.y += turn * blend;
+      paddlers.forEach((p) => {
+        p.rotation.x =
+          practice.phase === "resting" ? 0 : Math.sin(practice.stroke) * 0.75;
+        p.parent.rotation.x =
+          practice.phase === "resting" ? 0 : Math.sin(practice.stroke) * 0.09;
       });
     });
     // Dolphins arc out of the sea and slip back under.
@@ -3555,13 +3666,30 @@ export function buildEnvironment(scene) {
     const fan = Math.max(0, Math.sin(t * 0.25));
     tailFan.scale.set(0.5 + fan * 1.4, 1.5, 0.12);
     tailFan.rotation.x = 0.5 + fan * 0.5;
-    // Fireflies only come out at night.
-    const fireflyOn = darkness > 0.45;
-    fireflyClusters.forEach((cloud, i) => {
-      cloud.visible = fireflyOn;
-      if (fireflyOn) cloud.rotation.y = t * 0.12 + i;
+    // Independent slow glows and bounded flights; no added lights or per-frame allocation.
+    const activity = fireflyActivity(world.life);
+    fireflyClusters.forEach((cloud, cluster) => {
+      cloud.visible = activity > 0.01;
+      if (!cloud.visible) return;
+      cloud.material.opacity = activity * 0.85;
+      const positions = cloud.geometry.attributes.position;
+      const colors = cloud.geometry.attributes.color;
+      const rest = cloud.userData.rest;
+      for (let i = 0; i < positions.count; i++) {
+        const phase = i * 2.399 + cluster * 1.7;
+        positions.setXYZ(
+          i,
+          rest[i * 3] + Math.sin(t * 0.31 + phase) * 0.8,
+          rest[i * 3 + 1] + Math.sin(t * 0.47 + phase) * 0.35,
+          rest[i * 3 + 2] + Math.cos(t * 0.27 + phase) * 0.8,
+        );
+        const glow =
+          0.12 + 0.88 * Math.pow(0.5 + 0.5 * Math.sin(t * 1.1 + phase), 3);
+        colors.setXYZ(i, glow, glow, glow);
+      }
+      positions.needsUpdate = true;
+      colors.needsUpdate = true;
     });
-    fireflyMaterial.opacity = 0.35 + Math.sin(t * 2.2) * 0.25 + darkness * 0.3;
     // Monsoon drizzle falls around the player while a rain event is running.
     rain.visible = wetness > 0.01;
     if (rain.visible) {
@@ -3623,6 +3751,8 @@ export function buildEnvironment(scene) {
     jeep,
     jeepWheels,
     setJeepLighting,
+    setCarLighting: roadCar.setLighting,
+    setMotorcycleLighting: motorcycle.setLighting,
     beacons,
     update,
     dispose,

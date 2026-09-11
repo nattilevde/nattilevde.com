@@ -50,7 +50,7 @@ export const COMMUNITY_PEOPLE = [
     visit: { x: 44 + (i % 7) * 3.6, z: i < 7 ? -1049 : -1031 },
     shelter: { x: 41 + (i % 7) * 1.8, z: -1018 + Math.floor(i / 7) * 1.6 },
     start: 16 + (i % 4) * 0.04,
-    end: 18 - (i % 3) * 0.04,
+    end: 21.5 - (i % 3) * 0.04,
   })),
 ];
 export function communityClearance(x, z) {

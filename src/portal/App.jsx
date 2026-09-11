@@ -849,6 +849,16 @@ export default function App() {
               Meet your passport <ArrowRight size={16} />
             </button>
           </section>
+          <section className="portal-game-about" aria-label="About Nattilevde">
+            <h2>Nattilevde — a Kerala 3D browser game</h2>
+            <p>
+              Kerala Unfolded is a free, open-source exploration game and
+              discovery portal. Drive a jeep through fictional coastal villages,
+              paddy lanes and highland roads, or discover real Kerala through
+              our district guides.
+            </p>
+            <a href="/game/">About the game and how to play →</a>
+          </section>
           <footer className="page-footer">
             <div className="project-support">
               <p>

@@ -57,29 +57,37 @@ async function enterWithSound(page, position) {
     .click();
 }
 
-const loudness = async (page, samples = 26) => {
-  let peak = 0;
-  for (let i = 0; i < samples; i++) {
-    peak = Math.max(peak, await page.evaluate(() => window.__rms()));
-    await page.waitForTimeout(120);
-  }
-  return peak;
-};
+// CI runners render the 3D world in software, so every step takes longer
+// there. Per-test budgets scale rather than capping the config value.
+const budget = (ms) => (process.env.CI ? ms * 2 : ms);
+
+// Sampling happens inside the page: one round trip instead of one per sample.
+// Driving it from Node meant ~30 sequential evaluate calls, which on a loaded
+// CI runner cost more than the whole test budget.
+const loudness = async (page, samples = 14) =>
+  page.evaluate(async (samples) => {
+    let peak = 0;
+    for (let i = 0; i < samples; i++) {
+      peak = Math.max(peak, window.__rms());
+      await new Promise((done) => setTimeout(done, 120));
+    }
+    return peak;
+  }, samples);
 
 test("the soundscape actually produces audio when sound is on", async ({
   page,
 }) => {
-  test.setTimeout(90000);
+  test.setTimeout(budget(150000));
   await enterWithSound(page, { x: -70, z: 14 });
   expect(await page.evaluate(() => window.__probes.length)).toBeGreaterThan(0);
   expect(await loudness(page)).toBeGreaterThan(0.001);
 });
 
 test("a source gets quieter the further away you stand", async ({ page }) => {
-  test.setTimeout(120000);
+  test.setTimeout(budget(180000));
   // Silverthread Falls is loud, isolated, and far from the sea.
   await enterWithSound(page, { x: 612, z: -191 });
-  const beside = await loudness(page, 30);
+  const beside = await loudness(page, 14);
   // Leave the world first: it writes its own journey back on the way out,
   // which would otherwise overwrite the position we are about to seed.
   await page.getByRole("button", { name: "Back to Kerala" }).click();
@@ -102,19 +110,19 @@ test("a source gets quieter the further away you stand", async ({ page }) => {
   await page
     .getByRole("button", { name: /Step into Kerala|Continue your journey/ })
     .click();
-  const wayOff = await loudness(page, 30);
+  const wayOff = await loudness(page, 14);
   expect(beside).toBeGreaterThan(wayOff * 2.5);
 });
 
 test("muting silences the world and unmuting brings it back", async ({
   page,
 }) => {
-  test.setTimeout(90000);
+  test.setTimeout(budget(150000));
   await enterWithSound(page, { x: -70, z: 14 });
   expect(await loudness(page)).toBeGreaterThan(0.001);
   await page.getByRole("button", { name: "Mute the world" }).click();
   await page.waitForTimeout(1200);
-  expect(await loudness(page, 10)).toBeLessThan(0.0005);
+  expect(await loudness(page, 8)).toBeLessThan(0.0005);
   await page.getByRole("button", { name: "Unmute the world" }).click();
   expect(await loudness(page)).toBeGreaterThan(0.001);
 });

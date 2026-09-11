@@ -1,3 +1,4 @@
+import { groundDampness } from "./wet-ground.js";
 import { PADDY_PEOPLE } from "./paddy-data.js";
 export function buildPaddyView({
   group,
@@ -229,6 +230,9 @@ export function buildPaddyView({
       ...actors.map((a) => a.person),
     ],
     update(life, dt) {
+      const damp = groundDampness(life.weather);
+      paddyWater.roughness = 0.38 - damp * 0.16;
+      paddyWater.color.set("#6f9471").multiplyScalar(1 - damp * 0.12);
       const s = life.paddy;
       van.position.set(
         s.delivery.x,

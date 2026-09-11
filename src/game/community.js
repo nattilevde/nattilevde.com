@@ -1,9 +1,12 @@
+import { createSpectators, stepSpectators } from "./sevens-spectators.js";
 import { createFootball, footballTarget, stepFootball } from "./football.js";
 import { COMMUNITY_PEOPLE, FAITH_SPACES, SEVENS } from "./community-data.js";
 import { canWalk } from "./world.js";
 const gap = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 export function createCommunity(saved) {
+  const football = createFootball(saved?.football);
   return {
+    spectators: createSpectators(saved?.spectators, football.score),
     people: COMMUNITY_PEOPLE.map((d) => {
       const old = saved?.people?.find?.((p) => p.id === d.id);
       const valid =
@@ -19,7 +22,7 @@ export function createCommunity(saved) {
         heading: valid && Number.isFinite(old.heading) ? old.heading : 0,
       };
     }),
-    football: createFootball(saved?.football),
+    football,
     active: saved?.active === true,
     passes: Number.isInteger(saved?.passes)
       ? Math.max(0, Math.min(1e8, saved.passes))
@@ -90,6 +93,7 @@ export function stepCommunity(life, dt) {
       p.heading = Math.atan2(p.x - ball.x, p.z - ball.z);
     });
   } else c.progress = 0;
+  stepSpectators(c.spectators, life, dt);
 }
 export function communityBall(c) {
   return c.active

@@ -716,6 +716,53 @@ export function createSoundscape() {
           });
       },
     },
+    // Original synthetic ambience for the new forest drive, not species recordings.
+    ...[
+      { x: 463, z: -42 },
+      { x: 515, z: -104 },
+    ].map((at, i) => ({
+      id: `churam-canopy-${i}`,
+      range: 65,
+      level: 0.38,
+      at,
+      when: (l) => l.night < 0.5 && l.rain < 0.35 && l.jeep < 5,
+      every: () => between(7, 16),
+      fire(out) {
+        for (let note = 0; note < 3; note++)
+          tone(out, {
+            from: 1600 + i * 450 + note * 120,
+            to: 1300 + i * 350,
+            peak: 0.04,
+            decay: 0.16,
+            at: note * 0.23,
+          });
+      },
+    })),
+    {
+      id: "churam-leaves",
+      range: 90,
+      level: 0.3,
+      at: { x: 480, z: -85 },
+      every: () => between(8, 18),
+      fire(out) {
+        // Soft filtered noise gives the canopy a rustle without a continuous roar.
+        const node = source("white");
+        const band = filter("bandpass", 1700, 0.7);
+        const body = gain(0);
+        node.connect(band).connect(body).connect(out);
+        const now = ctx.currentTime;
+        body.gain.setValueAtTime(0, now);
+        body.gain.linearRampToValueAtTime(0.035, now + 0.5);
+        body.gain.linearRampToValueAtTime(0, now + 2);
+        node.start();
+        node.stop(now + 2.1);
+        node.onended = () => {
+          node.disconnect();
+          band.disconnect();
+          body.disconnect();
+        };
+      },
+    },
     // Forest: cicada wall by day, and an elephant somewhere in it.
     {
       id: "forest",
@@ -985,10 +1032,11 @@ export function createSoundscape() {
         ),
       );
     },
-    beat() {
+    beat(preview = false) {
       if (!ctx || !started) return;
-      tone(master, { from: 165, to: 55, peak: 0.16, decay: 0.24 });
-      hit(master, { freq: 1700, q: 1.1, peak: 0.12, decay: 0.16 });
+      const out = preview ? ctx.destination : master;
+      tone(out, { from: 165, to: 55, peak: 0.16, decay: 0.24 });
+      hit(out, { freq: 1700, q: 1.1, peak: 0.12, decay: 0.16 });
     },
     dispose() {
       disposed = true;

@@ -57,7 +57,7 @@ test("sevens needs both teams present, stops in rain and resumes consistently af
   expect(
     life.community.people.slice(9).every((p) => p.mode === "sheltering"),
   ).toBe(true);
-  life.clock = 19 * 120;
+  life.clock = 22 * 120;
   advanceLife(life, 60);
   expect(life.community.people.every((p) => p.mode === "home")).toBe(true);
 });
@@ -76,4 +76,21 @@ test("faith lane visits vary by hour without requiring the player", () => {
       (p) => p.id.startsWith("church") && p.mode === "visiting",
     ),
   ).toHaveLength(0);
+});
+
+test("sevens continues after dark and closes at night", () => {
+  const life = createLife();
+  dry(life);
+  life.clock = 19 * 120;
+  advanceLife(life, 65);
+  expect(life.community.active).toBe(true);
+  const before = life.community.football.passes;
+  advanceLife(life, 30);
+  expect(life.community.football.passes).toBeGreaterThan(before);
+  life.clock = 22 * 120;
+  advanceLife(life, 60);
+  expect(life.community.active).toBe(false);
+  expect(life.community.people.slice(9).every((p) => p.mode === "home")).toBe(
+    true,
+  );
 });
