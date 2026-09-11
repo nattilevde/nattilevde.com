@@ -29,3 +29,16 @@ Reference: https://developers.google.com/search/docs/crawling-indexing/javascrip
 
 - Added open-source information, the GitHub repository and Nabeel's Buy Me a Coffee link to portal and generated guide footers.
 - [ ] Check both footer links on desktop and phone; each opens the intended page in a new tab.
+
+## Game search identity follow-up
+
+The public homepage was verified as serving the previous SEO title and HTTPS canonical on 9 September 2026. The user's Google screenshot still shows an earlier title. This indicates a discrepancy between current content and that search snapshot; Search Console is needed to confirm Google's last crawl and selected canonical.
+
+Added /game/ with visible product facts, controls, supported browser requirements, local-save explanation, open-source authorship and VideoGame structured data. Homepage title/description now identify Nattilevde as a Kerala browser game; visible portal content connects that name to Kerala Unfolded. All guide headers link to the game page, and the sitemap includes it. No invented ratings or special AI markup.
+
+- [ ] Deploy this build; inspect https://nattilevde.com/game/ and the homepage in Search Console and request indexing.
+- [ ] Resubmit the sitemap and check Page indexing for exclusions and Google's chosen canonical.
+- [ ] Monitor branded/game queries, impressions and clicks in Search Console. Search screenshots alone cannot establish traffic or ranking performance.
+- [ ] Share actual gameplay clips and the /game/ link through relevant communities where promotion is welcome. No external posting performed.
+
+AI Overviews use standard search eligibility; no inclusion or ranking guarantee: https://developers.google.com/search/docs/appearance/ai-features

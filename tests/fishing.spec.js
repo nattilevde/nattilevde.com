@@ -77,6 +77,13 @@ test("courier route stays walkable and save resumes the same supply chain", () =
     true,
   );
 });
+// Other village features record their own ambient memories, and some sit within
+// range of the market, so this test counts only the fishing ones it is about.
+const fishMemories = (life) =>
+  life.memories.filter(
+    (m) => m.id.startsWith("fish-") || m.id.startsWith("catch-"),
+  );
+
 test("memories require a witnessed catch and matching delivery", () => {
   const life = createLife();
   life.fishing = createFishing({
@@ -87,7 +94,7 @@ test("memories require a witnessed catch and matching delivery", () => {
     caught: 4,
   });
   observeLife(life, FISH_MARKET);
-  expect(life.memories).toHaveLength(0);
+  expect(fishMemories(life)).toHaveLength(0);
   expect(actOnLife(life, "help-fish", FISH_LANDING)).toBe(true);
   life.fishing.phase = "walking-home";
   life.fishing.cargo = 0;
@@ -95,7 +102,7 @@ test("memories require a witnessed catch and matching delivery", () => {
   observeLife(life, FISH_MARKET);
   expect(life.memories.some((m) => m.id === "fish-market-1")).toBe(true);
   observeLife(life, FISH_MARKET);
-  expect(life.memories).toHaveLength(2);
+  expect(fishMemories(life)).toHaveLength(2);
 });
 test("shore help, saved catch and market render on a phone", async ({
   page,

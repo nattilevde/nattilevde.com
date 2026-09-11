@@ -1,3 +1,5 @@
+import { canAddFlowers } from "./onam.js";
+import ChendaPractice from "./ChendaPractice.jsx";
 import { STORIES, storyById } from "./stories.js";
 import {
   createPlaytest,
@@ -723,7 +725,17 @@ export default function Game({ onExit, onRecord }) {
         onError: setError,
       });
       engine.current = game;
-      setReady(true);
+      game
+        .prepare()
+        .then((prepared) => {
+          if (prepared && engine.current === game) setReady(true);
+        })
+        .catch(() => {
+          if (engine.current === game)
+            setError(
+              "The graphics could not finish loading. Return to the portal and try again.",
+            );
+        });
     } catch (e) {
       console.error("Kerala world could not initialize", e);
       setError(
@@ -1241,6 +1253,16 @@ export default function Game({ onExit, onRecord }) {
                   )}
                 </>
               )}
+              {!state.boating &&
+                !state.driving &&
+                !state.riding &&
+                canAddFlowers(life, state) && (
+                  <button
+                    onClick={() => engine.current?.lifeAction("add-flowers")}
+                  >
+                    Add a few flowers
+                  </button>
+                )}
               {!state.autoPassenger &&
                 !state.busPassenger &&
                 life.coir.phase === "covering" &&
@@ -1377,8 +1399,12 @@ export default function Game({ onExit, onRecord }) {
               <kbd>J</kbd>
               <span>
                 {state.driving
-                  ? `Hill jeep · ${state.jeepSpeed} km/h`
-                  : "Borrow the hill jeep"}
+                  ? `${state.vehicleName || "Hill jeep"} · ${state.jeepSpeed} km/h`
+                  : state.vehicleName === "Trail motorcycle"
+                    ? "Ride the trail motorcycle"
+                    : state.vehicleName === "Coastal Saloon"
+                      ? "Drive the Coastal Saloon"
+                      : "Borrow the hill jeep"}
                 <strong>
                   {state.driving
                     ? "Stop to step out · W/S drive · A/D steer · Space brake"
@@ -1743,7 +1769,8 @@ export default function Game({ onExit, onRecord }) {
               {encounterSite.npc && (
                 <blockquote>{encounterSite.hint}</blockquote>
               )}
-              {encounterSite.kind === "culture" &&
+              {encounterSite.residentId !== "hari" &&
+                encounterSite.kind === "culture" &&
                 encounterSite.handsOn &&
                 !journey.interactions.includes(encounter) && (
                   <div className="game-hands-on">
@@ -1757,7 +1784,17 @@ export default function Game({ onExit, onRecord }) {
                     </div>
                   </div>
                 )}
-              {encounterSite.npc && (
+              {encounterSite.residentId === "hari" &&
+                life?.rehearsal.active && (
+                  <ChendaPractice
+                    onBeat={() => engine.current?.practiceBeat()}
+                    onComplete={() => {
+                      record("interactions", encounter);
+                      engine.current?.completePractice();
+                    }}
+                  />
+                )}
+              {encounterSite.npc && encounterSite.residentId !== "hari" && (
                 <button
                   className="game-primary"
                   disabled={

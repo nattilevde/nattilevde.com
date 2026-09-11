@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Format and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Check formatting
+        run: npm run format:check
+      - name: Build
+        run: npm run build
+      - name: Check search pages
+        run: node scripts/check-seo.mjs
+
+  test:
+    name: Tests ${{ matrix.shard }}/3
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      # Fully parallel test grouping lets Playwright shard individual tests.
+      # One worker per CI runner still avoids software-rendering contention.
+      # Keep the conservative timeout until new shard timings are measured.
+      - name: Test
+        run: npm test -- --shard=${{ matrix.shard }}/3
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.shard }}
+          path: playwright-report/
+          retention-days: 7

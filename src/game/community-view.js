@@ -1,3 +1,5 @@
+import { SPECTATORS, spectatorPosition } from "./sevens-spectators.js";
+import * as THREE from "three";
 import { FAITH_SPACES, COMMUNITY_PEOPLE, SEVENS } from "./community-data.js";
 import { communityBall } from "./community.js";
 export function buildCommunityView({
@@ -111,6 +113,44 @@ export function buildCommunityView({
     3.1,
     5,
   );
+  // Keep lights in the scene even during daylight to avoid shader recompiles at dusk.
+  const floodlights = [-1, 1].map((side) => {
+    const tower = group(
+      "Sevens floodlight",
+      x + side * 18,
+      terrainHeight(x + side * 18, z),
+      z,
+    );
+    block(tower, m.darkWood, 0, 5.5, 0, 0.18, 11, 0.18);
+    block(tower, m.white, 0, 11, 0, 1.4, 0.45, 0.35);
+    const light = new THREE.SpotLight(0xffefcd, 0, 65, Math.PI / 2.8, 0.65, 1);
+    light.position.set(0, 10.8, 0);
+    light.target.position.set(-side * 18, 0, 0);
+    tower.add(light, light.target);
+    return { tower, light };
+  });
+  // Low benches leave the approach and players' retreat routes clear.
+  for (const offset of [-10, 0, 10]) {
+    const bench = group(
+      "Pitch-side bench",
+      x + 19,
+      terrainHeight(x + 19, z + offset),
+      z + offset,
+    );
+    block(bench, m.wood, 0, 0.5, 0, 0.65, 0.16, 5);
+    for (const end of [-2, 2])
+      block(bench, m.darkWood, 0, 0.25, end, 0.5, 0.5, 0.18);
+  }
+  const spectatorShelter = group(
+    "Supporters rain shelter",
+    33,
+    terrainHeight(33, -1008),
+    -1008,
+  );
+  roof(spectatorShelter, 0, 2.7, 0, 12, 5, 0.6);
+  for (const dx of [-5.5, 5.5])
+    block(spectatorShelter, m.wood, dx, 1.35, 2, 0.16, 2.7, 0.16);
+  const supporters = SPECTATORS.map((d) => human(d.id, m[d.color], m.trousers));
   let lastScore = "";
   const actors = COMMUNITY_PEOPLE.map((d) =>
     human(d.id, m[d.color], m.trousers),
@@ -118,8 +158,21 @@ export function buildCommunityView({
   const ball = group("Sevens ball");
   mesh(ball, sphere, m.white, 0, 0.18, 0, 0.18, 0.18, 0.18);
   return {
-    animated: [ball, ...actors.map((a) => a.person)],
+    animated: [
+      ball,
+      ...supporters.map((a) => a.person),
+      ...floodlights.map((f) => f.tower),
+      ...actors.map((a) => a.person),
+    ],
     update(life, dt) {
+      const hour = (life.clock / 120) % 24;
+      // Stay lit through rain retreats and departure, then close for the night.
+      const brightness = Math.max(
+        0,
+        Math.min(1, (hour - 17.5) * 2, (22 - hour) * 2),
+      );
+      for (const { light } of floodlights) light.intensity = brightness * 180;
+
       const score = life.community.football.score.join(" — ");
       if (score !== lastScore) {
         lastScore = score;
@@ -149,6 +202,31 @@ export function buildCommunityView({
           limb.rotation.x = p.moving
             ? Math.sin(life.clock * 6) * (j % 2 ? -0.4 : 0.4)
             : 0;
+        });
+      });
+      life.community.spectators.people.forEach((p, i) => {
+        const actor = supporters[i];
+        const at = spectatorPosition(p, SPECTATORS[i]);
+        const blend = actor.person.userData.placed ? 1 - Math.exp(-18 * dt) : 1;
+        actor.person.userData.placed = true;
+        actor.person.position.x += (at.x - actor.person.position.x) * blend;
+        actor.person.position.z += (at.z - actor.person.position.z) * blend;
+        const reaction = Math.min(1, p.remaining);
+        actor.person.position.y =
+          terrainHeight(actor.person.position.x, actor.person.position.z) +
+          (p.reaction > 0
+            ? Math.abs(Math.sin(life.clock * 7 + i)) * 0.12 * reaction
+            : 0);
+        const angle = p.heading - actor.person.rotation.y;
+        actor.person.rotation.y +=
+          Math.atan2(Math.sin(angle), Math.cos(angle)) * blend;
+        actor.limbs.forEach((limb, j) => {
+          limb.rotation.x =
+            p.mode === "walking"
+              ? Math.sin(life.clock * 6 + i) * (j % 2 ? 0.35 : -0.35)
+              : j >= 2
+                ? reaction * (p.reaction > 0 ? -2.4 : -0.8)
+                : 0;
         });
       });
       const b = communityBall(life.community);

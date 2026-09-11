@@ -11,5 +11,15 @@ export default defineConfig({
     // The Three.js world is lazy-loaded as its own chunk and is legitimately
     // large; this keeps the build output honest instead of silencing warnings.
     chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        // Three.js changes only when we upgrade it, while the world changes
+        // constantly. Splitting it out lets returning players keep the larger,
+        // stable half in cache across deploys instead of refetching both.
+        manualChunks(id) {
+          if (id.includes("node_modules/three")) return "three";
+        },
+      },
+    },
   },
 });

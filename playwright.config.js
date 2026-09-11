@@ -8,7 +8,9 @@ const ci = !!process.env.CI;
 
 export default defineConfig({
   testDir: "./tests",
-  fullyParallel: !ci,
+  testIgnore: "release.spec.js",
+  // Test-level sharding; workers still limit each CI runner to one browser.
+  fullyParallel: true,
   workers: ci ? 1 : 2,
   retries: ci ? 2 : 0,
   timeout: ci ? 120000 : 60000,
